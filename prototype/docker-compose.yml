@@ -1,0 +1,13 @@
+name: 'Test project'
+services:
+  test:
+    image: "nginx:stable-alpine"
+    command: "nginx -g 'daemon off;'"
+    entrypoint: "/solo-entrypoint.sh"
+    volumes:
+      # todo: I'd like all target mount files/dirs to go in a solo specific path
+      - "./entrypoint.sh:/solo-entrypoint.sh"
+      - "./build-scripts:/build-scripts:ro"
+      - "./run-scripts:/run-scripts:ro"
+    ports:
+      - "80:80"
