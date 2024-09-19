@@ -1,1 +1,5 @@
-package solo
+package main
+
+func main() {
+
+}
