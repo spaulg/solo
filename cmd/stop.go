@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/project"
+	"github.com/spaulg/solo/internal/pkg/project_finder"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // stopCmd represents the stop command
@@ -16,7 +19,15 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("stop called")
+		var project project.Project
+		var err error
+
+		if project, err = project_finder.FindProject(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		project.Stop()
 	},
 }
 
