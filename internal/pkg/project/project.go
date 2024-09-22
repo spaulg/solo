@@ -60,7 +60,7 @@ func (d Project) Start() {
 
 func (d Project) Stop() {
 	if _, err := os.Stat(d.ComposeFile); err != nil {
-		if errors.Is(os.ErrNotExist, err) {
+		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("compose file not found")
 			os.Exit(1)
 		} else {
@@ -77,5 +77,24 @@ func (d Project) Stop() {
 }
 
 func (d Project) Destroy() {
+	if _, err := os.Stat(d.ComposeFile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			fmt.Println("compose file not found")
+			os.Exit(1)
+		} else {
+			fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
+			os.Exit(1)
+		}
+	}
 
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", d.ComposeFile, "down", "-v")
+
+	if err := composeCmd.Run(); err != nil {
+		fmt.Println(fmt.Errorf("error running compose: %v", err))
+	}
+
+	if err := os.Remove(d.ComposeFile); err != nil {
+		fmt.Println(fmt.Errorf("failed to remove compose file: %v", err))
+		os.Exit(1)
+	}
 }
