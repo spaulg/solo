@@ -64,7 +64,7 @@ func (d *ProjectFile) ExportComposeConfiguration(config *viper.Viper) ([]byte, e
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   path.Join(".", localDirectory, "build-scripts"),
+			Source:   path.Join("..", localDirectory, "build-scripts"),
 			Target:   "/build-scripts",
 			ReadOnly: true,
 			Bind: &types.ServiceVolumeBind{
@@ -72,7 +72,7 @@ func (d *ProjectFile) ExportComposeConfiguration(config *viper.Viper) ([]byte, e
 			},
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   path.Join(".", localDirectory, "run-scripts"),
+			Source:   path.Join("..", localDirectory, "run-scripts"),
 			Target:   "/run-scripts",
 			ReadOnly: true,
 			Bind: &types.ServiceVolumeBind{

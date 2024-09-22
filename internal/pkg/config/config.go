@@ -9,7 +9,7 @@ import (
 func ReadConfig(projectFile *project_file.ProjectFile) (*viper.Viper, error) {
 	config := viper.New()
 
-	config.SetDefault("Entrypoint", "./prototype/solo-entrypoint.sh")
+	config.SetDefault("Entrypoint", "../prototype/solo-entrypoint.sh")
 	config.SetDefault("LocalDirectory", ".solo")
 
 	config.SetConfigName("config")
