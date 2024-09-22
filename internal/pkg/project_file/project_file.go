@@ -6,15 +6,18 @@ import (
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
+	"path/filepath"
 )
 
 type ProjectFile struct {
-	FilePath string
+	Directory string
+	FilePath  string
 }
 
 func New(projectFilePath string) *ProjectFile {
 	return &ProjectFile{
-		FilePath: projectFilePath,
+		Directory: filepath.Dir(projectFilePath),
+		FilePath:  projectFilePath,
 	}
 }
 
