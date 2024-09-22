@@ -2,7 +2,6 @@ package project
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/compose"
 	"github.com/spaulg/solo/internal/pkg/project_file"
 	"os/exec"
 )
@@ -18,12 +17,12 @@ func New(projectFile *project_file.ProjectFile) Project {
 }
 
 func (d DockerComposeProject) ComposeConfig() {
-	composeYml := compose.GenerateCompose(d.ProjectFile.FilePath)
+	composeYml := d.ProjectFile.GenerateCompose()
 	fmt.Println(string(composeYml))
 }
 
 func (d DockerComposeProject) Start() {
-	compose.GenerateCompose(d.ProjectFile.FilePath)
+	d.ProjectFile.GenerateCompose()
 
 	// todo: write the the new yml to a hidden file
 
