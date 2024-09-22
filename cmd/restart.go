@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/config"
 	"github.com/spaulg/solo/internal/pkg/project"
 	"github.com/spaulg/solo/internal/pkg/project_file"
 	"github.com/spaulg/solo/internal/pkg/project_finder"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"os"
 )
 
@@ -28,7 +31,17 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		project := project.New(projectFile)
+		// Read project configuration
+		projectConfig, err := config.ReadConfig(projectFile)
+		if err != nil {
+			var configFileNotFoundError viper.ConfigFileNotFoundError
+			if !errors.As(err, &configFileNotFoundError) {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+
+		project := project.New(projectConfig, projectFile)
 		project.Stop()
 		project.Start()
 	},

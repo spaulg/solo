@@ -6,6 +6,8 @@ import (
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/spf13/viper"
+	"path"
 	"path/filepath"
 )
 
@@ -23,7 +25,7 @@ func New(projectFilePath string) *ProjectFile {
 
 // ExportComposeConfiguration takes a project file and exports a valid compose file,
 // decorated with the necessary config for starting the project
-func (d *ProjectFile) ExportComposeConfiguration() ([]byte, error) {
+func (d *ProjectFile) ExportComposeConfiguration(config *viper.Viper) ([]byte, error) {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
 		option.SkipValidation = true
 	})
@@ -33,6 +35,9 @@ func (d *ProjectFile) ExportComposeConfiguration() ([]byte, error) {
 	if err != nil {
 		fmt.Println(fmt.Errorf("error building project options: %v", err))
 	}
+
+	soloEntrypoint := config.GetString("Entrypoint")
+	localDirectory := config.GetString("LocalDirectory")
 
 	project, err := projectOptions.LoadProject(context.Background())
 	if err != nil {
@@ -54,19 +59,25 @@ func (d *ProjectFile) ExportComposeConfiguration() ([]byte, error) {
 		// Append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id config
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   "./prototype/solo-entrypoint.sh", // todo: fix paths
+			Source:   soloEntrypoint,
 			Target:   "/solo-entrypoint.sh",
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   "./prototype/build-scripts", // todo: fix paths
+			Source:   path.Join(".", localDirectory, "build-scripts"),
 			Target:   "/build-scripts",
 			ReadOnly: true,
+			Bind: &types.ServiceVolumeBind{
+				CreateHostPath: true,
+			},
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   "./prototype/run-scripts", // todo: fix paths
+			Source:   path.Join(".", localDirectory, "run-scripts"),
 			Target:   "/run-scripts",
 			ReadOnly: true,
+			Bind: &types.ServiceVolumeBind{
+				CreateHostPath: true,
+			},
 		})
 
 		project.Services[index] = service
