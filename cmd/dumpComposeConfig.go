@@ -15,7 +15,7 @@ import (
 
 // composeConfigCmd represents the composeConfig command
 var composeConfigCmd = &cobra.Command{
-	Use:   "compose-config",
+	Use:   "dump-compose-config",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -33,7 +33,7 @@ to quickly create a Cobra application.`,
 		}
 
 		project := project.New(projectFile)
-		project.ComposeConfig()
+		project.DumpComposeConfig()
 	},
 }
 

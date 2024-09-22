@@ -16,7 +16,7 @@ func New(projectFile *project_file.ProjectFile) Project {
 	}
 }
 
-func (d Project) ComposeConfig() {
+func (d Project) DumpComposeConfig() {
 	composeYml, _ := d.ProjectFile.ExportComposeConfiguration()
 	fmt.Println(string(composeYml))
 }
