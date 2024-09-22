@@ -3,26 +3,29 @@ package project
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/project_file"
+	"github.com/spf13/viper"
 	"os/exec"
 )
 
 type Project struct {
+	Config      *viper.Viper
 	ProjectFile *project_file.ProjectFile
 }
 
-func New(projectFile *project_file.ProjectFile) Project {
+func New(config *viper.Viper, projectFile *project_file.ProjectFile) Project {
 	return Project{
+		Config:      config,
 		ProjectFile: projectFile,
 	}
 }
 
 func (d Project) DumpComposeConfig() {
-	composeYml, _ := d.ProjectFile.ExportComposeConfiguration()
+	composeYml, _ := d.ProjectFile.ExportComposeConfiguration(d.Config)
 	fmt.Println(string(composeYml))
 }
 
 func (d Project) Start() {
-	d.ProjectFile.ExportComposeConfiguration()
+	d.ProjectFile.ExportComposeConfiguration(d.Config)
 
 	// todo: write the the new yml to a hidden file
 
