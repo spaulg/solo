@@ -17,7 +17,7 @@ func New(projectFile *project_file.ProjectFile) Project {
 }
 
 func (d DockerComposeProject) ComposeConfig() {
-	composeYml := d.ProjectFile.ExportComposeConfiguration()
+	composeYml, _ := d.ProjectFile.ExportComposeConfiguration()
 	fmt.Println(string(composeYml))
 }
 

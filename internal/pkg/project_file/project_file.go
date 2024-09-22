@@ -20,7 +20,7 @@ func New(projectFilePath string) *ProjectFile {
 
 // ExportComposeConfiguration takes a project file and exports a valid compose file,
 // decorated with the necessary config for starting the project
-func (d *ProjectFile) ExportComposeConfiguration() []byte {
+func (d *ProjectFile) ExportComposeConfiguration() ([]byte, error) {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
 		option.SkipValidation = true
 	})
@@ -68,7 +68,5 @@ func (d *ProjectFile) ExportComposeConfiguration() []byte {
 		project.Services[index] = service
 	}
 
-	// Write output to a file for use with docker compose command call
-	bytes, err := project.MarshalYAML()
-	return bytes
+	return project.MarshalYAML()
 }
