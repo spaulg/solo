@@ -2,31 +2,35 @@ package project
 
 import (
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/compose"
+	"github.com/spaulg/solo/internal/pkg/project_file"
 	"os/exec"
 )
 
 type DockerComposeProject struct {
-	projectFilePath string
+	ProjectFile *project_file.ProjectFile
 }
 
-func New(projectFilePath string) Project {
+func New(projectFile *project_file.ProjectFile) Project {
 	return DockerComposeProject{
-		projectFilePath: projectFilePath,
+		ProjectFile: projectFile,
 	}
 }
 
+func (d DockerComposeProject) ComposeConfig() {
+	composeYml := compose.GenerateCompose(d.ProjectFile.FilePath)
+	fmt.Println(string(composeYml))
+}
+
 func (d DockerComposeProject) Start() {
-	// todo: read the docker-compose.yml based project file
-	// todo: strip out anything not official docker-compose
-	// todo: replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
-	// todo: override any user config to apply root
-	// todo: append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id config
-	// todo: write the the new docker-compose file to a working hidden directory
+	compose.GenerateCompose(d.ProjectFile.FilePath)
 
-	compose := exec.Command("/usr/local/bin/docker", "compose", "-f", d.projectFilePath, "up", "-d")
+	// todo: write the the new yml to a hidden file
 
-	if err := compose.Run(); err != nil {
-		fmt.Println(fmt.Errorf("error running compose: %v", err))
+	composeCmd := exec.Command("/usr/local/bin/docker", "composeCmd", "-f", d.ProjectFile.FilePath, "up", "-d")
+
+	if err := composeCmd.Run(); err != nil {
+		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
 	}
 }
 
@@ -34,9 +38,9 @@ func (d DockerComposeProject) Stop() {
 	// todo: find the temp docker-compose.yml and turn off containers
 
 	// todo: run docker compose down on the project
-	compose := exec.Command("/usr/local/bin/docker", "compose", "-f", d.projectFilePath, "down")
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", d.ProjectFile.FilePath, "down")
 
-	if err := compose.Run(); err != nil {
+	if err := composeCmd.Run(); err != nil {
 		fmt.Println(fmt.Errorf("error running compose: %v", err))
 	}
 }
