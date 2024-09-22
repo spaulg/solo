@@ -37,30 +37,31 @@ func (d *ProjectFile) ExportComposeConfiguration() ([]byte, error) {
 	}
 
 	for index, service := range project.Services {
-		// todo: override any user config to apply root
+		// Override any user config to force root
+		// todo: allow the user to switch in the entrypoint script
 		service.User = "0"
 
-		// todo: replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
+		// Replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
 		if len(service.Entrypoint) > 0 {
 			service.Command = append(service.Entrypoint, service.Command...)
 		}
 
 		service.Entrypoint = []string{"/solo-entrypoint.sh"}
 
-		// todo: append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id config
+		// Append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id config
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   "./prototype/solo-entrypoint.sh",
+			Source:   "./prototype/solo-entrypoint.sh", // todo: fix paths
 			Target:   "/solo-entrypoint.sh",
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   "/Users/spaulg/Repositories/spaulg/solo/prototype/build-scripts",
+			Source:   "./prototype/build-scripts", // todo: fix paths
 			Target:   "/build-scripts",
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   "/Users/spaulg/Repositories/spaulg/solo/prototype/run-scripts",
+			Source:   "./prototype/run-scripts", // todo: fix paths
 			Target:   "/run-scripts",
 			ReadOnly: true,
 		})
