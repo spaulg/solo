@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/project"
+	"github.com/spaulg/solo/internal/pkg/project_file"
 	"github.com/spaulg/solo/internal/pkg/project_finder"
 	"github.com/spf13/cobra"
 	"os"
@@ -19,14 +20,15 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var project project.Project
+		var projectFile *project_file.ProjectFile
 		var err error
 
-		if project, err = project_finder.FindProject(); err != nil {
+		if projectFile, err = project_finder.FindProjectFile(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
+		project := project.New(projectFile)
 		project.Destroy()
 	},
 }

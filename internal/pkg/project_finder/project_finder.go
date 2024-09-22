@@ -2,15 +2,17 @@ package project_finder
 
 import (
 	"errors"
-	"github.com/spaulg/solo/internal/pkg/project"
+	"github.com/spaulg/solo/internal/pkg/project_file"
 	"os"
 	"path/filepath"
 )
 
-// FindProject Find the project by navigating up the
+const ProjectFileName = "solo.yml"
+
+// FindProjectFile Find the project file by navigating up the
 // filesystem tree until the project file is found, or
-// return error if no project is found
-func FindProject() (project.Project, error) {
+// return error if no project file is found
+func FindProjectFile() (*project_file.ProjectFile, error) {
 	var projectFilePath = ""
 
 	path, err := filepath.Abs("./")
@@ -19,7 +21,7 @@ func FindProject() (project.Project, error) {
 	}
 
 	for {
-		projectFilePath = filepath.Join(path, "docker-compose.yml")
+		projectFilePath = filepath.Join(path, ProjectFileName)
 		fileInfo, err := os.Stat(projectFilePath)
 
 		if err != nil {
@@ -36,7 +38,7 @@ func FindProject() (project.Project, error) {
 				return nil, err
 			}
 		} else if fileInfo != nil {
-			return project.New(projectFilePath), nil
+			return project_file.New(projectFilePath), nil
 		}
 	}
 

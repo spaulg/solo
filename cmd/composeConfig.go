@@ -1,3 +1,6 @@
+/*
+Copyright © 2024 NAME HERE <EMAIL ADDRESS>
+*/
 package cmd
 
 import (
@@ -5,13 +8,14 @@ import (
 	"github.com/spaulg/solo/internal/pkg/project"
 	"github.com/spaulg/solo/internal/pkg/project_file"
 	"github.com/spaulg/solo/internal/pkg/project_finder"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
-// rebuildCmd represents the rebuild command
-var rebuildCmd = &cobra.Command{
-	Use:   "rebuild",
+// composeConfigCmd represents the composeConfig command
+var composeConfigCmd = &cobra.Command{
+	Use:   "compose-config",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -29,21 +33,20 @@ to quickly create a Cobra application.`,
 		}
 
 		project := project.New(projectFile)
-		project.Destroy()
-		project.Start()
+		project.ComposeConfig()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(rebuildCmd)
+	rootCmd.AddCommand(composeConfigCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
-	// and all solo, e.g.:
-	// rebuildCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// and all subcommands, e.g.:
+	// composeConfigCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// rebuildCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// composeConfigCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
