@@ -17,12 +17,12 @@ func New(projectFile *project_file.ProjectFile) Project {
 }
 
 func (d DockerComposeProject) ComposeConfig() {
-	composeYml := d.ProjectFile.GenerateCompose()
+	composeYml := d.ProjectFile.ExportComposeConfiguration()
 	fmt.Println(string(composeYml))
 }
 
 func (d DockerComposeProject) Start() {
-	d.ProjectFile.GenerateCompose()
+	d.ProjectFile.ExportComposeConfiguration()
 
 	// todo: write the the new yml to a hidden file
 

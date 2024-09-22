@@ -17,9 +17,9 @@ func New(projectFilePath string) *ProjectFile {
 	}
 }
 
-// GenerateCompose takes a project file and exports a valid compose file,
+// ExportComposeConfiguration takes a project file and exports a valid compose file,
 // decorated with the necessary config for starting the project
-func (d *ProjectFile) GenerateCompose() []byte {
+func (d *ProjectFile) ExportComposeConfiguration() []byte {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
 		option.SkipValidation = true
 	})
