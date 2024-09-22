@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/loader"
+	"github.com/compose-spec/compose-go/v2/types"
 )
 
 type ProjectFile struct {
@@ -35,24 +36,37 @@ func (d *ProjectFile) ExportComposeConfiguration() []byte {
 		fmt.Println(fmt.Errorf("error loading project: %v", err))
 	}
 
-	// todo: replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
-	// todo: override any user config to apply root
-	// todo: append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id config
+	for index, service := range project.Services {
+		// todo: override any user config to apply root
+		service.User = "0"
 
-	//for _, service := range project.Services {
-	//	for k := range service.Volumes {
-	//		fmt.Println(k)
-	//	}
-	//}
-	//
-	//fmt.Println("Project volumes: ")
-	//for k := range project.Volumes {
-	//	fmt.Println(k)
-	//}
-	//
-	//for name := range project.VolumeNames() {
-	//	fmt.Println(name)
-	//}
+		// todo: replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
+		if len(service.Entrypoint) > 0 {
+			service.Command = append(service.Entrypoint, service.Command...)
+		}
+
+		service.Entrypoint = []string{"/solo-entrypoint.sh"}
+
+		// todo: append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id config
+		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
+			Type:     "bind",
+			Source:   "./prototype/solo-entrypoint.sh",
+			Target:   "/solo-entrypoint.sh",
+			ReadOnly: true,
+		}, types.ServiceVolumeConfig{
+			Type:     "bind",
+			Source:   "/Users/spaulg/Repositories/spaulg/solo/prototype/build-scripts",
+			Target:   "/build-scripts",
+			ReadOnly: true,
+		}, types.ServiceVolumeConfig{
+			Type:     "bind",
+			Source:   "/Users/spaulg/Repositories/spaulg/solo/prototype/run-scripts",
+			Target:   "/run-scripts",
+			ReadOnly: true,
+		})
+
+		project.Services[index] = service
+	}
 
 	// Write output to a file for use with docker compose command call
 	bytes, err := project.MarshalYAML()
