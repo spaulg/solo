@@ -1,10 +1,20 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
+	"github.com/spaulg/solo/internal/pkg/config"
+	"github.com/spaulg/solo/internal/pkg/project_file"
+	"github.com/spaulg/solo/internal/pkg/project_finder"
+	"github.com/spf13/viper"
 	"os"
 
 	"github.com/spf13/cobra"
 )
+
+var projectFile *project_file.ProjectFile
+var projectConfig *viper.Viper
+var projectLoadErr, configLoadErr error
 
 // rootCmd represents the base command when called without any solo
 var rootCmd = &cobra.Command{
@@ -19,6 +29,20 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if projectLoadErr != nil {
+			fmt.Println(projectLoadErr)
+			os.Exit(1)
+		}
+
+		if configLoadErr != nil {
+			var configFileNotFoundError viper.ConfigFileNotFoundError
+			if !errors.As(configLoadErr, &configFileNotFoundError) {
+				fmt.Println(configLoadErr)
+				os.Exit(1)
+			}
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -31,13 +55,6 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.solo.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	projectFile, projectLoadErr = project_finder.FindProjectFile()
+	projectConfig, configLoadErr = config.ReadConfig(projectFile)
 }
