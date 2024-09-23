@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 type ProjectFile struct {
@@ -27,7 +28,8 @@ func New(projectFilePath string) *ProjectFile {
 // decorated with the necessary config for starting the project
 func (d *ProjectFile) ExportComposeConfiguration(config *viper.Viper) ([]byte, error) {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
-		option.SkipValidation = true
+		option.SkipValidation = true // Prevent validation failures from preventing the config from being loaded
+		option.ResolvePaths = false  // Keep paths relative in case the user moves their project folder
 	})
 
 	projectOptions, err := cli.NewProjectOptions([]string{d.FilePath}, projectOptionsLoader)
@@ -55,6 +57,13 @@ func (d *ProjectFile) ExportComposeConfiguration(config *viper.Viper) ([]byte, e
 		}
 
 		service.Entrypoint = []string{"/solo-entrypoint.sh"}
+
+		// Patch relative paths to account for the project work directory
+		for index, volume := range service.Volumes {
+			if volume.Type == "bind" && !strings.HasPrefix(volume.Source, "/") {
+				service.Volumes[index].Source = "../" + volume.Source
+			}
+		}
 
 		// Append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id config
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
