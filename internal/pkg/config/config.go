@@ -15,7 +15,10 @@ func ReadConfig(projectFile *project_file.ProjectFile) (*viper.Viper, error) {
 	config.SetConfigName("config")
 	config.SetConfigType("yaml")
 	config.AddConfigPath("$HOME/.solo")
-	config.AddConfigPath(projectFile.Directory)
+
+	if projectFile != nil {
+		config.AddConfigPath(projectFile.Directory)
+	}
 
 	if err := config.ReadInConfig(); err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
