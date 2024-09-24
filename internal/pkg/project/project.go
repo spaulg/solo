@@ -3,20 +3,21 @@ package project
 import (
 	"errors"
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/compose_exporter"
+	"github.com/spaulg/solo/internal/pkg/config"
 	"github.com/spaulg/solo/internal/pkg/project_file"
-	"github.com/spf13/viper"
 	"os"
 	"os/exec"
 	"path"
 )
 
 type Project struct {
-	Config      *viper.Viper
+	Config      *config.Config
 	ProjectFile *project_file.ProjectFile
 	ComposeFile string
 }
 
-func New(config *viper.Viper, projectFile *project_file.ProjectFile) Project {
+func New(config *config.Config, projectFile *project_file.ProjectFile) Project {
 	return Project{
 		Config:      config,
 		ProjectFile: projectFile,
@@ -24,15 +25,15 @@ func New(config *viper.Viper, projectFile *project_file.ProjectFile) Project {
 	}
 }
 
-func (d Project) DumpComposeConfig() {
-	composeYml, _ := d.ProjectFile.ExportComposeConfiguration(d.Config)
+func (p Project) DumpComposeConfig() {
+	composeYml, _ := compose_exporter.ExportComposeConfiguration(p.Config, p.ProjectFile)
 	fmt.Println(string(composeYml))
 }
 
-func (d Project) Start() {
-	composeYml, _ := d.ProjectFile.ExportComposeConfiguration(d.Config)
+func (p Project) Start() {
+	composeYml, _ := compose_exporter.ExportComposeConfiguration(p.Config, p.ProjectFile)
 
-	composeDirectory := path.Dir(d.ComposeFile)
+	composeDirectory := path.Dir(p.ComposeFile)
 	if _, err := os.Stat(composeDirectory); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			fmt.Println(fmt.Errorf("failed to check .solo directory existence: %v", err))
@@ -45,12 +46,12 @@ func (d Project) Start() {
 		}
 	}
 
-	if err := os.WriteFile(d.ComposeFile, composeYml, 0640); err != nil {
+	if err := os.WriteFile(p.ComposeFile, composeYml, 0640); err != nil {
 		fmt.Println(fmt.Errorf("failed to write compose file: %v", err))
 		os.Exit(1)
 	}
 
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", d.ComposeFile, "up", "-d")
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", p.ComposeFile, "up", "-d")
 
 	if err := composeCmd.Run(); err != nil {
 		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
@@ -58,8 +59,8 @@ func (d Project) Start() {
 	}
 }
 
-func (d Project) Stop() {
-	if _, err := os.Stat(d.ComposeFile); err != nil {
+func (p Project) Stop() {
+	if _, err := os.Stat(p.ComposeFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("compose file not found")
 			os.Exit(1)
@@ -69,15 +70,15 @@ func (d Project) Stop() {
 		}
 	}
 
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", d.ComposeFile, "stop")
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", p.ComposeFile, "stop")
 
 	if err := composeCmd.Run(); err != nil {
 		fmt.Println(fmt.Errorf("error running compose: %v", err))
 	}
 }
 
-func (d Project) Destroy() {
-	if _, err := os.Stat(d.ComposeFile); err != nil {
+func (p Project) Destroy() {
+	if _, err := os.Stat(p.ComposeFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("compose file not found")
 			os.Exit(1)
@@ -87,13 +88,13 @@ func (d Project) Destroy() {
 		}
 	}
 
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", d.ComposeFile, "down", "-v")
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", p.ComposeFile, "down", "-v")
 
 	if err := composeCmd.Run(); err != nil {
 		fmt.Println(fmt.Errorf("error running compose: %v", err))
 	}
 
-	if err := os.Remove(d.ComposeFile); err != nil {
+	if err := os.Remove(p.ComposeFile); err != nil {
 		fmt.Println(fmt.Errorf("failed to remove compose file: %v", err))
 		os.Exit(1)
 	}

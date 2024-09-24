@@ -13,8 +13,8 @@ import (
 )
 
 var projectFile *project_file.ProjectFile
-var projectConfig *viper.Viper
-var projectLoadErr, configLoadErr error
+var globalConfig *config.Config
+var projectLoadErr, globalConfigLoadErr error
 
 // rootCmd represents the base command when called without any solo
 var rootCmd = &cobra.Command{
@@ -35,10 +35,10 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if configLoadErr != nil {
+		if globalConfigLoadErr != nil {
 			var configFileNotFoundError viper.ConfigFileNotFoundError
-			if !errors.As(configLoadErr, &configFileNotFoundError) {
-				fmt.Println(configLoadErr)
+			if !errors.As(globalConfigLoadErr, &configFileNotFoundError) {
+				fmt.Println(globalConfigLoadErr)
 				os.Exit(1)
 			}
 		}
@@ -56,5 +56,5 @@ func Execute() {
 
 func init() {
 	projectFile, projectLoadErr = project_finder.FindProjectFile()
-	projectConfig, configLoadErr = config.ReadConfig(projectFile)
+	globalConfig, globalConfigLoadErr = config.ReadConfig(projectFile)
 }
