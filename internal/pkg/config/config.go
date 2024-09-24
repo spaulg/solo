@@ -6,26 +6,46 @@ import (
 	"github.com/spf13/viper"
 )
 
-func ReadConfig(projectFile *project_file.ProjectFile) (*viper.Viper, error) {
-	config := viper.New()
+type Config struct {
+	Entrypoint     string
+	LocalDirectory string
+}
 
-	config.SetDefault("Entrypoint", "../prototype/solo-entrypoint.sh")
-	config.SetDefault("LocalDirectory", ".solo")
+func ReadConfig(projectFile *project_file.ProjectFile) (*Config, error) {
+	configReader := viper.New()
 
-	config.SetConfigName("config")
-	config.SetConfigType("yaml")
-	config.AddConfigPath("$HOME/.solo")
+	configReader.SetConfigName(".solo-config")
+	configReader.SetConfigType("yaml")
+	configReader.AddConfigPath("$HOME")
 
-	if projectFile != nil {
-		config.AddConfigPath(projectFile.Directory)
-	}
-
-	if err := config.ReadInConfig(); err != nil {
+	if err := configReader.ReadInConfig(); err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {
 			return nil, err
 		}
 	}
 
-	return config, nil
+	if projectFile != nil {
+		configReader.SetConfigName("solo-config")
+		configReader.SetConfigType("yaml")
+		configReader.AddConfigPath(projectFile.Directory)
+
+		if err := configReader.MergeInConfig(); err != nil {
+			var configFileNotFoundError viper.ConfigFileNotFoundError
+			if !errors.As(err, &configFileNotFoundError) {
+				return nil, err
+			}
+		}
+	}
+
+	config := Config{
+		Entrypoint:     "../prototype/solo-entrypoint.sh",
+		LocalDirectory: "",
+	}
+
+	if err := configReader.Unmarshal(&config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
