@@ -39,8 +39,8 @@ func ReadConfig(projectFile *project_file.ProjectFile) (*Config, error) {
 	}
 
 	config := Config{
-		Entrypoint:     "../prototype/solo-entrypoint.sh",
-		LocalDirectory: "",
+		Entrypoint:     "./prototype/solo-entrypoint.sh",
+		LocalDirectory: "./.solo",
 	}
 
 	if err := configReader.Unmarshal(&config); err != nil {

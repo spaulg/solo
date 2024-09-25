@@ -9,7 +9,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/config"
 	"github.com/spaulg/solo/internal/pkg/project_file"
 	"path"
-	"strings"
 )
 
 // ExportComposeConfiguration takes a project file and exports a valid compose file,
@@ -46,13 +45,6 @@ func ExportComposeConfiguration(globalConfig *config.Config, d *project_file.Pro
 
 		service.Entrypoint = []string{"/solo-entrypoint.sh"}
 
-		// Patch relative paths to account for the project work directory
-		for index, volume := range service.Volumes {
-			if volume.Type == "bind" && !strings.HasPrefix(volume.Source, "/") {
-				service.Volumes[index].Source = "../" + volume.Source
-			}
-		}
-
 		// Append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id globalConfig
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
@@ -61,7 +53,7 @@ func ExportComposeConfiguration(globalConfig *config.Config, d *project_file.Pro
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   path.Join("..", localDirectory, "build-scripts"),
+			Source:   path.Join(localDirectory, "build-scripts"),
 			Target:   "/build-scripts",
 			ReadOnly: true,
 			Bind: &types.ServiceVolumeBind{
@@ -69,7 +61,7 @@ func ExportComposeConfiguration(globalConfig *config.Config, d *project_file.Pro
 			},
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
-			Source:   path.Join("..", localDirectory, "run-scripts"),
+			Source:   path.Join(localDirectory, "run-scripts"),
 			Target:   "/run-scripts",
 			ReadOnly: true,
 			Bind: &types.ServiceVolumeBind{

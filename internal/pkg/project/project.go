@@ -51,7 +51,10 @@ func (p Project) Start() {
 		os.Exit(1)
 	}
 
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", p.ComposeFile, "up", "-d")
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+		"-f", p.ComposeFile,
+		"--project-directory", p.ProjectFile.Directory,
+		"up", "-d")
 
 	if err := composeCmd.Run(); err != nil {
 		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
@@ -70,7 +73,10 @@ func (p Project) Stop() {
 		}
 	}
 
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", p.ComposeFile, "stop")
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+		"-f", p.ComposeFile,
+		"--project-directory", p.ProjectFile.Directory,
+		"stop")
 
 	if err := composeCmd.Run(); err != nil {
 		fmt.Println(fmt.Errorf("error running compose: %v", err))
@@ -88,7 +94,10 @@ func (p Project) Destroy() {
 		}
 	}
 
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose", "-f", p.ComposeFile, "down", "-v")
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+		"-f", p.ComposeFile,
+		"--project-directory", p.ProjectFile.Directory,
+		"down", "-v")
 
 	if err := composeCmd.Run(); err != nil {
 		fmt.Println(fmt.Errorf("error running compose: %v", err))
