@@ -1,4 +1,16 @@
-package schema
+package solo
+
+type Project struct {
+	Config      *Config
+	ProjectFile *ProjectFile
+	ComposeFile string
+	Project     *ProjectConfig
+}
+
+type Config struct {
+	Entrypoint     string
+	LocalDirectory string
+}
 
 type StepConfig struct {
 	Name    string `yaml:"name"`
@@ -23,6 +35,6 @@ type ServiceConfig struct {
 
 type Services map[string]ServiceConfig
 
-type Config struct {
+type ProjectConfig struct {
 	Services Services `yaml:"services"`
 }

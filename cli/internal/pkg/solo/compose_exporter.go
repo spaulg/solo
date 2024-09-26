@@ -1,4 +1,4 @@
-package compose_exporter
+package solo
 
 import (
 	"context"
@@ -6,14 +6,12 @@ import (
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
-	"github.com/spaulg/solo/cli/internal/pkg/config"
-	"github.com/spaulg/solo/cli/internal/pkg/project_file"
 	"path"
 )
 
 // ExportComposeConfiguration takes a project file and exports a valid compose file,
 // decorated with the necessary config for starting the project
-func ExportComposeConfiguration(globalConfig *config.Config, d *project_file.ProjectFile) ([]byte, error) {
+func ExportComposeConfiguration(globalConfig *Config, d *ProjectFile) ([]byte, error) {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
 		option.SkipValidation = true // Prevent validation failures from preventing the global config from being loaded
 		option.ResolvePaths = false  // Keep paths relative in case the user moves their project folder

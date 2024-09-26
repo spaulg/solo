@@ -3,17 +3,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/config"
-	"github.com/spaulg/solo/cli/internal/pkg/project_file"
-	"github.com/spaulg/solo/cli/internal/pkg/project_finder"
+	"github.com/spaulg/solo/cli/internal/pkg/solo"
 	"github.com/spf13/viper"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-var projectFile *project_file.ProjectFile
-var globalConfig *config.Config
+var projectFile *solo.ProjectFile
+var globalConfig *solo.Config
 var projectLoadErr, globalConfigLoadErr error
 
 // rootCmd represents the base command when called without any solo
@@ -55,6 +53,6 @@ func Execute() {
 }
 
 func init() {
-	projectFile, projectLoadErr = project_finder.FindProjectFile()
-	globalConfig, globalConfigLoadErr = config.ReadConfig(projectFile)
+	projectFile, projectLoadErr = solo.FindProjectFile()
+	globalConfig, globalConfigLoadErr = solo.NewConfig(projectFile)
 }

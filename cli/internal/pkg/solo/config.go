@@ -1,17 +1,11 @@
-package config
+package solo
 
 import (
 	"errors"
-	"github.com/spaulg/solo/cli/internal/pkg/project_file"
 	"github.com/spf13/viper"
 )
 
-type Config struct {
-	Entrypoint     string
-	LocalDirectory string
-}
-
-func ReadConfig(projectFile *project_file.ProjectFile) (*Config, error) {
+func NewConfig(projectFile *ProjectFile) (*Config, error) {
 	configReader := viper.New()
 
 	configReader.SetConfigName(".solo-config")
