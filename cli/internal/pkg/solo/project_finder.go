@@ -1,8 +1,7 @@
-package project_finder
+package solo
 
 import (
 	"errors"
-	"github.com/spaulg/solo/cli/internal/pkg/project_file"
 	"os"
 	"path/filepath"
 )
@@ -12,7 +11,7 @@ const ProjectFileName = "solo.yml"
 // FindProjectFile Find the project file by navigating up the
 // filesystem tree until the project file is found, or
 // return error if no project file is found
-func FindProjectFile() (*project_file.ProjectFile, error) {
+func FindProjectFile() (*ProjectFile, error) {
 	var projectFilePath = ""
 
 	path, err := filepath.Abs("./")
@@ -38,7 +37,7 @@ func FindProjectFile() (*project_file.ProjectFile, error) {
 				return nil, err
 			}
 		} else if fileInfo != nil {
-			return project_file.New(projectFilePath), nil
+			return NewProjectFile(projectFilePath), nil
 		}
 	}
 

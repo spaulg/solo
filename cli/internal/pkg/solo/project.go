@@ -1,17 +1,14 @@
-package project
+package solo
 
 import (
 	"errors"
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/compose_exporter"
-	"github.com/spaulg/solo/cli/internal/pkg/config"
-	"github.com/spaulg/solo/cli/internal/pkg/project_file"
 	"os"
 	"os/exec"
 	"path"
 )
 
-func LoadProject(config *config.Config, projectFile *project_file.ProjectFile) *Project {
+func NewProject(config *Config, projectFile *ProjectFile) *Project {
 	projectConfig, err := projectFile.Marshall()
 	if err != nil {
 		fmt.Println(fmt.Errorf("failed to read project file: %v", err))
@@ -27,13 +24,13 @@ func LoadProject(config *config.Config, projectFile *project_file.ProjectFile) *
 }
 
 func (p Project) DumpComposeConfig() {
-	composeYml, _ := compose_exporter.ExportComposeConfiguration(p.Config, p.ProjectFile)
+	composeYml, _ := ExportComposeConfiguration(p.Config, p.ProjectFile)
 	fmt.Println(string(composeYml))
 }
 
 func (p Project) Start() {
 	// Write compose file
-	composeYml, _ := compose_exporter.ExportComposeConfiguration(p.Config, p.ProjectFile)
+	composeYml, _ := ExportComposeConfiguration(p.Config, p.ProjectFile)
 
 	composeDirectory := path.Dir(p.ComposeFile)
 	if _, err := os.Stat(composeDirectory); err != nil {
