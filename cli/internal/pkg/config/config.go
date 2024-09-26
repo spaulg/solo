@@ -39,7 +39,7 @@ func ReadConfig(projectFile *project_file.ProjectFile) (*Config, error) {
 	}
 
 	config := Config{
-		Entrypoint:     "./prototype/solo-entrypoint.sh",
+		Entrypoint:     "./agent/solo-entrypoint.sh",
 		LocalDirectory: "./.solo",
 	}
 
