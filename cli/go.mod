@@ -1,4 +1,4 @@
-module github.com/spaulg/solo
+module github.com/spaulg/solo/cli
 
 go 1.22.2
 

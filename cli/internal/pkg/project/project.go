@@ -3,9 +3,9 @@ package project
 import (
 	"errors"
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/compose_exporter"
-	"github.com/spaulg/solo/internal/pkg/config"
-	"github.com/spaulg/solo/internal/pkg/project_file"
+	"github.com/spaulg/solo/cli/internal/pkg/compose_exporter"
+	"github.com/spaulg/solo/cli/internal/pkg/config"
+	"github.com/spaulg/solo/cli/internal/pkg/project_file"
 	"os"
 	"os/exec"
 	"path"
