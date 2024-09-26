@@ -9,3 +9,19 @@ services:
     command: "nginx -g 'daemon off;'"
     ports:
       - "80:80"
+
+    steps:
+      provisioning: # event name
+        - name: 'Name for display purposes'
+          command: 'command to run that will work with os.exec (i.e. not shell)'
+          cwd: 'The directory to run the command from within'
+          timeout: 60 # timeout in seconds to wait for the command to complete
+
+      pre_start:
+      post_start:
+
+      pre_stop:
+      post_stop:
+
+      pre_destroy:
+      post_destroy:

@@ -11,17 +11,18 @@ import (
 	"path"
 )
 
-type Project struct {
-	Config      *config.Config
-	ProjectFile *project_file.ProjectFile
-	ComposeFile string
-}
+func LoadProject(config *config.Config, projectFile *project_file.ProjectFile) *Project {
+	projectConfig, err := projectFile.Marshall()
+	if err != nil {
+		fmt.Println(fmt.Errorf("failed to read project file: %v", err))
+		os.Exit(1)
+	}
 
-func New(config *config.Config, projectFile *project_file.ProjectFile) Project {
-	return Project{
+	return &Project{
 		Config:      config,
 		ProjectFile: projectFile,
 		ComposeFile: path.Join(projectFile.Directory, ".solo", "docker-compose.yml"),
+		Project:     projectConfig,
 	}
 }
 
@@ -31,6 +32,7 @@ func (p Project) DumpComposeConfig() {
 }
 
 func (p Project) Start() {
+	// Write compose file
 	composeYml, _ := compose_exporter.ExportComposeConfiguration(p.Config, p.ProjectFile)
 
 	composeDirectory := path.Dir(p.ComposeFile)
@@ -51,6 +53,8 @@ func (p Project) Start() {
 		os.Exit(1)
 	}
 
+	// todo: Extract yaml steps file
+
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", p.ComposeFile,
 		"--project-directory", p.ProjectFile.Directory,
@@ -60,6 +64,13 @@ func (p Project) Start() {
 		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
 		os.Exit(1)
 	}
+
+	// todo: wait for lock file / health check from service to notify startup succeeded
+	//		 could this be done via a compose event stream?
+
+	// todo: Exec post start commands (via docker exec)
+	//	     or could I make the entrypoint an agent that accepts remote connections over a named pipe
+	//		 that I could feed instruction to
 }
 
 func (p Project) Stop() {
@@ -72,6 +83,8 @@ func (p Project) Stop() {
 			os.Exit(1)
 		}
 	}
+
+	// todo: Exec pre stop commands
 
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", p.ComposeFile,
@@ -93,6 +106,8 @@ func (p Project) Destroy() {
 			os.Exit(1)
 		}
 	}
+
+	// todo: Exec pre stop commands
 
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", p.ComposeFile,
