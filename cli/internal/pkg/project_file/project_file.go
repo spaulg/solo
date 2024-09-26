@@ -1,7 +1,7 @@
 package project_file
 
 import (
-	"github.com/spaulg/solo/internal/pkg/schema"
+	"github.com/spaulg/solo/cli/internal/pkg/schema"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"

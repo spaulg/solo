@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"github.com/spaulg/solo/internal/pkg/project"
+	"github.com/spaulg/solo/cli/internal/pkg/project"
 	"github.com/spf13/cobra"
 )
 
-// rebuildCmd represents the rebuild command
-var rebuildCmd = &cobra.Command{
-	Use:   "rebuild",
+// destroyCmd represents the destroy command
+var destroyCmd = &cobra.Command{
+	Use:   "destroy",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -18,10 +18,9 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		project := project.LoadProject(globalConfig, projectFile)
 		project.Destroy()
-		project.Start()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(rebuildCmd)
+	rootCmd.AddCommand(destroyCmd)
 }

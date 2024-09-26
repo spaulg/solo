@@ -2,7 +2,7 @@ package config
 
 import (
 	"errors"
-	"github.com/spaulg/solo/internal/pkg/project_file"
+	"github.com/spaulg/solo/cli/internal/pkg/project_file"
 	"github.com/spf13/viper"
 )
 
