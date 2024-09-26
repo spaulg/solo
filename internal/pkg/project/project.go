@@ -71,6 +71,13 @@ func (p Project) Start() {
 	// todo: Exec post start commands (via docker exec)
 	//	     or could I make the entrypoint an agent that accepts remote connections over a named pipe
 	//		 that I could feed instruction to
+	//		 or start a grpc service in this command, pass the port used to the guest and wait for a connection
+	//		 then feed back instruction
+	//		 would this be a long running process? would it be passed via env var
+	//		 or a file that can be updated
+	//		 would the guest run the agent forever or just initially and then exit?
+	//		 would stop/destroy commands restart the agent and reconnect for instruction to receive events again
+	//		 what if the container is already stopped when this happens?
 }
 
 func (p Project) Stop() {
