@@ -1,8 +1,5 @@
 name: 'Test project'
 
-project:
-  foo: bar
-
 services:
   test:
     image: "nginx:stable-alpine"
