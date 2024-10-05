@@ -2,10 +2,13 @@ name: 'Test project'
 
 services:
   test:
-    image: "nginx:stable-alpine"
-    command: "nginx -g 'daemon off;'"
+    build: .
+    command: ['/usr/sbin/nginx', '-g', 'daemon off;']
+#    command: nginx -g 'daemon off;'
     ports:
       - "80:80"
+    volumes:
+      - "./:/solo"
 
     steps:
       provisioning: # event name

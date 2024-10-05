@@ -41,13 +41,13 @@ func ExportComposeConfiguration(globalConfig *Config, d *ProjectFile) ([]byte, e
 			service.Command = append(service.Entrypoint, service.Command...)
 		}
 
-		service.Entrypoint = []string{"/solo-entrypoint.sh"}
+		service.Entrypoint = []string{"/solo-entrypoint"}
 
 		// Append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id globalConfig
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
 			Source:   soloEntrypoint,
-			Target:   "/solo-entrypoint.sh",
+			Target:   "/solo-entrypoint",
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
