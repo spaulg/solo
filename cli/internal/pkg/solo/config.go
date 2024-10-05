@@ -33,7 +33,7 @@ func NewConfig(projectFile *ProjectFile) (*Config, error) {
 	}
 
 	config := Config{
-		Entrypoint:     "./agent/solo-entrypoint.sh",
+		Entrypoint:     "/usr/lib/solo/solo-entrypoint",
 		LocalDirectory: "./.solo",
 	}
 
