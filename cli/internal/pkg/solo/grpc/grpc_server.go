@@ -1,4 +1,4 @@
-package solo
+package grpc
 
 import (
 	"fmt"
