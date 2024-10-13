@@ -11,7 +11,7 @@ import (
 
 // ExportComposeConfiguration takes a project file and exports a valid compose file,
 // decorated with the necessary config for starting the project
-func ExportComposeConfiguration(globalConfig *Config, d *ProjectFile) ([]byte, error) {
+func ExportComposeConfiguration(globalConfig *Config, d *Project) ([]byte, error) {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
 		option.SkipValidation = true // Prevent validation failures from preventing the global config from being loaded
 		option.ResolvePaths = false  // Keep paths relative in case the user moves their project folder

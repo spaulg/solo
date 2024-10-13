@@ -11,7 +11,7 @@ const ProjectFileName = "solo.yml"
 // FindProjectFile Find the project file by navigating up the
 // filesystem tree until the project file is found, or
 // return error if no project file is found
-func FindProjectFile() (*ProjectFile, error) {
+func FindProjectFile() (*Project, error) {
 	var projectFilePath = ""
 
 	path, err := filepath.Abs("./")
@@ -37,7 +37,7 @@ func FindProjectFile() (*ProjectFile, error) {
 				return nil, err
 			}
 		} else if fileInfo != nil {
-			return NewProjectFile(projectFilePath), nil
+			return NewProject(projectFilePath), nil
 		}
 	}
 

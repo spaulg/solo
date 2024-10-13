@@ -1,126 +1,33 @@
 package solo
 
 import (
-	"errors"
-	"fmt"
+	"gopkg.in/yaml.v3"
 	"os"
-	"os/exec"
-	"path"
+	"path/filepath"
 )
 
-func NewProject(config *Config, projectFile *ProjectFile) *Project {
-	projectConfig, err := projectFile.Marshall()
-	if err != nil {
-		fmt.Println(fmt.Errorf("failed to read project file: %v", err))
-		os.Exit(1)
-	}
+type Project struct {
+	Directory string
+	FilePath  string
+}
 
+func NewProject(projectFilePath string) *Project {
 	return &Project{
-		Config:      config,
-		ProjectFile: projectFile,
-		ComposeFile: path.Join(projectFile.Directory, ".solo", "docker-compose.yml"),
-		Project:     projectConfig,
+		Directory: filepath.Dir(projectFilePath),
+		FilePath:  projectFilePath,
 	}
 }
 
-func (p Project) DumpComposeConfig() {
-	composeYml, _ := ExportComposeConfiguration(p.Config, p.ProjectFile)
-	fmt.Println(string(composeYml))
-}
-
-func (p Project) Start() {
-	// Write compose file
-	composeYml, _ := ExportComposeConfiguration(p.Config, p.ProjectFile)
-
-	composeDirectory := path.Dir(p.ComposeFile)
-	if _, err := os.Stat(composeDirectory); err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			fmt.Println(fmt.Errorf("failed to check .solo directory existence: %v", err))
-			os.Exit(1)
-		}
-
-		if err := os.MkdirAll(composeDirectory, 0755); err != nil {
-			fmt.Println(fmt.Errorf("failed to create .solo directory: %v", err))
-			os.Exit(1)
-		}
+func (p *Project) Marshall() (*ProjectConfig, error) {
+	fileContents, err := os.ReadFile(p.FilePath)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := os.WriteFile(p.ComposeFile, composeYml, 0640); err != nil {
-		fmt.Println(fmt.Errorf("failed to write compose file: %v", err))
-		os.Exit(1)
+	projectConfig := ProjectConfig{}
+	if err := yaml.Unmarshal(fileContents, &projectConfig); err != nil {
+		return nil, err
 	}
 
-	// todo: launch provisioning grpc server
-	//fmt.Println("Launching GRPC service...")
-	//grpc_server := NewGrpcServer()
-	//go grpc_server.Listen()
-
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", p.ComposeFile,
-		"--project-directory", p.ProjectFile.Directory,
-		"up", "-d")
-
-	if err := composeCmd.Run(); err != nil {
-		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
-		os.Exit(1)
-	}
-
-	//fmt.Println("Sleeping...")
-	//time.Sleep(30 * time.Second)
-
-	// todo: wait for confirmation that all containers have completed provisioning
-	// todo: wait delay period for final containers to start
-	// todo: Exec post start commands (via docker exec)
-	// todo: wait delay period for all containers to checkin for post start commands provisioning
-}
-
-func (p Project) Stop() {
-	if _, err := os.Stat(p.ComposeFile); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			fmt.Println("compose file not found")
-			os.Exit(1)
-		} else {
-			fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
-			os.Exit(1)
-		}
-	}
-
-	// todo: Exec pre stop commands
-
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", p.ComposeFile,
-		"--project-directory", p.ProjectFile.Directory,
-		"stop")
-
-	if err := composeCmd.Run(); err != nil {
-		fmt.Println(fmt.Errorf("error running compose: %v", err))
-	}
-}
-
-func (p Project) Destroy() {
-	if _, err := os.Stat(p.ComposeFile); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			fmt.Println("compose file not found")
-			os.Exit(1)
-		} else {
-			fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
-			os.Exit(1)
-		}
-	}
-
-	// todo: Exec pre stop commands
-
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", p.ComposeFile,
-		"--project-directory", p.ProjectFile.Directory,
-		"down", "-v")
-
-	if err := composeCmd.Run(); err != nil {
-		fmt.Println(fmt.Errorf("error running compose: %v", err))
-	}
-
-	if err := os.Remove(p.ComposeFile); err != nil {
-		fmt.Println(fmt.Errorf("failed to remove compose file: %v", err))
-		os.Exit(1)
-	}
+	return &projectConfig, nil
 }
