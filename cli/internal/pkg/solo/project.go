@@ -1,8 +1,6 @@
 package solo
 
 import (
-	"gopkg.in/yaml.v3"
-	"os"
 	"path/filepath"
 )
 
@@ -18,16 +16,16 @@ func NewProject(projectFilePath string) *Project {
 	}
 }
 
-func (p *Project) Marshall() (*ProjectConfig, error) {
-	fileContents, err := os.ReadFile(p.FilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	projectConfig := ProjectConfig{}
-	if err := yaml.Unmarshal(fileContents, &projectConfig); err != nil {
-		return nil, err
-	}
-
-	return &projectConfig, nil
-}
+//func (p *Project) Marshall() (*ProjectConfig, error) {
+//	fileContents, err := os.ReadFile(p.FilePath)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	projectConfig := ProjectConfig{}
+//	if err := yaml.Unmarshal(fileContents, &projectConfig); err != nil {
+//		return nil, err
+//	}
+//
+//	return &projectConfig, nil
+//}
