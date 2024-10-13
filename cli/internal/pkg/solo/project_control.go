@@ -8,29 +8,36 @@ import (
 	"path"
 )
 
+type ProjectControl struct {
+	Config      *Config
+	Project     *Project
+	ComposeFile string
+	//Project     *ProjectConfig
+}
+
 func NewProjectControl(config *Config, projectFile *Project) *ProjectControl {
-	projectConfig, err := projectFile.Marshall()
-	if err != nil {
-		fmt.Println(fmt.Errorf("failed to read project file: %v", err))
-		os.Exit(1)
-	}
+	//projectConfig, err := projectFile.Marshall()
+	//if err != nil {
+	//	fmt.Println(fmt.Errorf("failed to read project file: %v", err))
+	//	os.Exit(1)
+	//}
 
 	return &ProjectControl{
 		Config:      config,
-		ProjectFile: projectFile,
+		Project:     projectFile,
 		ComposeFile: path.Join(projectFile.Directory, ".solo", "docker-compose.yml"),
-		Project:     projectConfig,
+		//Project:     projectConfig,
 	}
 }
 
 func (p ProjectControl) DumpComposeConfig() {
-	composeYml, _ := ExportComposeConfiguration(p.Config, p.ProjectFile)
+	composeYml, _ := ExportComposeConfiguration(p.Config, p.Project)
 	fmt.Println(string(composeYml))
 }
 
 func (p ProjectControl) Start() {
 	// Write compose file
-	composeYml, _ := ExportComposeConfiguration(p.Config, p.ProjectFile)
+	composeYml, _ := ExportComposeConfiguration(p.Config, p.Project)
 
 	composeDirectory := path.Dir(p.ComposeFile)
 	if _, err := os.Stat(composeDirectory); err != nil {
@@ -57,7 +64,7 @@ func (p ProjectControl) Start() {
 
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", p.ComposeFile,
-		"--project-directory", p.ProjectFile.Directory,
+		"--project-directory", p.Project.Directory,
 		"up", "-d")
 
 	if err := composeCmd.Run(); err != nil {
@@ -89,7 +96,7 @@ func (p ProjectControl) Stop() {
 
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", p.ComposeFile,
-		"--project-directory", p.ProjectFile.Directory,
+		"--project-directory", p.Project.Directory,
 		"stop")
 
 	if err := composeCmd.Run(); err != nil {
@@ -112,7 +119,7 @@ func (p ProjectControl) Destroy() {
 
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", p.ComposeFile,
-		"--project-directory", p.ProjectFile.Directory,
+		"--project-directory", p.Project.Directory,
 		"down", "-v")
 
 	if err := composeCmd.Run(); err != nil {

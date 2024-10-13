@@ -5,6 +5,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Config struct {
+	Entrypoint     string
+	LocalDirectory string
+}
+
 func NewConfig(projectFile *Project) (*Config, error) {
 	configReader := viper.New()
 
