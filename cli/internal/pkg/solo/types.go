@@ -1,8 +1,8 @@
 package solo
 
-type Project struct {
+type ProjectControl struct {
 	Config      *Config
-	ProjectFile *ProjectFile
+	ProjectFile *Project
 	ComposeFile string
 	Project     *ProjectConfig
 }

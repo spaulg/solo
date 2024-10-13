@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NewConfig(projectFile *ProjectFile) (*Config, error) {
+func NewConfig(projectFile *Project) (*Config, error) {
 	configReader := viper.New()
 
 	configReader.SetConfigName(".solo-config")

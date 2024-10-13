@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var projectFile *solo.ProjectFile
+var projectFile *solo.Project
 var globalConfig *solo.Config
 var projectLoadErr, globalConfigLoadErr error
 
