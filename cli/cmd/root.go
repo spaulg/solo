@@ -53,6 +53,10 @@ func Execute() {
 }
 
 func init() {
+	globalConfig, globalConfigLoadErr = solo.NewConfig()
 	projectFile, projectLoadErr = solo.FindProjectFile()
-	globalConfig, globalConfigLoadErr = solo.NewConfig(projectFile)
+
+	if projectFile != nil {
+		globalConfigLoadErr = globalConfig.AddConfigPath(projectFile.Directory)
+	}
 }

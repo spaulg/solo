@@ -6,45 +6,56 @@ import (
 )
 
 type Config struct {
+	reader         *viper.Viper
 	Entrypoint     string
 	LocalDirectory string
 }
 
-func NewConfig(projectFile *Project) (*Config, error) {
-	configReader := viper.New()
+func NewConfig() (*Config, error) {
+	config := Config{
+		Entrypoint:     "/usr/lib/solo/solo-entrypoint",
+		LocalDirectory: "./.solo",
 
-	configReader.SetConfigName(".solo-config")
-	configReader.SetConfigType("yaml")
-	configReader.AddConfigPath("$HOME")
+		reader: viper.New(),
+	}
 
-	if err := configReader.ReadInConfig(); err != nil {
+	config.reader.SetConfigName(".solo-config")
+	config.reader.SetConfigType("yaml")
+	config.reader.AddConfigPath("$HOME")
+
+	if err := config.reader.ReadInConfig(); err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {
 			return nil, err
 		}
 	}
 
-	if projectFile != nil {
-		configReader.SetConfigName("solo-config")
-		configReader.SetConfigType("yaml")
-		configReader.AddConfigPath(projectFile.Directory)
-
-		if err := configReader.MergeInConfig(); err != nil {
-			var configFileNotFoundError viper.ConfigFileNotFoundError
-			if !errors.As(err, &configFileNotFoundError) {
-				return nil, err
-			}
-		}
-	}
-
-	config := Config{
-		Entrypoint:     "/usr/lib/solo/solo-entrypoint",
-		LocalDirectory: "./.solo",
-	}
-
-	if err := configReader.Unmarshal(&config); err != nil {
+	if err := config.unmarshallConfig(); err != nil {
 		return nil, err
 	}
 
 	return &config, nil
+}
+
+func (config *Config) AddConfigPath(path string) error {
+	config.reader.SetConfigName("solo-config")
+	config.reader.SetConfigType("yaml")
+	config.reader.AddConfigPath(path)
+
+	if err := config.reader.MergeInConfig(); err != nil {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			return err
+		}
+	}
+
+	return config.unmarshallConfig()
+}
+
+func (config *Config) unmarshallConfig() error {
+	if err := config.reader.Unmarshal(&config); err != nil {
+		return err
+	}
+
+	return nil
 }
