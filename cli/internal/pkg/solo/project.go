@@ -50,7 +50,10 @@ func (p Project) Start() {
 		os.Exit(1)
 	}
 
-	// todo: Extract yaml steps file
+	// todo: launch provisioning grpc server
+	//fmt.Println("Launching GRPC service...")
+	//grpc_server := NewGrpcServer()
+	//go grpc_server.Listen()
 
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", p.ComposeFile,
@@ -62,19 +65,13 @@ func (p Project) Start() {
 		os.Exit(1)
 	}
 
-	// todo: wait for lock file / health check from service to notify startup succeeded
-	//		 could this be done via a compose event stream?
+	//fmt.Println("Sleeping...")
+	//time.Sleep(30 * time.Second)
 
+	// todo: wait for confirmation that all containers have completed provisioning
+	// todo: wait delay period for final containers to start
 	// todo: Exec post start commands (via docker exec)
-	//	     or could I make the entrypoint an agent that accepts remote connections over a named pipe
-	//		 that I could feed instruction to
-	//		 or start a grpc service in this command, pass the port used to the guest and wait for a connection
-	//		 then feed back instruction
-	//		 would this be a long running process? would it be passed via env var
-	//		 or a file that can be updated
-	//		 would the guest run the agent forever or just initially and then exit?
-	//		 would stop/destroy commands restart the agent and reconnect for instruction to receive events again
-	//		 what if the container is already stopped when this happens?
+	// todo: wait delay period for all containers to checkin for post start commands provisioning
 }
 
 func (p Project) Stop() {
