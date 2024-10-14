@@ -43,7 +43,7 @@ func (p *ProjectControl) Start() {
 	//go grpc_server.Listen()
 
 	fmt.Println("Starting orchestrator")
-	if err := p.Orchestrator.Start(p.Project.Directory, p.ComposeFile); err != nil {
+	if err := p.Orchestrator.Up(p.Project.Directory, p.ComposeFile); err != nil {
 		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
 		os.Exit(1)
 	}
@@ -64,7 +64,7 @@ func (p *ProjectControl) Stop() {
 
 	// todo: Exec pre stop commands
 
-	if err := p.Orchestrator.Stop(p.Project.Directory, p.ComposeFile); err != nil {
+	if err := p.Orchestrator.Down(p.Project.Directory, p.ComposeFile); err != nil {
 		fmt.Println(fmt.Errorf("error running compose: %v", err))
 	}
 }

@@ -5,8 +5,8 @@ import (
 )
 
 type Orchestrator interface {
-	Start(projectDirectory string, composeFile string) error
-	Stop(projectDirectory string, composeFile string) error
+	Up(projectDirectory string, composeFile string) error
+	Down(projectDirectory string, composeFile string) error
 	Destroy(projectDirectory string, composeFile string) error
 	ExportComposeConfiguration(globalConfig *config.Config, projectPath string) ([]byte, error)
 }

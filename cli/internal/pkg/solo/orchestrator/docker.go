@@ -13,7 +13,7 @@ import (
 
 type DockerOrchestrator struct{}
 
-func (o *DockerOrchestrator) Start(projectDirectory string, composeFile string) error {
+func (o *DockerOrchestrator) Up(projectDirectory string, composeFile string) error {
 	fmt.Println("compose cmd")
 
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
@@ -30,7 +30,7 @@ func (o *DockerOrchestrator) Start(projectDirectory string, composeFile string) 
 	return nil
 }
 
-func (o *DockerOrchestrator) Stop(projectDirectory string, composeFile string) error {
+func (o *DockerOrchestrator) Down(projectDirectory string, composeFile string) error {
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", composeFile,
 		"--project-directory", projectDirectory,
