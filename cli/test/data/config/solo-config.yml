@@ -1,0 +1,2 @@
+Entrypoint: '/opt/bin/solo-custom-entrypoint.sh'
+LocalDirectory: '/opt/solo'
