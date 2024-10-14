@@ -1,4 +1,4 @@
-package solo
+package config
 
 import (
 	"errors"
@@ -9,15 +9,18 @@ type Config struct {
 	reader         *viper.Viper
 	Entrypoint     string
 	LocalDirectory string
+	Orchestrator   string
 }
 
 const DefaultEntrypoint = "/usr/lib/solo/solo-entrypoint"
 const DefaultLocalDirectory = "./.solo"
+const DefaultOrchestrator = "docker"
 
 func NewConfig() (*Config, error) {
 	config := Config{
 		Entrypoint:     DefaultEntrypoint,
 		LocalDirectory: DefaultLocalDirectory,
+		Orchestrator:   DefaultOrchestrator,
 
 		reader: viper.New(),
 	}

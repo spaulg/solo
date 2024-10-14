@@ -1,21 +1,22 @@
 package solo
 
 import (
+	config2 "github.com/spaulg/solo/cli/internal/pkg/solo/config"
 	_ "github.com/spaulg/solo/cli/test"
 	"testing"
 )
 
 func TestConfigLoading(t *testing.T) {
-	config, err := NewConfig()
+	config, err := config2.NewConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config without error: %v", err)
 	}
 
-	if config.Entrypoint != DefaultEntrypoint {
+	if config.Entrypoint != config2.DefaultEntrypoint {
 		t.Fatal("Entrypoint does not match default")
 	}
 
-	if config.LocalDirectory != DefaultLocalDirectory {
+	if config.LocalDirectory != config2.DefaultLocalDirectory {
 		t.Fatal("LocalDirectory does not match default")
 	}
 
@@ -33,16 +34,16 @@ func TestConfigLoading(t *testing.T) {
 }
 
 func TestConfigPathNotFound(t *testing.T) {
-	config, err := NewConfig()
+	config, err := config2.NewConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config without error: %v", err)
 	}
 
-	if config.Entrypoint != DefaultEntrypoint {
+	if config.Entrypoint != config2.DefaultEntrypoint {
 		t.Fatal("Entrypoint does not match default")
 	}
 
-	if config.LocalDirectory != DefaultLocalDirectory {
+	if config.LocalDirectory != config2.DefaultLocalDirectory {
 		t.Fatal("LocalDirectory does not match default")
 	}
 
@@ -50,11 +51,11 @@ func TestConfigPathNotFound(t *testing.T) {
 		t.Fatalf("failed to add config path: %v", err)
 	}
 
-	if config.Entrypoint != DefaultEntrypoint {
+	if config.Entrypoint != config2.DefaultEntrypoint {
 		t.Fatal("Entrypoint does not match default")
 	}
 
-	if config.LocalDirectory != DefaultLocalDirectory {
+	if config.LocalDirectory != config2.DefaultLocalDirectory {
 		t.Fatal("LocalDirectory does not match default")
 	}
 }

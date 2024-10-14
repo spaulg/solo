@@ -3,19 +3,20 @@ package solo
 import (
 	"errors"
 	"fmt"
+	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
 	"os"
 	"path"
 )
 
 type ProjectControl struct {
-	Config       *Config
+	Config       *config.Config
 	Project      *Project
 	ComposeFile  string
 	Orchestrator orchestrator.Orchestrator
 }
 
-func NewProjectControl(config *Config, projectFile *Project) *ProjectControl {
+func NewProjectControl(config *config.Config, projectFile *Project) *ProjectControl {
 	return &ProjectControl{
 		Config:       config,
 		Project:      projectFile,
@@ -24,14 +25,16 @@ func NewProjectControl(config *Config, projectFile *Project) *ProjectControl {
 	}
 }
 
-func (p ProjectControl) DumpComposeConfig() {
-	composeYml, _ := ExportComposeConfiguration(p.Config, p.Project)
+func (p *ProjectControl) DumpComposeConfig() {
+	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project.FilePath)
 	fmt.Println(string(composeYml))
 }
 
-func (p ProjectControl) Start() {
+func (p *ProjectControl) Start() {
 	// Write compose file
-	composeYml, _ := ExportComposeConfiguration(p.Config, p.Project)
+	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project.FilePath)
+	fmt.Println("composeYml exported")
+
 	p.exportComposeFile(composeYml)
 
 	// todo: launch provisioning grpc server
@@ -39,10 +42,13 @@ func (p ProjectControl) Start() {
 	//grpc_server := NewGrpcServer()
 	//go grpc_server.Listen()
 
+	fmt.Println("Starting orchestrator")
 	if err := p.Orchestrator.Start(p.Project.Directory, p.ComposeFile); err != nil {
 		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
 		os.Exit(1)
 	}
+
+	fmt.Println("done")
 
 	//fmt.Println("Sleeping...")
 	//time.Sleep(30 * time.Second)
@@ -53,7 +59,7 @@ func (p ProjectControl) Start() {
 	// todo: wait delay period for all containers to checkin for post start commands provisioning
 }
 
-func (p ProjectControl) Stop() {
+func (p *ProjectControl) Stop() {
 	p.composeFileExists()
 
 	// todo: Exec pre stop commands
@@ -63,7 +69,7 @@ func (p ProjectControl) Stop() {
 	}
 }
 
-func (p ProjectControl) Destroy() {
+func (p *ProjectControl) Destroy() {
 	p.composeFileExists()
 
 	// todo: Exec pre stop commands
@@ -78,7 +84,7 @@ func (p ProjectControl) Destroy() {
 	}
 }
 
-func (p ProjectControl) exportComposeFile(composeYml []byte) {
+func (p *ProjectControl) exportComposeFile(composeYml []byte) {
 	composeDirectory := path.Dir(p.ComposeFile)
 	if _, err := os.Stat(composeDirectory); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -98,7 +104,7 @@ func (p ProjectControl) exportComposeFile(composeYml []byte) {
 	}
 }
 
-func (p ProjectControl) composeFileExists() {
+func (p *ProjectControl) composeFileExists() {
 	if _, err := os.Stat(p.ComposeFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("compose file not found")

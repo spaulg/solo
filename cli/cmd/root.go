@@ -3,13 +3,14 @@ package cmd
 import (
 	"fmt"
 	"github.com/spaulg/solo/cli/internal/pkg/solo"
+	config2 "github.com/spaulg/solo/cli/internal/pkg/solo/config"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var project *solo.Project
-var config *solo.Config
+var config *config2.Config
 var projectLoadErr, configLoadErr error
 
 // rootCmd represents the base command when called without any solo
@@ -48,7 +49,7 @@ func Execute() {
 }
 
 func init() {
-	config, configLoadErr = solo.NewConfig()
+	config, configLoadErr = config2.NewConfig()
 	project, projectLoadErr = solo.FindProjectFile()
 
 	if project != nil && configLoadErr == nil {
