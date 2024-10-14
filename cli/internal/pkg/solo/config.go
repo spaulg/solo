@@ -11,10 +11,13 @@ type Config struct {
 	LocalDirectory string
 }
 
+const DefaultEntrypoint = "/usr/lib/solo/solo-entrypoint"
+const DefaultLocalDirectory = "./.solo"
+
 func NewConfig() (*Config, error) {
 	config := Config{
-		Entrypoint:     "/usr/lib/solo/solo-entrypoint",
-		LocalDirectory: "./.solo",
+		Entrypoint:     DefaultEntrypoint,
+		LocalDirectory: DefaultLocalDirectory,
 
 		reader: viper.New(),
 	}
