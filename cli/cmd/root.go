@@ -1,18 +1,16 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"github.com/spaulg/solo/cli/internal/pkg/solo"
-	"github.com/spf13/viper"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-var projectFile *solo.Project
-var globalConfig *solo.Config
-var projectLoadErr, globalConfigLoadErr error
+var project *solo.Project
+var config *solo.Config
+var projectLoadErr, configLoadErr error
 
 // rootCmd represents the base command when called without any solo
 var rootCmd = &cobra.Command{
@@ -33,12 +31,9 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if globalConfigLoadErr != nil {
-			var configFileNotFoundError viper.ConfigFileNotFoundError
-			if !errors.As(globalConfigLoadErr, &configFileNotFoundError) {
-				fmt.Println(globalConfigLoadErr)
-				os.Exit(1)
-			}
+		if configLoadErr != nil {
+			fmt.Println(configLoadErr)
+			os.Exit(1)
 		}
 	},
 }
@@ -53,10 +48,10 @@ func Execute() {
 }
 
 func init() {
-	globalConfig, globalConfigLoadErr = solo.NewConfig()
-	projectFile, projectLoadErr = solo.FindProjectFile()
+	config, configLoadErr = solo.NewConfig()
+	project, projectLoadErr = solo.FindProjectFile()
 
-	if projectFile != nil {
-		globalConfigLoadErr = globalConfig.AddConfigPath(projectFile.Directory)
+	if project != nil && configLoadErr == nil {
+		configLoadErr = config.AddConfigPath(project.Directory)
 	}
 }

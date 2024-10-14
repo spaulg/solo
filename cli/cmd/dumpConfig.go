@@ -18,7 +18,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		configYaml, err := yaml.Marshal(globalConfig)
+		configYaml, err := yaml.Marshal(config)
 		if err != nil {
 			fmt.Println(fmt.Errorf("failed to marshall config to yaml: %v", err))
 			os.Exit(1)
