@@ -3,30 +3,24 @@ package solo
 import (
 	"errors"
 	"fmt"
+	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
 	"os"
-	"os/exec"
 	"path"
 )
 
 type ProjectControl struct {
-	Config      *Config
-	Project     *Project
-	ComposeFile string
-	//Project     *ProjectConfig
+	Config       *Config
+	Project      *Project
+	ComposeFile  string
+	Orchestrator orchestrator.Orchestrator
 }
 
 func NewProjectControl(config *Config, projectFile *Project) *ProjectControl {
-	//projectConfig, err := projectFile.Marshall()
-	//if err != nil {
-	//	fmt.Println(fmt.Errorf("failed to read project file: %v", err))
-	//	os.Exit(1)
-	//}
-
 	return &ProjectControl{
-		Config:      config,
-		Project:     projectFile,
-		ComposeFile: path.Join(projectFile.Directory, ".solo", "docker-compose.yml"),
-		//Project:     projectConfig,
+		Config:       config,
+		Project:      projectFile,
+		ComposeFile:  path.Join(projectFile.Directory, ".solo", "docker-compose.yml"),
+		Orchestrator: orchestrator.BuildOrchestrator(),
 	}
 }
 
@@ -38,7 +32,53 @@ func (p ProjectControl) DumpComposeConfig() {
 func (p ProjectControl) Start() {
 	// Write compose file
 	composeYml, _ := ExportComposeConfiguration(p.Config, p.Project)
+	p.exportComposeFile(composeYml)
 
+	// todo: launch provisioning grpc server
+	//fmt.Println("Launching GRPC service...")
+	//grpc_server := NewGrpcServer()
+	//go grpc_server.Listen()
+
+	if err := p.Orchestrator.Start(p.Project.Directory, p.ComposeFile); err != nil {
+		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
+		os.Exit(1)
+	}
+
+	//fmt.Println("Sleeping...")
+	//time.Sleep(30 * time.Second)
+
+	// todo: wait for confirmation that all containers have completed provisioning
+	// todo: wait delay period for final containers to start
+	// todo: Exec post start commands (via docker exec)
+	// todo: wait delay period for all containers to checkin for post start commands provisioning
+}
+
+func (p ProjectControl) Stop() {
+	p.composeFileExists()
+
+	// todo: Exec pre stop commands
+
+	if err := p.Orchestrator.Stop(p.Project.Directory, p.ComposeFile); err != nil {
+		fmt.Println(fmt.Errorf("error running compose: %v", err))
+	}
+}
+
+func (p ProjectControl) Destroy() {
+	p.composeFileExists()
+
+	// todo: Exec pre stop commands
+
+	if err := p.Orchestrator.Destroy(p.Project.Directory, p.ComposeFile); err != nil {
+		fmt.Println(fmt.Errorf("error running compose: %v", err))
+	}
+
+	if err := os.Remove(p.ComposeFile); err != nil {
+		fmt.Println(fmt.Errorf("failed to remove compose file: %v", err))
+		os.Exit(1)
+	}
+}
+
+func (p ProjectControl) exportComposeFile(composeYml []byte) {
 	composeDirectory := path.Dir(p.ComposeFile)
 	if _, err := os.Stat(composeDirectory); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -56,32 +96,9 @@ func (p ProjectControl) Start() {
 		fmt.Println(fmt.Errorf("failed to write compose file: %v", err))
 		os.Exit(1)
 	}
-
-	// todo: launch provisioning grpc server
-	//fmt.Println("Launching GRPC service...")
-	//grpc_server := NewGrpcServer()
-	//go grpc_server.Listen()
-
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", p.ComposeFile,
-		"--project-directory", p.Project.Directory,
-		"up", "-d")
-
-	if err := composeCmd.Run(); err != nil {
-		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
-		os.Exit(1)
-	}
-
-	//fmt.Println("Sleeping...")
-	//time.Sleep(30 * time.Second)
-
-	// todo: wait for confirmation that all containers have completed provisioning
-	// todo: wait delay period for final containers to start
-	// todo: Exec post start commands (via docker exec)
-	// todo: wait delay period for all containers to checkin for post start commands provisioning
 }
 
-func (p ProjectControl) Stop() {
+func (p ProjectControl) composeFileExists() {
 	if _, err := os.Stat(p.ComposeFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("compose file not found")
@@ -90,44 +107,5 @@ func (p ProjectControl) Stop() {
 			fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
 			os.Exit(1)
 		}
-	}
-
-	// todo: Exec pre stop commands
-
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", p.ComposeFile,
-		"--project-directory", p.Project.Directory,
-		"stop")
-
-	if err := composeCmd.Run(); err != nil {
-		fmt.Println(fmt.Errorf("error running compose: %v", err))
-	}
-}
-
-func (p ProjectControl) Destroy() {
-	if _, err := os.Stat(p.ComposeFile); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			fmt.Println("compose file not found")
-			os.Exit(1)
-		} else {
-			fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
-			os.Exit(1)
-		}
-	}
-
-	// todo: Exec pre stop commands
-
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", p.ComposeFile,
-		"--project-directory", p.Project.Directory,
-		"down", "-v")
-
-	if err := composeCmd.Run(); err != nil {
-		fmt.Println(fmt.Errorf("error running compose: %v", err))
-	}
-
-	if err := os.Remove(p.ComposeFile); err != nil {
-		fmt.Println(fmt.Errorf("failed to remove compose file: %v", err))
-		os.Exit(1)
 	}
 }
