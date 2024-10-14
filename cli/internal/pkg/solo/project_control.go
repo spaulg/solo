@@ -33,8 +33,6 @@ func (p *ProjectControl) DumpComposeConfig() {
 func (p *ProjectControl) Start() {
 	// Write compose file
 	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project.FilePath)
-	fmt.Println("composeYml exported")
-
 	p.exportComposeFile(composeYml)
 
 	// todo: launch provisioning grpc server
@@ -42,13 +40,10 @@ func (p *ProjectControl) Start() {
 	//grpc_server := NewGrpcServer()
 	//go grpc_server.Listen()
 
-	fmt.Println("Starting orchestrator")
 	if err := p.Orchestrator.Up(p.Project.Directory, p.ComposeFile); err != nil {
 		fmt.Println(fmt.Errorf("error running composeCmd: %v", err))
 		os.Exit(1)
 	}
-
-	fmt.Println("done")
 
 	//fmt.Println("Sleeping...")
 	//time.Sleep(30 * time.Second)
