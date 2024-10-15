@@ -1,4 +1,4 @@
-package solo
+package project
 
 import (
 	"path/filepath"

@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
+	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
 	"os"
 	"path"
 )
 
 type ProjectControl struct {
 	Config       *config.Config
-	Project      *Project
+	Project      *project.Project
 	ComposeFile  string
 	Orchestrator orchestrator.Orchestrator
 }
 
-func NewProjectControl(config *config.Config, projectFile *Project) *ProjectControl {
+func NewProjectControl(config *config.Config, projectFile *project.Project) *ProjectControl {
 	return &ProjectControl{
 		Config:       config,
 		Project:      projectFile,

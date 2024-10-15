@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/solo"
 	config2 "github.com/spaulg/solo/cli/internal/pkg/solo/config"
+	project2 "github.com/spaulg/solo/cli/internal/pkg/solo/project"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-var project *solo.Project
+var project *project2.Project
 var config *config2.Config
 var projectLoadErr, configLoadErr error
 
@@ -50,7 +50,7 @@ func Execute() {
 
 func init() {
 	config, configLoadErr = config2.NewConfig()
-	project, projectLoadErr = solo.FindProjectFile()
+	project, projectLoadErr = project2.FindProjectFile()
 
 	if project != nil && configLoadErr == nil {
 		configLoadErr = config.AddConfigPath(project.Directory)
