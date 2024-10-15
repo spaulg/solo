@@ -8,10 +8,10 @@ import (
 
 const ProjectFileName = "solo.yml"
 
-// FindProjectFile Find the project file by navigating up the
+// FindProject Find the project file by navigating up the
 // filesystem tree until the project file is found, or
 // return error if no project file is found
-func FindProjectFile() (*Project, error) {
+func FindProject() (*Project, error) {
 	var projectFilePath = ""
 
 	path, err := filepath.Abs("./")
