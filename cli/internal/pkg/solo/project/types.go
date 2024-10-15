@@ -1,4 +1,4 @@
-package solo
+package project
 
 //type StepConfig struct {
 //	Name    string `yaml:"name"`
