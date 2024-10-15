@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 // dumpConfigCmd represents the dumpConfig command
@@ -17,14 +16,14 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		configYaml, err := yaml.Marshal(config)
 		if err != nil {
-			fmt.Println(fmt.Errorf("failed to marshall config to yaml: %v", err))
-			os.Exit(1)
+			return err
 		}
 
 		fmt.Print(string(configYaml))
+		return nil
 	},
 }
 
