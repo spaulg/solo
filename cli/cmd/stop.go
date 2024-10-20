@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// stopCmd represents the stop command
 var stopCmd = &cobra.Command{
 	Use:   "stop",
 	Short: "Stops your app",
