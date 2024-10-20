@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// sshCmd represents the ssh command
 var sshCmd = &cobra.Command{
 	Use:   "ssh",
 	Short: "Drops into a shell on a service, runs commands",

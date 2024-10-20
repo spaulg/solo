@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// logsCmd represents the logs command
 var logsCmd = &cobra.Command{
 	Use:   "logs",
 	Short: "Displays logs for your app",

@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// composeConfigCmd represents the composeConfig command
 var composeConfigCmd = &cobra.Command{
 	Use:   "dump-compose-config",
 	Short: "Dumps the compose config to stdout",

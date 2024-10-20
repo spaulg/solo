@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// restartCmd represents the restart command
 var restartCmd = &cobra.Command{
 	Use:   "restart",
 	Short: "Restarts your app",

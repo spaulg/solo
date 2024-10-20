@@ -6,7 +6,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// dumpConfigCmd represents the dumpConfig command
 var dumpConfigCmd = &cobra.Command{
 	Use:   "dump-config",
 	Short: "Dumps the solo config to stdout",
