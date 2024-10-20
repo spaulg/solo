@@ -8,13 +8,8 @@ import (
 // composeConfigCmd represents the composeConfig command
 var composeConfigCmd = &cobra.Command{
 	Use:   "dump-compose-config",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Dumps the compose config to stdout",
+	Long:  "Dumps the compose config to stdout",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		projectControl := solo.NewProjectControl(config, project)
 		return projectControl.DumpComposeConfig()

@@ -13,7 +13,6 @@ var project *project2.Project
 var config *config2.Config
 var projectLoadErr, configLoadErr error
 
-// rootCmd represents the base command when called without any solo
 var rootCmd = &cobra.Command{
 	Use:          "solo",
 	SilenceUsage: true,
@@ -30,8 +29,6 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
