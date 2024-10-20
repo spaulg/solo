@@ -8,13 +8,8 @@ import (
 // rebuildCmd represents the rebuild command
 var rebuildCmd = &cobra.Command{
 	Use:   "rebuild",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Rebuilds your app from scratch, preserving data",
+	Long:  "Rebuilds your app from scratch, preserving data",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		projectControl := solo.NewProjectControl(config, project)
 
