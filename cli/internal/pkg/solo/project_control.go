@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
+	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
 	"os"
 	"path"
+	"strconv"
 )
 
 type ProjectControl struct {
@@ -44,9 +46,14 @@ func (p *ProjectControl) Start() error {
 	}
 
 	// todo: launch provisioning grpc server
-	//fmt.Println("Launching GRPC service...")
-	//grpc_server := NewGrpcServer()
-	//go grpc_server.Listen()
+	fmt.Println("Launching GRPC service...")
+	grpcServer := grpc.NewGrpcServer()
+	port, err := grpcServer.Start()
+	if err != nil {
+		return fmt.Errorf("failed to start grpc server: %v", err)
+	}
+
+	fmt.Println("GRPC server listening on port: " + strconv.Itoa(port))
 
 	if err := p.Orchestrator.Up(p.Project.Directory, p.ComposeFile); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)

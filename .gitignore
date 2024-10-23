@@ -1,3 +1,4 @@
 /.solo
 /build
 coverage.out
+**/*.pb.go

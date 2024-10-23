@@ -2,10 +2,14 @@ module github.com/spaulg/solo/cli
 
 go 1.22.2
 
+replace github.com/spaulg/solo/shared v0.0.0 => ../shared
+
 require (
 	github.com/compose-spec/compose-go/v2 v2.2.0
+	github.com/spaulg/solo/shared v0.0.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
+	google.golang.org/grpc v1.67.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -41,7 +45,6 @@ require (
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
-	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
