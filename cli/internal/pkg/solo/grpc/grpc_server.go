@@ -6,6 +6,8 @@ import (
 	"github.com/spaulg/solo/shared/pkg/solo/grpc/services"
 	"google.golang.org/grpc"
 	"net"
+	"strconv"
+	"strings"
 )
 
 type GrpcServer struct {
@@ -16,30 +18,33 @@ func NewGrpcServer() *GrpcServer {
 	return &GrpcServer{}
 }
 
-func (t *GrpcServer) Start() (int, error) {
-	// todo: use port 0 to get a random port assignment
-
+func (t *GrpcServer) CreateListener() (int, error) {
+	// Create listener with randomly assigned port
 	listener, err := net.Listen("tcp", "0.0.0.0:0")
 	if err != nil {
 		return 0, err
 	}
+	t.listener = listener
 
-	// todo: share port with parent to give to containers
-	// todo: use a data file bind mounted in to the containers instead of env vars
-	fmt.Println("address: " + listener.Addr().String())
-	t.start()
+	// Extract the port from the address
+	address := listener.Addr().String()
+	lastIndex := strings.LastIndex(address, ":")
+	if lastIndex == -1 {
+		return 0, fmt.Errorf("unable to find port from address '%s'", address)
+	}
 
-	return 0, nil
+	// Return parsed port number
+	port, err := strconv.Atoi(address[lastIndex+1:])
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert address port to integer: %v", err)
+	}
+
+	return port, nil
 }
 
-func (t *GrpcServer) start() error {
+func (t *GrpcServer) Listen() {
 	server := grpc.NewServer()
 	services.RegisterProvisionerServer(server, &service_definitions.ProvisionerServerImpl{})
-	// todo: register protos
 
-	//if err := server.Serve(t.listener); err != nil {
-	//	return err
-	//}
-
-	return nil
+	_ = server.Serve(t.listener)
 }
