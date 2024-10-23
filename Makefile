@@ -17,16 +17,16 @@ all: build
 build: -build-solo -build-entrypoint
 
 -build-shared: $(SHARED_PROTO_FILES)
-	@protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		shared/pkg/solo/grpc/services/workflow.proto
 
 -build-solo: -build-shared $(CLI_GO_FILES)
-	@mkdir -p $(BUILD_DIR)
-	@CGO_ENABLED=0 $(GOBUILD) -C cli -ldflags="-s -w" -o ../$(BUILD_DIR)/$(CLI_BINARY_NAME) main.go
+	mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 $(GOBUILD) -C cli -ldflags="-s -w" -o ../$(BUILD_DIR)/$(CLI_BINARY_NAME) main.go
 
 -build-entrypoint: -build-shared $(ENTRYPOINT_GO_FILES)
-	@mkdir -p $(BUILD_DIR)
-	@GOOS=linux CGO_ENABLED=0 $(GOBUILD) -C agent -ldflags="-s -w" -o ../$(BUILD_DIR)/$(ENTRYPOINT_BINARY_NAME) main.go
+	mkdir -p $(BUILD_DIR)
+	GOOS=linux CGO_ENABLED=0 $(GOBUILD) -C agent -ldflags="-s -w" -o ../$(BUILD_DIR)/$(ENTRYPOINT_BINARY_NAME) main.go
 
 test-cli:
 	$(GOTEST) -C cli -coverprofile=coverage.out -v ./...
@@ -40,5 +40,9 @@ test-agent:
 cover-agent:
 	cd agent; $(GOCOVER) -html=coverage.out
 
+install:
+	install -m 0755 -o root -g admin $(BUILD_DIR)/$(CLI_BINARY_NAME) /usr/local/bin/
+	install -m 0755 -o root -g admin $(BUILD_DIR)/$(ENTRYPOINT_BINARY_NAME) /usr/local/bin/
+
 clean:
-	@rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR)
