@@ -2,7 +2,7 @@ module github.com/spaulg/solo/cli
 
 go 1.22.2
 
-replace github.com/spaulg/solo/shared v0.0.0 => ../shared
+replace github.com/spaulg/solo/shared v0.0.0 => ./../shared
 
 require (
 	github.com/compose-spec/compose-go/v2 v2.2.0
