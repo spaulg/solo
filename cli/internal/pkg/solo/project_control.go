@@ -47,8 +47,7 @@ func (p *ProjectControl) Start() error {
 
 	// todo: launch provisioning grpc server
 	fmt.Println("Launching GRPC service...")
-	grpcServer := grpc.NewGrpcServer()
-	port, err := grpcServer.Start()
+	port, err := grpc.StartServer()
 	if err != nil {
 		return fmt.Errorf("failed to start grpc server: %v", err)
 	}
