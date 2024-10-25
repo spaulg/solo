@@ -20,7 +20,8 @@ func NewGrpcServer() *GrpcServer {
 
 func (t *GrpcServer) CreateListener() (int, error) {
 	// Create listener with randomly assigned port
-	listener, err := net.Listen("tcp", "0.0.0.0:0")
+	// todo: allow a fixed port to be set via config
+	listener, err := net.Listen("tcp", "0.0.0.0:12345") // todo: use port 0
 	if err != nil {
 		return 0, err
 	}

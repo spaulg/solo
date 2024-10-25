@@ -12,7 +12,7 @@ type Config struct {
 	Orchestrator   string
 }
 
-const DefaultEntrypoint = "/usr/lib/solo/solo-entrypoint"
+const DefaultEntrypoint = "/usr/local/bin/solo-entrypoint"
 const DefaultLocalDirectory = "./.solo"
 const DefaultOrchestrator = "docker"
 

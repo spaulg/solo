@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"time"
 )
 
 type ProjectControl struct {
@@ -54,12 +55,15 @@ func (p *ProjectControl) Start() error {
 
 	fmt.Println("GRPC server listening on port: " + strconv.Itoa(port))
 
+	fmt.Println("Sleeping...")
+	time.Sleep(10 * time.Second)
+
 	if err := p.Orchestrator.Up(p.Project.Directory, p.ComposeFile); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
-	//fmt.Println("Sleeping...")
-	//time.Sleep(30 * time.Second)
+	fmt.Println("Sleeping...")
+	time.Sleep(30 * time.Second)
 
 	// todo: wait for confirmation that all containers have completed provisioning
 	// todo: wait delay period for final containers to start

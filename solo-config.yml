@@ -1,1 +1,1 @@
-Entrypoint: './agent/solo-entrypoint-wrapper.sh'
+Entrypoint: './src/agent/solo-entrypoint-wrapper.sh'
