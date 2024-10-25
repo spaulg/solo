@@ -17,8 +17,7 @@ all: build
 build: -build-solo -build-entrypoint
 
 -build-shared: $(SHARED_PROTO_FILES)
-	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		src/shared/pkg/solo/grpc/services/workflow.proto
+	find src/shared/pkg/solo/grpc/services -name *.proto -exec protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 -build-solo: -build-shared $(CLI_GO_FILES)
 	mkdir -p $(BUILD_DIR)

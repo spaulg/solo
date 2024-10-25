@@ -8,7 +8,6 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
 	"os/exec"
-	"path"
 )
 
 type DockerOrchestrator struct{}
@@ -65,7 +64,6 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(globalConfig *config.Con
 	}
 
 	soloEntrypoint := globalConfig.Entrypoint
-	localDirectory := globalConfig.LocalDirectory
 
 	project, err := projectOptions.LoadProject(context.Background())
 	if err != nil {
@@ -84,28 +82,12 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(globalConfig *config.Con
 
 		service.Entrypoint = []string{"/solo-entrypoint"}
 
-		// Append volume mounts for the new entrypoint, build scripts, run scripts and preferred user id globalConfig
+		// Append volume mounts for the new entrypoint
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
 			Source:   soloEntrypoint,
 			Target:   "/solo-entrypoint",
 			ReadOnly: true,
-		}, types.ServiceVolumeConfig{
-			Type:     "bind",
-			Source:   path.Join(localDirectory, "build-scripts"),
-			Target:   "/build-scripts",
-			ReadOnly: true,
-			Bind: &types.ServiceVolumeBind{
-				CreateHostPath: true,
-			},
-		}, types.ServiceVolumeConfig{
-			Type:     "bind",
-			Source:   path.Join(localDirectory, "run-scripts"),
-			Target:   "/run-scripts",
-			ReadOnly: true,
-			Bind: &types.ServiceVolumeBind{
-				CreateHostPath: true,
-			},
 		})
 
 		project.Services[index] = service
