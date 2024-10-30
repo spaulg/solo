@@ -24,11 +24,14 @@ type Listener struct {
 	caCertificateFilePath string
 }
 
-func NewListener(certificateFilePath string, certificateKeyPath string, caCertificateFilePath string) (*Listener, error) {
+func NewListener(
+	port int,
+	certificateFilePath string,
+	certificateKeyPath string,
+	caCertificateFilePath string,
+) (*Listener, error) {
 	// Create listener with randomly assigned port
-	// todo: move to constructor and add deferable close method
-	// todo: allow a fixed port to be set via config
-	listener, err := net.Listen("tcp", "0.0.0.0:12345") // todo: use port 0
+	listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(port))
 	if err != nil {
 		return nil, err
 	}
@@ -40,15 +43,16 @@ func NewListener(certificateFilePath string, certificateKeyPath string, caCertif
 		return nil, fmt.Errorf("unable to find port from address '%s'", address)
 	}
 
-	// Return parsed port number
-	port, err := strconv.Atoi(address[lastIndex+1:])
+	// Return allocated port number, in events when
+	// an automatic port allocation was used
+	allocatedPort, err := strconv.Atoi(address[lastIndex+1:])
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert address port to integer: %v", err)
 	}
 
 	return &Listener{
 		listener:              listener,
-		Port:                  port,
+		Port:                  allocatedPort,
 		certificateFilePath:   certificateFilePath,
 		certificateKeyPath:    certificateKeyPath,
 		caCertificateFilePath: caCertificateFilePath,
