@@ -9,7 +9,6 @@ import (
 	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
 	"os"
 	"path"
-	"strconv"
 	"time"
 )
 
@@ -41,9 +40,12 @@ func (p *ProjectControl) DumpComposeConfig() error {
 
 func (p *ProjectControl) Start() error {
 	// Start GRPC services
-	if err := p.startGrpcServer(); err != nil {
+	grpcServer := grpc.NewServer()
+	if err := grpcServer.Start(p.Project, p.Orchestrator); err != nil {
 		return err
 	}
+
+	defer grpcServer.Stop()
 
 	// Write compose file
 	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project)
@@ -93,46 +95,6 @@ func (p *ProjectControl) Destroy() error {
 
 	if err := os.Remove(p.ComposeFile); err != nil {
 		return fmt.Errorf("failed to remove compose file: %v", err)
-	}
-
-	return nil
-}
-
-// Move this function to the grpc_server_control class
-func (p *ProjectControl) startGrpcServer() error {
-	// Generate certificate files
-	certificateGenerator := grpc.NewCertificateGenerator(
-		p.Orchestrator.GetHostGatewayHostname(),
-		p.Project.GetAllServicesStateDirectory(),
-	)
-
-	if err := certificateGenerator.Generate(); err != nil {
-		return fmt.Errorf("failed to generate grpc server certificate files: %v", err)
-	}
-
-	fmt.Println("Launching GRPC service...")
-	port, err := grpc.StartServer(
-		certificateGenerator.ServerCertificateFilePath,
-		certificateGenerator.ServerPrivateKeyFilePath,
-		certificateGenerator.CACertificateFilePath,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to start grpc server: %v", err)
-	}
-
-	fmt.Println("GRPC server listening on port: " + strconv.Itoa(port))
-
-	grpcServiceLookup := grpc.NewGrpcServiceLookup(
-		grpc.WithHostname(p.Orchestrator.GetHostGatewayHostname()),
-		grpc.WithPort(port),
-		grpc.WithClientCertificate(certificateGenerator.ClientCertificateFileName),
-		grpc.WithClientPrivateKey(certificateGenerator.ClientPrivateKeyFileName),
-	)
-
-	grpcServiceLookupFilePath := p.Project.GetAllServicesStateDirectory() + "/grpcservice.yml"
-	if err := grpcServiceLookup.MarshallYaml(grpcServiceLookupFilePath); err != nil {
-		return fmt.Errorf("failed to generate grpc service lookup definition file: %v", err)
 	}
 
 	return nil

@@ -14,61 +14,69 @@ import (
 	"strings"
 )
 
-type GrpcServer struct {
-	listener              net.Listener
+type Listener struct {
+	listener net.Listener
+	server   *grpc.Server
+
+	Port                  int
 	certificateFilePath   string
 	certificateKeyPath    string
 	caCertificateFilePath string
 }
 
-func NewGrpcServer(certificateFilePath string, certificateKeyPath string, caCertificateFilePath string) *GrpcServer {
-	return &GrpcServer{
-		certificateFilePath:   certificateFilePath,
-		certificateKeyPath:    certificateKeyPath,
-		caCertificateFilePath: caCertificateFilePath,
-	}
-}
-
-func (t *GrpcServer) CreateListener() (int, error) {
+func NewListener(certificateFilePath string, certificateKeyPath string, caCertificateFilePath string) (*Listener, error) {
 	// Create listener with randomly assigned port
+	// todo: move to constructor and add deferable close method
 	// todo: allow a fixed port to be set via config
 	listener, err := net.Listen("tcp", "0.0.0.0:12345") // todo: use port 0
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	t.listener = listener
 
 	// Extract the port from the address
 	address := listener.Addr().String()
 	lastIndex := strings.LastIndex(address, ":")
 	if lastIndex == -1 {
-		return 0, fmt.Errorf("unable to find port from address '%s'", address)
+		return nil, fmt.Errorf("unable to find port from address '%s'", address)
 	}
 
 	// Return parsed port number
 	port, err := strconv.Atoi(address[lastIndex+1:])
 	if err != nil {
-		return 0, fmt.Errorf("failed to convert address port to integer: %v", err)
+		return nil, fmt.Errorf("failed to convert address port to integer: %v", err)
 	}
 
-	return port, nil
+	return &Listener{
+		listener:              listener,
+		Port:                  port,
+		certificateFilePath:   certificateFilePath,
+		certificateKeyPath:    certificateKeyPath,
+		caCertificateFilePath: caCertificateFilePath,
+	}, nil
 }
 
-func (t *GrpcServer) Listen() error {
+func (t *Listener) Listen() error {
 	tlsConfig, err := t.createTlsConfig()
 	if err != nil {
 		return err
 	}
 
 	tlsCredentials := credentials.NewTLS(tlsConfig)
-	server := grpc.NewServer(grpc.Creds(tlsCredentials))
-	services.RegisterProvisionerServer(server, &service_definitions.ProvisionerServerImpl{})
+	t.server = grpc.NewServer(grpc.Creds(tlsCredentials))
+	services.RegisterProvisionerServer(t.server, &service_definitions.ProvisionerServerImpl{})
 
-	_ = server.Serve(t.listener)
+	_ = t.server.Serve(t.listener)
 	return nil
 }
 
-func (t *GrpcServer) createTlsConfig() (*tls.Config, error) {
+func (t *Listener) Close() error {
+	t.server.Stop()
+	_ = t.listener.Close()
+
+	return nil
+}
+
+func (t *Listener) createTlsConfig() (*tls.Config, error) {
 	serverCert, err := tls.LoadX509KeyPair(t.certificateFilePath, t.certificateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load server certificate: %v", err)
