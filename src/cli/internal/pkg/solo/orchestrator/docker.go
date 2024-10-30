@@ -7,6 +7,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
+	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
 	"os/exec"
 )
 
@@ -51,30 +52,29 @@ func (o *DockerOrchestrator) Destroy(projectDirectory string, composeFile string
 	return nil
 }
 
-func (o *DockerOrchestrator) ExportComposeConfiguration(globalConfig *config.Config, projectPath string) ([]byte, error) {
+func (o *DockerOrchestrator) GetHostGatewayHostname() string {
+	return "host.docker.internal"
+}
+
+func (o *DockerOrchestrator) ExportComposeConfiguration(globalConfig *config.Config, project *project.Project) ([]byte, error) {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
 		option.SkipValidation = true // Prevent validation failures from preventing the global config from being loaded
 		option.ResolvePaths = false  // Keep paths relative in case the user moves their project folder
 	})
 
-	projectOptions, err := cli.NewProjectOptions([]string{projectPath}, projectOptionsLoader)
-
+	projectOptions, err := cli.NewProjectOptions([]string{project.FilePath}, projectOptionsLoader)
 	if err != nil {
 		fmt.Println(fmt.Errorf("error building project options: %v", err))
 	}
 
-	soloEntrypoint := globalConfig.Entrypoint
-
-	project, err := projectOptions.LoadProject(context.Background())
+	compose, err := projectOptions.LoadProject(context.Background())
 	if err != nil {
 		fmt.Println(fmt.Errorf("error loading project: %v", err))
 	}
 
-	for index, service := range project.Services {
-		// Override any user globalConfig to force root
-		// todo: allow the user to switch in the entrypoint script
-		service.User = "0"
+	soloEntrypoint := globalConfig.Entrypoint
 
+	for index, service := range compose.Services {
 		// Replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
 		if len(service.Entrypoint) > 0 {
 			service.Command = append(service.Entrypoint, service.Command...)
@@ -82,16 +82,35 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(globalConfig *config.Con
 
 		service.Entrypoint = []string{"/solo-entrypoint"}
 
+		serviceDataPath := project.GetServiceStateDirectory(service.Name)
+		allServicesDataPath := project.GetAllServicesStateDirectory()
+
 		// Append volume mounts for the new entrypoint
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
 			Source:   soloEntrypoint,
 			Target:   "/solo-entrypoint",
 			ReadOnly: true,
+		}, types.ServiceVolumeConfig{
+			Type:     "bind",
+			Source:   serviceDataPath,
+			Target:   "/solo/service",
+			ReadOnly: true,
+			Bind: &types.ServiceVolumeBind{
+				CreateHostPath: true,
+			},
+		}, types.ServiceVolumeConfig{
+			Type:     "bind",
+			Source:   allServicesDataPath,
+			Target:   "/solo/services_all",
+			ReadOnly: true,
+			Bind: &types.ServiceVolumeBind{
+				CreateHostPath: true,
+			},
 		})
 
-		project.Services[index] = service
+		compose.Services[index] = service
 	}
 
-	return project.MarshalYAML()
+	return compose.MarshalYAML()
 }

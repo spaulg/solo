@@ -5,27 +5,29 @@ import (
 )
 
 type Project struct {
-	Directory string
-	FilePath  string
+	ProjectStateDirectory string
+	Directory             string
+	FilePath              string
 }
 
 func NewProject(projectFilePath string) *Project {
+	workingDirectory := filepath.Dir(projectFilePath)
+
 	return &Project{
-		Directory: filepath.Dir(projectFilePath),
-		FilePath:  projectFilePath,
+		ProjectStateDirectory: workingDirectory + "/.solo",
+		Directory:             workingDirectory,
+		FilePath:              projectFilePath,
 	}
 }
 
-//func (p *Project) Marshall() (*ProjectConfig, error) {
-//	fileContents, err := os.ReadFile(p.FilePath)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	projectConfig := ProjectConfig{}
-//	if err := yaml.Unmarshal(fileContents, &projectConfig); err != nil {
-//		return nil, err
-//	}
-//
-//	return &projectConfig, nil
-//}
+func (t *Project) ResolveStateDirectory(relativePath string) string {
+	return t.ProjectStateDirectory + "/" + relativePath
+}
+
+func (t *Project) GetAllServicesStateDirectory() string {
+	return t.ProjectStateDirectory + "/services_all"
+}
+
+func (t *Project) GetServiceStateDirectory(serviceName string) string {
+	return t.ProjectStateDirectory + "/services/" + serviceName
+}
