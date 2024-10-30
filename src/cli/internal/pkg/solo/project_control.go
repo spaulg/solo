@@ -98,9 +98,14 @@ func (p *ProjectControl) Destroy() error {
 	return nil
 }
 
+// Move this function to the grpc_server_control class
 func (p *ProjectControl) startGrpcServer() error {
 	// Generate certificate files
-	certificateGenerator := grpc.NewCertificateGenerator(p.Project.GetAllServicesStateDirectory())
+	certificateGenerator := grpc.NewCertificateGenerator(
+		p.Orchestrator.GetHostGatewayHostname(),
+		p.Project.GetAllServicesStateDirectory(),
+	)
+
 	if err := certificateGenerator.Generate(); err != nil {
 		return fmt.Errorf("failed to generate grpc server certificate files: %v", err)
 	}

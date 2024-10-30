@@ -15,6 +15,7 @@ import (
 )
 
 type CertificateGenerator struct {
+	ServerHostname      string
 	CertificateBasePath string
 
 	CACertificateFileName     string
@@ -35,51 +36,10 @@ type CertificateGenerator struct {
 	CAPrivateKey  *ecdsa.PrivateKey
 }
 
-type CertificateGeneratorOptions func(*CertificateGenerator)
-
-func WithCertificateBasePath(filePath string) CertificateGeneratorOptions {
-	return func(t *CertificateGenerator) {
-		t.CertificateBasePath = filePath
-	}
-}
-
-func WithCACertificateFileName(filename string) CertificateGeneratorOptions {
-	return func(t *CertificateGenerator) {
-		t.CACertificateFileName = filename
-	}
-}
-
-func WithCAKeyFileName(filename string) CertificateGeneratorOptions {
-	return func(t *CertificateGenerator) {
-		t.CAKeyFileName = filename
-	}
-}
-
-func WithServerCertificateFileName(filename string) CertificateGeneratorOptions {
-	return func(t *CertificateGenerator) {
-		t.ServerCertificateFileName = filename
-	}
-}
-
-func WithServerKeyFileName(filename string) CertificateGeneratorOptions {
-	return func(t *CertificateGenerator) {
-		t.ServerPrivateKeyFileName = filename
-	}
-}
-
-func WithClientCertificateFile(filename string) CertificateGeneratorOptions {
-	return func(t *CertificateGenerator) {
-		t.ClientCertificateFileName = filename
-	}
-}
-
-func WithClientKeyFile(filename string) CertificateGeneratorOptions {
-	return func(t *CertificateGenerator) {
-		t.ClientPrivateKeyFileName = filename
-	}
-}
-
-func NewCertificateGenerator(certificateBasePath string, opts ...CertificateGeneratorOptions) *CertificateGenerator {
+func NewCertificateGenerator(
+	serverHostname string,
+	certificateBasePath string,
+) *CertificateGenerator {
 	const (
 		defaultCACertificateFileName     = "ca.crt"
 		defaultCAKeyFileName             = "ca.key"
@@ -90,6 +50,7 @@ func NewCertificateGenerator(certificateBasePath string, opts ...CertificateGene
 	)
 
 	t := &CertificateGenerator{
+		ServerHostname:            serverHostname,
 		CertificateBasePath:       certificateBasePath,
 		CACertificateFileName:     defaultCACertificateFileName,
 		CAKeyFileName:             defaultCAKeyFileName,
@@ -97,10 +58,6 @@ func NewCertificateGenerator(certificateBasePath string, opts ...CertificateGene
 		ServerPrivateKeyFileName:  defaultServerPrivateKeyFileName,
 		ClientCertificateFileName: defaultClientCertificateFileName,
 		ClientPrivateKeyFileName:  defaultClientPrivateKeyFileName,
-	}
-
-	for _, opt := range opts {
-		opt(t)
 	}
 
 	// Assign full paths
@@ -141,7 +98,7 @@ func (t *CertificateGenerator) generateCACertificate() error {
 	caTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
-			Organization: []string{"CA Example Corp"},
+			Organization: []string{"Solo CA"},
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(365 * 24 * time.Hour), // 1 year
@@ -165,7 +122,7 @@ func (t *CertificateGenerator) generateServerCertificate() error {
 	certificateTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
-			Organization: []string{"solo"},
+			Organization: []string{"Solo server"},
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(3 * time.Hour),
@@ -174,7 +131,7 @@ func (t *CertificateGenerator) generateServerCertificate() error {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 
-		DNSNames: []string{"host.docker.internal"}, // todo: pass hostname
+		DNSNames: []string{t.ServerHostname},
 	}
 
 	_, _, err := t.generateCertificate(
@@ -196,7 +153,7 @@ func (t *CertificateGenerator) generateClientCertificate() error {
 	clientTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(2),
 		Subject: pkix.Name{
-			Organization: []string{"Client Corp"},
+			Organization: []string{"Solo Client"},
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(365 * 24 * time.Hour), // 1 year
