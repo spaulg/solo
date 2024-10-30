@@ -1,12 +1,11 @@
 package grpc
 
-func StartServer() (int, error) {
-	// Start the GRPC server and return the port number the server is listening on
+func StartServer(certificateFilePath string, certificateKeyPath string, caCertificateFilePath string) (int, error) {
 	grpcServicePortChannel := make(chan int)
 	grpcServiceErrorChannel := make(chan error)
 
 	go func() {
-		grpcServer := NewGrpcServer()
+		grpcServer := NewGrpcServer(certificateFilePath, certificateKeyPath, caCertificateFilePath)
 
 		// Start listener and report listening port
 		port, err := grpcServer.CreateListener()
@@ -22,7 +21,7 @@ func StartServer() (int, error) {
 		grpcServicePortChannel <- port
 
 		// Start listening
-		grpcServer.Listen()
+		_ = grpcServer.Listen()
 
 		close(grpcServicePortChannel)
 		close(grpcServiceErrorChannel)

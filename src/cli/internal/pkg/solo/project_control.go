@@ -30,7 +30,7 @@ func NewProjectControl(config *config.Config, projectFile *project.Project) *Pro
 }
 
 func (p *ProjectControl) DumpComposeConfig() error {
-	composeYml, err := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project.FilePath)
+	composeYml, err := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project)
 	if err != nil {
 		return err
 	}
@@ -40,33 +40,26 @@ func (p *ProjectControl) DumpComposeConfig() error {
 }
 
 func (p *ProjectControl) Start() error {
+	// Start GRPC services
+	if err := p.startGrpcServer(); err != nil {
+		return err
+	}
+
 	// Write compose file
-	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project.FilePath)
+	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project)
 	if err := p.exportComposeFile(composeYml); err != nil {
 		return err
 	}
 
-	// todo: launch provisioning grpc server
-	fmt.Println("Launching GRPC service...")
-	port, err := grpc.StartServer()
-	if err != nil {
-		return fmt.Errorf("failed to start grpc server: %v", err)
-	}
-
-	fmt.Println("GRPC server listening on port: " + strconv.Itoa(port))
-
-	fmt.Println("Sleeping...")
-	time.Sleep(10 * time.Second)
-
+	// Start compose services
 	if err := p.Orchestrator.Up(p.Project.Directory, p.ComposeFile); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
+	// todo: refactor in to timer - context object ??
 	fmt.Println("Sleeping...")
 	time.Sleep(30 * time.Second)
 
-	// todo: wait for confirmation that all containers have completed provisioning
-	// todo: wait delay period for final containers to start
 	// todo: Exec post start commands (via docker exec)
 	// todo: wait delay period for all containers to checkin for post start commands provisioning
 
@@ -100,6 +93,41 @@ func (p *ProjectControl) Destroy() error {
 
 	if err := os.Remove(p.ComposeFile); err != nil {
 		return fmt.Errorf("failed to remove compose file: %v", err)
+	}
+
+	return nil
+}
+
+func (p *ProjectControl) startGrpcServer() error {
+	// Generate certificate files
+	certificateGenerator := grpc.NewCertificateGenerator(p.Project.GetAllServicesStateDirectory())
+	if err := certificateGenerator.Generate(); err != nil {
+		return fmt.Errorf("failed to generate grpc server certificate files: %v", err)
+	}
+
+	fmt.Println("Launching GRPC service...")
+	port, err := grpc.StartServer(
+		certificateGenerator.ServerCertificateFilePath,
+		certificateGenerator.ServerPrivateKeyFilePath,
+		certificateGenerator.CACertificateFilePath,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to start grpc server: %v", err)
+	}
+
+	fmt.Println("GRPC server listening on port: " + strconv.Itoa(port))
+
+	grpcServiceLookup := grpc.NewGrpcServiceLookup(
+		grpc.WithHostname(p.Orchestrator.GetHostGatewayHostname()),
+		grpc.WithPort(port),
+		grpc.WithClientCertificate(certificateGenerator.ClientCertificateFileName),
+		grpc.WithClientPrivateKey(certificateGenerator.ClientPrivateKeyFileName),
+	)
+
+	grpcServiceLookupFilePath := p.Project.GetAllServicesStateDirectory() + "/grpcservice.yml"
+	if err := grpcServiceLookup.MarshallYaml(grpcServiceLookupFilePath); err != nil {
+		return fmt.Errorf("failed to generate grpc service lookup definition file: %v", err)
 	}
 
 	return nil
