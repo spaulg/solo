@@ -40,8 +40,13 @@ func (p *ProjectControl) DumpComposeConfig() error {
 
 func (p *ProjectControl) Start() error {
 	// Start GRPC services
-	grpcServer := grpc.NewServer()
-	if err := grpcServer.Start(p.Project, p.Orchestrator); err != nil {
+	grpcServer := grpc.NewServer(
+		p.Orchestrator.GetHostGatewayHostname(),
+		p.Config.GrpcServerPort,
+		p.Project.GetAllServicesStateDirectory(),
+	)
+
+	if err := grpcServer.Start(); err != nil {
 		return err
 	}
 

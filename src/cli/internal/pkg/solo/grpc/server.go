@@ -2,29 +2,26 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
 )
 
 type Server struct {
-	listener *Listener
+	listener       *Listener
+	hostname       string
+	port           int
+	stateDirectory string
 }
 
-func NewServer() *Server {
-	return &Server{}
+func NewServer(hostname string, port int, stateDirectory string) *Server {
+	return &Server{
+		hostname:       hostname,
+		port:           port,
+		stateDirectory: stateDirectory,
+	}
 }
 
-func (t *Server) Start(
-	// todo: refactor to pass hostname & storage directory to decouple
-	project *project.Project,
-	orchestrator orchestrator.Orchestrator,
-) error {
+func (t *Server) Start() error {
 	// Generate certificate files
-	certificateGenerator := NewCertificateGenerator(
-		orchestrator.GetHostGatewayHostname(),
-		project.GetAllServicesStateDirectory(),
-	)
-
+	certificateGenerator := NewCertificateGenerator(t.hostname, t.stateDirectory)
 	if err := certificateGenerator.Generate(); err != nil {
 		return fmt.Errorf("failed to generate grpc server certificate files: %v", err)
 	}
@@ -36,6 +33,7 @@ func (t *Server) Start(
 		var err error
 
 		t.listener, err = NewListener(
+			t.port,
 			certificateGenerator.ServerCertificateFilePath,
 			certificateGenerator.ServerPrivateKeyFilePath,
 			certificateGenerator.CACertificateFilePath,
@@ -66,13 +64,13 @@ func (t *Server) Start(
 	}
 
 	grpcServiceLookup := NewGrpcServiceLookup(
-		WithHostname(orchestrator.GetHostGatewayHostname()),
+		WithHostname(t.hostname),
 		WithPort(port),
 		WithClientCertificate(certificateGenerator.ClientCertificateFileName),
 		WithClientPrivateKey(certificateGenerator.ClientPrivateKeyFileName),
 	)
 
-	grpcServiceLookupFilePath := project.GetAllServicesStateDirectory() + "/grpcservice.yml"
+	grpcServiceLookupFilePath := t.stateDirectory + "/grpcservice.yml"
 	if err := grpcServiceLookup.MarshallYaml(grpcServiceLookupFilePath); err != nil {
 		return fmt.Errorf("failed to generate grpc service lookup definition file: %v", err)
 	}
