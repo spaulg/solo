@@ -7,11 +7,11 @@ import (
 type Server struct {
 	listener       *Listener
 	hostname       string
-	port           int
+	port           uint16
 	stateDirectory string
 }
 
-func NewServer(hostname string, port int, stateDirectory string) *Server {
+func NewServer(hostname string, port uint16, stateDirectory string) *Server {
 	return &Server{
 		hostname:       hostname,
 		port:           port,
@@ -26,7 +26,7 @@ func (t *Server) Start() error {
 		return fmt.Errorf("failed to generate grpc server certificate files: %v", err)
 	}
 
-	grpcServicePortChannel := make(chan int)
+	grpcServicePortChannel := make(chan uint16)
 	grpcServiceErrorChannel := make(chan error)
 
 	go func() {
@@ -63,7 +63,8 @@ func (t *Server) Start() error {
 		return fmt.Errorf("failed to start grpc server: %v", <-grpcServiceErrorChannel)
 	}
 
-	grpcServiceLookup := NewGrpcServiceLookup(
+	grpcServiceLookup := NewServiceLookup(
+		// todo: refactor these out - they're all required so shouldn't be configured using optional with pattern
 		WithHostname(t.hostname),
 		WithPort(port),
 		WithClientCertificate(certificateGenerator.ClientCertificateFileName),
