@@ -18,20 +18,20 @@ type Listener struct {
 	listener net.Listener
 	server   *grpc.Server
 
-	Port                  int
+	Port                  uint16
 	certificateFilePath   string
 	certificateKeyPath    string
 	caCertificateFilePath string
 }
 
 func NewListener(
-	port int,
+	port uint16,
 	certificateFilePath string,
 	certificateKeyPath string,
 	caCertificateFilePath string,
 ) (*Listener, error) {
 	// Create listener with randomly assigned port
-	listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(port))
+	listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(int(port)))
 	if err != nil {
 		return nil, err
 	}
@@ -45,14 +45,14 @@ func NewListener(
 
 	// Return allocated port number, in events when
 	// an automatic port allocation was used
-	allocatedPort, err := strconv.Atoi(address[lastIndex+1:])
+	allocatedPort, err := strconv.ParseUint(address[lastIndex+1:], 10, 16)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert address port to integer: %v", err)
 	}
 
 	return &Listener{
 		listener:              listener,
-		Port:                  allocatedPort,
+		Port:                  uint16(allocatedPort),
 		certificateFilePath:   certificateFilePath,
 		certificateKeyPath:    certificateKeyPath,
 		caCertificateFilePath: caCertificateFilePath,

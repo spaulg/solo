@@ -10,7 +10,7 @@ type Config struct {
 	Entrypoint     string
 	LocalDirectory string
 	Orchestrator   string
-	GrpcServerPort int
+	GrpcServerPort uint16
 }
 
 const DefaultEntrypoint = "/usr/local/bin/solo-entrypoint"
