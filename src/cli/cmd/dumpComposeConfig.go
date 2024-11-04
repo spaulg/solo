@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"github.com/spaulg/solo/cli/internal/pkg/solo"
+	"fmt"
+	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -10,8 +11,13 @@ var composeConfigCmd = &cobra.Command{
 	Short: "Dumps the compose config to stdout",
 	Long:  "Dumps the compose config to stdout",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectControl := solo.NewProjectControl(config, project)
-		return projectControl.DumpComposeConfig()
+		composeYml, err := orchestrator.BuildOrchestrator().ExportComposeConfiguration(config, project)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(composeYml))
+		return nil
 	},
 }
 
