@@ -28,16 +28,6 @@ func NewProjectControl(config *config.Config, projectFile *project.Project) *Pro
 	}
 }
 
-func (p *ProjectControl) DumpComposeConfig() error {
-	composeYml, err := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(composeYml))
-	return nil
-}
-
 func (p *ProjectControl) Start() error {
 	// Start GRPC services
 	grpcServer := grpc.NewServer(
