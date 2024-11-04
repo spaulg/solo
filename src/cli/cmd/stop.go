@@ -10,7 +10,7 @@ var stopCmd = &cobra.Command{
 	Short: "Stops your app",
 	Long:  "Stops your app",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectControl := solo.NewProjectControl(config, project)
+		projectControl := solo.ProjectControlFactory(config, project)
 		return projectControl.Stop()
 	},
 }

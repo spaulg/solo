@@ -10,9 +10,9 @@ type Orchestrator interface {
 	Down(projectDirectory string, composeFile string) error
 	Destroy(projectDirectory string, composeFile string) error
 	GetHostGatewayHostname() string
-	ExportComposeConfiguration(globalConfig *config.Config, project *project.Project) ([]byte, error)
+	ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error)
 }
 
-func BuildOrchestrator() Orchestrator {
+func OrchestratorFactory(config *config.Config) Orchestrator {
 	return &DockerOrchestrator{}
 }

@@ -10,7 +10,7 @@ var restartCmd = &cobra.Command{
 	Short: "Restarts your app",
 	Long:  "Restarts your app",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectControl := solo.NewProjectControl(config, project)
+		projectControl := solo.ProjectControlFactory(config, project)
 
 		if err := projectControl.Stop(); err != nil {
 			return err

@@ -10,7 +10,7 @@ var startCmd = &cobra.Command{
 	Short: "Starts your app",
 	Long:  "Starts your app",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectControl := solo.NewProjectControl(config, project)
+		projectControl := solo.ProjectControlFactory(config, project)
 		return projectControl.Start()
 	},
 }

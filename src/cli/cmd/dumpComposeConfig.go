@@ -11,7 +11,7 @@ var composeConfigCmd = &cobra.Command{
 	Short: "Dumps the compose config to stdout",
 	Long:  "Dumps the compose config to stdout",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		composeYml, err := orchestrator.BuildOrchestrator().ExportComposeConfiguration(config, project)
+		composeYml, err := orchestrator.OrchestratorFactory(config).ExportComposeConfiguration(config, project)
 		if err != nil {
 			return err
 		}

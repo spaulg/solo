@@ -4,22 +4,27 @@ import (
 	"fmt"
 )
 
-type Server struct {
+type Server interface {
+	Start() error
+	Stop()
+}
+
+type AuthenticatingServer struct {
 	listener       *Listener
 	hostname       string
 	port           uint16
 	stateDirectory string
 }
 
-func NewServer(hostname string, port uint16, stateDirectory string) *Server {
-	return &Server{
+func NewServer(hostname string, port uint16, stateDirectory string) Server {
+	return &AuthenticatingServer{
 		hostname:       hostname,
 		port:           port,
 		stateDirectory: stateDirectory,
 	}
 }
 
-func (t *Server) Start() error {
+func (t *AuthenticatingServer) Start() error {
 	// Generate certificate files
 	certificateGenerator, err := NewCertificateGenerator(t.hostname, t.stateDirectory)
 	if err != nil {
@@ -83,6 +88,6 @@ func (t *Server) Start() error {
 	return nil
 }
 
-func (t *Server) Stop() {
+func (t *AuthenticatingServer) Stop() {
 	_ = t.listener.Close()
 }

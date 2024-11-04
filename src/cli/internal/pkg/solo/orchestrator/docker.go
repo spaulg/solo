@@ -56,7 +56,7 @@ func (o *DockerOrchestrator) GetHostGatewayHostname() string {
 	return "host.docker.internal"
 }
 
-func (o *DockerOrchestrator) ExportComposeConfiguration(globalConfig *config.Config, project *project.Project) ([]byte, error) {
+func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error) {
 	projectOptionsLoader := cli.WithLoadOptions(func(option *loader.Options) {
 		option.SkipValidation = true // Prevent validation failures from preventing the global config from being loaded
 		option.ResolvePaths = false  // Keep paths relative in case the user moves their project folder
@@ -72,7 +72,7 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(globalConfig *config.Con
 		fmt.Println(fmt.Errorf("error loading project: %v", err))
 	}
 
-	soloEntrypoint := globalConfig.Entrypoint
+	soloEntrypoint := config.Entrypoint
 
 	for index, service := range compose.Services {
 		// Replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
