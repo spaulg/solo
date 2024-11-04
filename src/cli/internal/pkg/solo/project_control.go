@@ -17,30 +17,31 @@ type ProjectControl struct {
 	Project      *project.Project
 	ComposeFile  string
 	Orchestrator orchestrator.Orchestrator
+	GrpcServer   grpc.Server
 }
 
-func NewProjectControl(config *config.Config, projectFile *project.Project) *ProjectControl {
+func NewProjectControl(
+	config *config.Config,
+	project *project.Project,
+	orchestrator orchestrator.Orchestrator,
+	grpcServer grpc.Server,
+) *ProjectControl {
 	return &ProjectControl{
 		Config:       config,
-		Project:      projectFile,
-		ComposeFile:  path.Join(projectFile.Directory, ".solo", "docker-compose.yml"),
-		Orchestrator: orchestrator.BuildOrchestrator(),
+		Project:      project,
+		ComposeFile:  path.Join(project.Directory, ".solo", "docker-compose.yml"),
+		Orchestrator: orchestrator,
+		GrpcServer:   grpcServer,
 	}
 }
 
 func (p *ProjectControl) Start() error {
 	// Start GRPC services
-	grpcServer := grpc.NewServer(
-		p.Orchestrator.GetHostGatewayHostname(),
-		p.Config.GrpcServerPort,
-		p.Project.GetAllServicesStateDirectory(),
-	)
-
-	if err := grpcServer.Start(); err != nil {
+	if err := p.GrpcServer.Start(); err != nil {
 		return err
 	}
 
-	defer grpcServer.Stop()
+	defer p.GrpcServer.Stop()
 
 	// Write compose file
 	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project)

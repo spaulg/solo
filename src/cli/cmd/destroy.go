@@ -32,7 +32,7 @@ var destroyCmd = &cobra.Command{
 		}
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectControl := solo.NewProjectControl(config, project)
+		projectControl := solo.ProjectControlFactory(config, project)
 		return projectControl.Destroy()
 	},
 }
