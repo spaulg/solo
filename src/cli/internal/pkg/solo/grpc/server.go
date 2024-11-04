@@ -21,7 +21,11 @@ func NewServer(hostname string, port uint16, stateDirectory string) *Server {
 
 func (t *Server) Start() error {
 	// Generate certificate files
-	certificateGenerator := NewCertificateGenerator(t.hostname, t.stateDirectory)
+	certificateGenerator, err := NewCertificateGenerator(t.hostname, t.stateDirectory)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate generator: %v", err)
+	}
+
 	if err := certificateGenerator.Generate(); err != nil {
 		return fmt.Errorf("failed to generate grpc server certificate files: %v", err)
 	}

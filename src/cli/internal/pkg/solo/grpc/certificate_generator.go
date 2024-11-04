@@ -11,8 +11,11 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"time"
 )
+
+var InvalidHostname = errors.New("server hostname cannot be blank")
 
 type CertificateGenerator struct {
 	ServerHostname      string
@@ -39,7 +42,7 @@ type CertificateGenerator struct {
 func NewCertificateGenerator(
 	serverHostname string,
 	certificateBasePath string,
-) *CertificateGenerator {
+) (*CertificateGenerator, error) {
 	const (
 		defaultCACertificateFileName     = "ca.crt"
 		defaultCAKeyFileName             = "ca.key"
@@ -48,6 +51,11 @@ func NewCertificateGenerator(
 		defaultClientCertificateFileName = "client.crt"
 		defaultClientPrivateKeyFileName  = "client.key"
 	)
+
+	serverHostname = strings.TrimSpace(serverHostname)
+	if len(serverHostname) == 0 {
+		return nil, InvalidHostname
+	}
 
 	t := &CertificateGenerator{
 		ServerHostname:            serverHostname,
@@ -68,7 +76,7 @@ func NewCertificateGenerator(
 	t.ClientCertificateFilePath = t.CertificateBasePath + "/" + t.ClientCertificateFileName
 	t.ClientPrivateKeyFilePath = t.CertificateBasePath + "/" + t.ClientPrivateKeyFileName
 
-	return t
+	return t, nil
 }
 
 func (t *CertificateGenerator) Generate() error {
