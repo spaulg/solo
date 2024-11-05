@@ -10,28 +10,30 @@ type Server interface {
 }
 
 type AuthenticatingServer struct {
-	listener       *Listener
-	hostname       string
-	port           uint16
-	stateDirectory string
+	listener             *Listener
+	hostname             string
+	port                 uint16
+	stateDirectory       string
+	certificateGenerator *CertificateGenerator
 }
 
-func NewServer(hostname string, port uint16, stateDirectory string) Server {
+func NewServer(
+	hostname string,
+	port uint16,
+	stateDirectory string,
+	certificateGenerator *CertificateGenerator,
+) Server {
 	return &AuthenticatingServer{
-		hostname:       hostname,
-		port:           port,
-		stateDirectory: stateDirectory,
+		hostname:             hostname,
+		port:                 port,
+		stateDirectory:       stateDirectory,
+		certificateGenerator: certificateGenerator,
 	}
 }
 
 func (t *AuthenticatingServer) Start() error {
 	// Generate certificate files
-	certificateGenerator, err := NewCertificateGenerator(t.hostname, t.stateDirectory)
-	if err != nil {
-		return fmt.Errorf("failed to create certificate generator: %v", err)
-	}
-
-	if err := certificateGenerator.Generate(); err != nil {
+	if err := t.certificateGenerator.Generate(); err != nil {
 		return fmt.Errorf("failed to generate grpc server certificate files: %v", err)
 	}
 
@@ -43,9 +45,9 @@ func (t *AuthenticatingServer) Start() error {
 
 		t.listener, err = NewListener(
 			t.port,
-			certificateGenerator.ServerCertificateFilePath,
-			certificateGenerator.ServerPrivateKeyFilePath,
-			certificateGenerator.CACertificateFilePath,
+			t.certificateGenerator.ServerCertificateFilePath,
+			t.certificateGenerator.ServerPrivateKeyFilePath,
+			t.certificateGenerator.CACertificateFilePath,
 		)
 
 		// Start listener and report listening port
@@ -76,8 +78,8 @@ func (t *AuthenticatingServer) Start() error {
 		// todo: refactor these out - they're all required so shouldn't be configured using optional with pattern
 		WithHostname(t.hostname),
 		WithPort(port),
-		WithClientCertificate(certificateGenerator.ClientCertificateFileName),
-		WithClientPrivateKey(certificateGenerator.ClientPrivateKeyFileName),
+		WithClientCertificate(t.certificateGenerator.ClientCertificateFileName),
+		WithClientPrivateKey(t.certificateGenerator.ClientPrivateKeyFileName),
 	)
 
 	grpcServiceLookupFilePath := t.stateDirectory + "/grpcservice.yml"
