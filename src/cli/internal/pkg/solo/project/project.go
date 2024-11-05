@@ -5,29 +5,37 @@ import (
 )
 
 type Project struct {
-	ProjectStateDirectory string
-	Directory             string
-	FilePath              string
+	projectStateDirectory string
+	directory             string
+	filePath              string
 }
 
 func NewProject(projectFilePath string) *Project {
 	workingDirectory := filepath.Dir(projectFilePath)
 
 	return &Project{
-		ProjectStateDirectory: workingDirectory + "/.solo",
-		Directory:             workingDirectory,
-		FilePath:              projectFilePath,
+		projectStateDirectory: workingDirectory + "/.solo",
+		directory:             workingDirectory,
+		filePath:              projectFilePath,
 	}
 }
 
 func (t *Project) ResolveStateDirectory(relativePath string) string {
-	return t.ProjectStateDirectory + "/" + relativePath
+	return t.projectStateDirectory + "/" + relativePath
 }
 
 func (t *Project) GetAllServicesStateDirectory() string {
-	return t.ProjectStateDirectory + "/services_all"
+	return t.projectStateDirectory + "/services_all"
 }
 
 func (t *Project) GetServiceStateDirectory(serviceName string) string {
-	return t.ProjectStateDirectory + "/services/" + serviceName
+	return t.projectStateDirectory + "/services/" + serviceName
+}
+
+func (t *Project) GetDirectory() string {
+	return t.directory
+}
+
+func (t *Project) GetFilePath() string {
+	return t.filePath
 }

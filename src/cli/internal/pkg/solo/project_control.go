@@ -13,11 +13,11 @@ import (
 )
 
 type ProjectControl struct {
-	Config       *config.Config
-	Project      *project.Project
-	ComposeFile  string
-	Orchestrator orchestrator.Orchestrator
-	GrpcServer   grpc.Server
+	config       *config.Config
+	project      *project.Project
+	composeFile  string
+	orchestrator orchestrator.Orchestrator
+	grpcServer   grpc.Server
 }
 
 func NewProjectControl(
@@ -27,30 +27,30 @@ func NewProjectControl(
 	grpcServer grpc.Server,
 ) *ProjectControl {
 	return &ProjectControl{
-		Config:       config,
-		Project:      project,
-		ComposeFile:  path.Join(project.Directory, ".solo", "docker-compose.yml"),
-		Orchestrator: orchestrator,
-		GrpcServer:   grpcServer,
+		config:       config,
+		project:      project,
+		composeFile:  project.ResolveStateDirectory("docker-compose.yml"),
+		orchestrator: orchestrator,
+		grpcServer:   grpcServer,
 	}
 }
 
-func (p *ProjectControl) Start() error {
+func (t *ProjectControl) Start() error {
 	// Start GRPC services
-	if err := p.GrpcServer.Start(); err != nil {
+	if err := t.grpcServer.Start(); err != nil {
 		return err
 	}
 
-	defer p.GrpcServer.Stop()
+	defer t.grpcServer.Stop()
 
 	// Write compose file
-	composeYml, _ := p.Orchestrator.ExportComposeConfiguration(p.Config, p.Project)
-	if err := p.exportComposeFile(composeYml); err != nil {
+	composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.config, t.project)
+	if err := t.exportComposeFile(composeYml); err != nil {
 		return err
 	}
 
 	// Start compose services
-	if err := p.Orchestrator.Up(p.Project.Directory, p.ComposeFile); err != nil {
+	if err := t.orchestrator.Up(t.project.GetDirectory(), t.composeFile); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
@@ -64,40 +64,40 @@ func (p *ProjectControl) Start() error {
 	return nil
 }
 
-func (p *ProjectControl) Stop() error {
-	if err := p.composeFileExists(); err != nil {
+func (t *ProjectControl) Stop() error {
+	if err := t.composeFileExists(); err != nil {
 		return err
 	}
 
 	// todo: Exec pre stop commands
 
-	if err := p.Orchestrator.Down(p.Project.Directory, p.ComposeFile); err != nil {
+	if err := t.orchestrator.Down(t.project.GetDirectory(), t.composeFile); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
 	return nil
 }
 
-func (p *ProjectControl) Destroy() error {
-	if err := p.composeFileExists(); err != nil {
+func (t *ProjectControl) Destroy() error {
+	if err := t.composeFileExists(); err != nil {
 		return err
 	}
 
 	// todo: Exec pre stop commands
 
-	if err := p.Orchestrator.Destroy(p.Project.Directory, p.ComposeFile); err != nil {
+	if err := t.orchestrator.Destroy(t.project.GetDirectory(), t.composeFile); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
-	if err := os.Remove(p.ComposeFile); err != nil {
+	if err := os.Remove(t.composeFile); err != nil {
 		return fmt.Errorf("failed to remove compose file: %v", err)
 	}
 
 	return nil
 }
 
-func (p *ProjectControl) exportComposeFile(composeYml []byte) error {
-	composeDirectory := path.Dir(p.ComposeFile)
+func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
+	composeDirectory := path.Dir(t.composeFile)
 	if _, err := os.Stat(composeDirectory); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("failed to check .solo directory existence: %v", err)
@@ -108,15 +108,15 @@ func (p *ProjectControl) exportComposeFile(composeYml []byte) error {
 		}
 	}
 
-	if err := os.WriteFile(p.ComposeFile, composeYml, 0640); err != nil {
+	if err := os.WriteFile(t.composeFile, composeYml, 0640); err != nil {
 		return fmt.Errorf("failed to write compose file: %v", err)
 	}
 
 	return nil
 }
 
-func (p *ProjectControl) composeFileExists() error {
-	if _, err := os.Stat(p.ComposeFile); err != nil {
+func (t *ProjectControl) composeFileExists() error {
+	if _, err := os.Stat(t.composeFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("compose file not found")
 		} else {

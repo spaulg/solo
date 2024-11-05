@@ -62,7 +62,7 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 		option.ResolvePaths = false  // Keep paths relative in case the user moves their project folder
 	})
 
-	projectOptions, err := cli.NewProjectOptions([]string{project.FilePath}, projectOptionsLoader)
+	projectOptions, err := cli.NewProjectOptions([]string{project.GetFilePath()}, projectOptionsLoader)
 	if err != nil {
 		fmt.Println(fmt.Errorf("error building project options: %v", err))
 	}

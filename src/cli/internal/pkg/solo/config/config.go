@@ -6,19 +6,22 @@ import (
 )
 
 type Config struct {
-	reader         *viper.Viper
+	reader *viper.Viper
+
 	Entrypoint     string
 	LocalDirectory string
 	Orchestrator   string
 	GrpcServerPort uint16
 }
 
-const DefaultEntrypoint = "/usr/local/bin/solo-entrypoint"
-const DefaultLocalDirectory = "./.solo"
-const DefaultOrchestrator = "docker"
-const DefaultGrpcServerPort = 0
-
 func NewConfig() (*Config, error) {
+	const (
+		DefaultEntrypoint     = "/usr/local/bin/solo-entrypoint"
+		DefaultLocalDirectory = "./.solo"
+		DefaultOrchestrator   = "docker"
+		DefaultGrpcServerPort = 0
+	)
+
 	config := Config{
 		Entrypoint:     DefaultEntrypoint,
 		LocalDirectory: DefaultLocalDirectory,
