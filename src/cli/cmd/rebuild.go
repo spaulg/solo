@@ -32,7 +32,10 @@ var rebuildCmd = &cobra.Command{
 		}
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectControl := solo.ProjectControlFactory(config, project)
+		projectControl, err := solo.ProjectControlFactory(config, project)
+		if err != nil {
+			return err
+		}
 
 		if err := projectControl.Destroy(); err != nil {
 			return err
