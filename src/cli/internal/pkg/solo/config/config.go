@@ -14,14 +14,14 @@ type Config struct {
 	GrpcServerPort uint16
 }
 
-func NewConfig() (*Config, error) {
-	const (
-		DefaultEntrypoint     = "/usr/local/bin/solo-entrypoint"
-		DefaultLocalDirectory = "./.solo"
-		DefaultOrchestrator   = "docker"
-		DefaultGrpcServerPort = 0
-	)
+const (
+	DefaultEntrypoint     = "/usr/local/bin/solo-entrypoint"
+	DefaultLocalDirectory = "./.solo"
+	DefaultOrchestrator   = "docker"
+	DefaultGrpcServerPort = 0
+)
 
+func NewConfig() (*Config, error) {
 	config := Config{
 		Entrypoint:     DefaultEntrypoint,
 		LocalDirectory: DefaultLocalDirectory,
