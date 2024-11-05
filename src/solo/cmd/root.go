@@ -38,7 +38,7 @@ func Execute() {
 
 func init() {
 	config, configLoadErr = config2.NewConfig()
-	project, projectLoadErr = project2.FindProject()
+	project, projectLoadErr = project2.FindProject("./")
 
 	if project != nil && configLoadErr == nil {
 		configLoadErr = config.AddConfigPath(project.GetDirectory())
