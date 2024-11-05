@@ -41,6 +41,6 @@ func init() {
 	project, projectLoadErr = project2.FindProject()
 
 	if project != nil && configLoadErr == nil {
-		configLoadErr = config.AddConfigPath(project.Directory)
+		configLoadErr = config.AddConfigPath(project.GetDirectory())
 	}
 }
