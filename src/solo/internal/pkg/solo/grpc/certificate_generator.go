@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/fs"
 	"math/big"
 	"os"
 	"strings"
@@ -16,6 +17,7 @@ import (
 )
 
 var InvalidHostname = errors.New("server hostname cannot be blank")
+var InvalidCertificateBasePath = errors.New("certificate base path invalid")
 
 type CertificateGenerator struct {
 	ServerHostname      string
@@ -55,6 +57,18 @@ func NewCertificateGenerator(
 	serverHostname = strings.TrimSpace(serverHostname)
 	if len(serverHostname) == 0 {
 		return nil, InvalidHostname
+	}
+
+	certificateBasePath = strings.TrimSpace(certificateBasePath)
+	if len(certificateBasePath) == 0 {
+		return nil, InvalidCertificateBasePath
+	}
+
+	_, err := os.Stat(certificateBasePath)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, InvalidCertificateBasePath
+	} else if err != nil {
+		return nil, fmt.Errorf("unknown error checking certificate base path exists: %v", err)
 	}
 
 	t := &CertificateGenerator{
