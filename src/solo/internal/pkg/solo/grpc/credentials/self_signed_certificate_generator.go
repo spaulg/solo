@@ -16,25 +16,18 @@ import (
 )
 
 type SelfSignedCertificateGenerator struct {
-	ServerHostname      string
-	CertificateBasePath string
+	serverHostname      string
+	certificateBasePath string
 
-	CACertificateFileName     string
-	CAKeyFileName             string
-	ServerCertificateFileName string
-	ServerPrivateKeyFileName  string
-	ClientCertificateFileName string
-	ClientPrivateKeyFileName  string
+	caCertificateFilePath     string
+	caKeyFilePath             string
+	serverCertificateFilePath string
+	serverPrivateKeyFilePath  string
+	clientCertificateFilePath string
+	clientPrivateKeyFilePath  string
 
-	CACertificateFilePath     string
-	CAKeyFilePath             string
-	ServerCertificateFilePath string
-	ServerPrivateKeyFilePath  string
-	ClientCertificateFilePath string
-	ClientPrivateKeyFilePath  string
-
-	CACertificate *x509.Certificate
-	CAPrivateKey  *ecdsa.PrivateKey
+	caCertificate *x509.Certificate
+	caPrivateKey  *ecdsa.PrivateKey
 }
 
 func NewCertificateGenerator(
@@ -61,31 +54,25 @@ func NewCertificateGenerator(
 	}
 
 	t := &SelfSignedCertificateGenerator{
-		ServerHostname:            serverHostname,
-		CertificateBasePath:       certificateBasePath,
-		CACertificateFileName:     defaultCACertificateFileName,
-		CAKeyFileName:             defaultCAKeyFileName,
-		ServerCertificateFileName: defaultServerCertificateFileName,
-		ServerPrivateKeyFileName:  defaultServerPrivateKeyFileName,
-		ClientCertificateFileName: defaultClientCertificateFileName,
-		ClientPrivateKeyFileName:  defaultClientPrivateKeyFileName,
+		serverHostname:      serverHostname,
+		certificateBasePath: certificateBasePath,
 	}
 
 	// Assign full paths
-	t.CACertificateFilePath = t.CertificateBasePath + "/" + t.CACertificateFileName
-	t.CAKeyFilePath = t.CertificateBasePath + "/" + t.CAKeyFileName
-	t.ServerCertificateFilePath = t.CertificateBasePath + "/" + t.ServerCertificateFileName
-	t.ServerPrivateKeyFilePath = t.CertificateBasePath + "/" + t.ServerPrivateKeyFileName
-	t.ClientCertificateFilePath = t.CertificateBasePath + "/" + t.ClientCertificateFileName
-	t.ClientPrivateKeyFilePath = t.CertificateBasePath + "/" + t.ClientPrivateKeyFileName
+	t.caCertificateFilePath = t.certificateBasePath + "/" + defaultCACertificateFileName
+	t.caKeyFilePath = t.certificateBasePath + "/" + defaultCAKeyFileName
+	t.serverCertificateFilePath = t.certificateBasePath + "/" + defaultServerCertificateFileName
+	t.serverPrivateKeyFilePath = t.certificateBasePath + "/" + defaultServerPrivateKeyFileName
+	t.clientCertificateFilePath = t.certificateBasePath + "/" + defaultClientCertificateFileName
+	t.clientPrivateKeyFilePath = t.certificateBasePath + "/" + defaultClientPrivateKeyFileName
 
 	return t, nil
 }
 
 func (t *SelfSignedCertificateGenerator) Generate() (*CertificatePack, error) {
-	_, err := os.Stat(t.CertificateBasePath)
+	_, err := os.Stat(t.certificateBasePath)
 	if errors.Is(err, os.ErrNotExist) {
-		if err := os.MkdirAll(t.CertificateBasePath, 0750); err != nil {
+		if err := os.MkdirAll(t.certificateBasePath, 0750); err != nil {
 			return nil, fmt.Errorf("failed to create certificate base path: %v", err)
 		}
 	}
@@ -120,16 +107,16 @@ func (t *SelfSignedCertificateGenerator) generateCACertificate(certificatePack *
 		IsCA:                  true,
 	}
 
-	certificate, key, err := t.generateCertificate(&caTemplate, t.CACertificateFilePath, t.CAKeyFilePath, nil, nil)
+	certificate, key, err := t.generateCertificate(&caTemplate, t.caCertificateFilePath, t.caKeyFilePath, nil, nil)
 	if err != nil {
 		return err
 	}
 
-	certificatePack.CACertificateFilePath = t.CACertificateFilePath
-	certificatePack.CAKeyFilePath = t.CAKeyFilePath
+	certificatePack.CACertificateFilePath = t.caCertificateFilePath
+	certificatePack.CAKeyFilePath = t.caKeyFilePath
 
-	t.CACertificate = certificate
-	t.CAPrivateKey = key
+	t.caCertificate = certificate
+	t.caPrivateKey = key
 
 	return nil
 }
@@ -147,19 +134,19 @@ func (t *SelfSignedCertificateGenerator) generateServerCertificate(certificatePa
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 
-		DNSNames: []string{t.ServerHostname},
+		DNSNames: []string{t.serverHostname},
 	}
 
 	_, _, err := t.generateCertificate(
 		&certificateTemplate,
-		t.ServerCertificateFilePath,
-		t.ServerPrivateKeyFilePath,
-		t.CACertificate,
-		t.CAPrivateKey,
+		t.serverCertificateFilePath,
+		t.serverPrivateKeyFilePath,
+		t.caCertificate,
+		t.caPrivateKey,
 	)
 
-	certificatePack.ServerCertificateFilePath = t.ServerCertificateFilePath
-	certificatePack.ServerPrivateKeyFilePath = t.ServerPrivateKeyFilePath
+	certificatePack.ServerCertificateFilePath = t.serverCertificateFilePath
+	certificatePack.ServerPrivateKeyFilePath = t.serverPrivateKeyFilePath
 
 	if err != nil {
 		return err
@@ -183,14 +170,14 @@ func (t *SelfSignedCertificateGenerator) generateClientCertificate(certificatePa
 
 	_, _, err := t.generateCertificate(
 		&clientTemplate,
-		t.ClientCertificateFilePath,
-		t.ClientPrivateKeyFilePath,
-		t.CACertificate,
-		t.CAPrivateKey,
+		t.clientCertificateFilePath,
+		t.clientPrivateKeyFilePath,
+		t.caCertificate,
+		t.caPrivateKey,
 	)
 
-	certificatePack.ClientCertificateFilePath = t.ClientCertificateFilePath
-	certificatePack.ClientPrivateKeyFilePath = t.ClientPrivateKeyFilePath
+	certificatePack.ClientCertificateFilePath = t.clientCertificateFilePath
+	certificatePack.ClientPrivateKeyFilePath = t.clientPrivateKeyFilePath
 
 	if err != nil {
 		return err
