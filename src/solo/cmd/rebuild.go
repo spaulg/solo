@@ -15,7 +15,7 @@ var rebuildCmd = &cobra.Command{
 	Short: "Rebuilds your app from scratch, preserving data",
 	Long:  "Rebuilds your app from scratch, preserving data",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if rebuildCmdForce == false {
+		if !rebuildCmdForce {
 			var rebuildCmdForceString string
 			for {
 				fmt.Print("Are you sure you want to rebuild (y/n)? ")

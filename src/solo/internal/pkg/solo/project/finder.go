@@ -12,7 +12,7 @@ import (
 func FindProject(startPath string) (*Project, error) {
 	const DefaultProjectFileName = "solo.yml"
 
-	var projectFilePath = ""
+	var projectFilePath string
 
 	path, err := filepath.Abs(startPath)
 	if err != nil {

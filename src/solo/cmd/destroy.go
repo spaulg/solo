@@ -15,7 +15,7 @@ var destroyCmd = &cobra.Command{
 	Short: "Destroys your app",
 	Long:  "Destroys your app",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if destroyCmdForce == false {
+		if !destroyCmdForce {
 			var destroyCmdForceString string
 			for {
 				fmt.Print("Are you sure you want to destroy (y/n)? ")
