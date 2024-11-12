@@ -40,17 +40,18 @@ func TestCertificateGeneration(t *testing.T) {
 		t.FailNow()
 	}
 
-	if err = certificateGenerator.Generate(); err != nil {
+	certificatePack, err := certificateGenerator.Generate()
+	if err != nil {
 		t.FailNow()
 	}
 
 	for _, file := range []string{
-		certificateGenerator.CACertificateFilePath,
-		certificateGenerator.CAKeyFilePath,
-		certificateGenerator.ServerCertificateFilePath,
-		certificateGenerator.ServerPrivateKeyFilePath,
-		certificateGenerator.ClientCertificateFilePath,
-		certificateGenerator.ClientPrivateKeyFilePath,
+		certificatePack.CACertificateFilePath,
+		certificatePack.CAKeyFilePath,
+		certificatePack.ServerCertificateFilePath,
+		certificatePack.ServerPrivateKeyFilePath,
+		certificatePack.ClientCertificateFilePath,
+		certificatePack.ClientPrivateKeyFilePath,
 	} {
 		_, err = os.Stat(file)
 		if errors.Is(err, os.ErrNotExist) {
@@ -58,7 +59,7 @@ func TestCertificateGeneration(t *testing.T) {
 		}
 	}
 
-	certificateBytes, err := os.ReadFile(certificateGenerator.ServerCertificateFilePath)
+	certificateBytes, err := os.ReadFile(certificatePack.ServerCertificateFilePath)
 	if err != nil {
 		t.FailNow()
 	}
