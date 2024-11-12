@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"fmt"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc/credentials"
 	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc/service_definitions"
 	"github.com/spaulg/solo/shared/pkg/solo/grpc/services"
@@ -8,14 +9,16 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 type AuthenticatingServer struct {
 	hostname           string
-	port               uint16
+	port               uint32
 	stateDirectory     string
 	credentialsBuilder credentials.Builder
 	server             *grpc.Server
+	grpcServiceErrorCh chan error
 }
 
 func NewServer(
@@ -26,66 +29,68 @@ func NewServer(
 ) Server {
 	return &AuthenticatingServer{
 		hostname:           hostname,
-		port:               port,
+		port:               uint32(port),
 		stateDirectory:     stateDirectory,
 		credentialsBuilder: credentialsBuilder,
+		grpcServiceErrorCh: make(chan error, 1),
 	}
 }
 
 func (t *AuthenticatingServer) Start() error {
-	grpcServicePortChannel := make(chan uint16)
-	grpcServiceErrorChannel := make(chan error)
 
 	go func() {
-		var err error
+		desiredPort := atomic.LoadUint32(&t.port)
 
-		// Create listener with randomly assigned port
-		listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(int(t.port)))
+		// Create listener
+		listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(int(desiredPort)))
 		if err != nil {
+			t.grpcServiceErrorCh <- err
 			return
-			//nil, err
 		}
 
 		// Extract the port from the address
 		address := listener.Addr().String()
 		lastIndex := strings.LastIndex(address, ":")
 		if lastIndex == -1 {
+			t.grpcServiceErrorCh <- err
 			return
-			//nil, fmt.Errorf("unable to find port from address '%s'", address)
 		}
 
-		// Return allocated port number, in events when
-		// an automatic port allocation was used
-		_, err = strconv.ParseUint(address[lastIndex+1:], 10, 16)
+		// Discover port number used
+		allocatedPort64, err := strconv.ParseUint(address[lastIndex+1:], 10, 32)
 		if err != nil {
+			t.grpcServiceErrorCh <- err
 			return
-			//nil, fmt.Errorf("failed to convert address port to integer: %v", err)
 		}
 
-		// todo: broken
-		//grpcServicePortChannel <- uint16(allocatedPort)
-
-		builder, err := t.credentialsBuilder.Build()
+		grpcCredentials, err := t.credentialsBuilder.Build()
 		if err != nil {
+			t.grpcServiceErrorCh <- err
 			return
 		}
 
-		t.server = grpc.NewServer(grpc.Creds(builder))
+		t.server = grpc.NewServer(grpc.Creds(grpcCredentials))
 		services.RegisterProvisionerServer(t.server, &service_definitions.ProvisionerServerImpl{})
 
-		_ = t.server.Serve(listener)
+		// Report port but only if its different
+		allocatedPort := uint32(allocatedPort64)
+		if desiredPort != allocatedPort {
+			atomic.StoreUint32(&t.port, allocatedPort)
+		}
 
-		close(grpcServicePortChannel)
-		close(grpcServiceErrorChannel)
+		// Signal main routine the service is about to start successfully
+		t.grpcServiceErrorCh <- nil
+
+		if err := t.server.Serve(listener); err != nil {
+			t.grpcServiceErrorCh <- err
+		}
 	}()
 
-	//port, ok := <-grpcServicePortChannel
-	//if !ok {
-	//	return fmt.Errorf("failed to start grpc server: %v", <-grpcServiceErrorChannel)
-	//}
-	//
+	if err := <-t.grpcServiceErrorCh; err != nil {
+		return fmt.Errorf("failed to start grpc service: %v", err)
+	}
+
 	//grpcServiceLookup := NewServiceLookup(
-	//	// todo: refactor these out - they're all required so shouldn't be configured using optional with pattern
 	//	WithHostname(t.hostname),
 	//	WithPort(port),
 	//	WithClientCertificate(t.certificateGenerator.ClientCertificateFileName),
@@ -101,5 +106,5 @@ func (t *AuthenticatingServer) Start() error {
 }
 
 func (t *AuthenticatingServer) Stop() {
-	//_ = t.listener.Close()
+	t.server.Stop()
 }
