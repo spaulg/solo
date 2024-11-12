@@ -32,7 +32,7 @@ $(LINUX_SERVICES):
 	cd $(SRC_DIR)/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
 
 test:
-	$(foreach srv, $(SERVICES), cd $(SRC_DIR)/$(srv) && $(GOTEST) -coverprofile=coverage.out -v ./... || exit;)
+	$(foreach srv, $(SERVICES), cd $(SRC_DIR)/$(srv) && $(GOTEST) -coverprofile=coverage.out ./... || exit;)
 
 lint:
 	$(foreach srv, $(SERVICES), cd $(SRC_DIR)/$(srv) && $(GOLINT) run || exit;)
