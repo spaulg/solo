@@ -1,4 +1,4 @@
-package grpc
+package credentials
 
 import (
 	"crypto/x509"
@@ -23,19 +23,6 @@ func TestEmptyHostname(t *testing.T) {
 
 func TestEmptyCertificatePath(t *testing.T) {
 	_, err := NewCertificateGenerator("example.com", "")
-	if err == nil {
-		t.FailNow()
-	}
-
-	if errors.Is(err, InvalidCertificateBasePath) {
-		return
-	}
-
-	t.FailNow()
-}
-
-func TestInvalidCertificateBasePath(t *testing.T) {
-	_, err := NewCertificateGenerator("example.com", "/foo/bar/baz")
 	if err == nil {
 		t.FailNow()
 	}

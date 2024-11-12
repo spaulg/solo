@@ -1,4 +1,4 @@
-package grpc
+package credentials
 
 import (
 	"crypto/ecdsa"
@@ -9,17 +9,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/fs"
 	"math/big"
 	"os"
 	"strings"
 	"time"
 )
 
-var InvalidHostname = errors.New("server hostname cannot be blank")
-var InvalidCertificateBasePath = errors.New("certificate base path invalid")
-
-type CertificateGenerator struct {
+type SelfSignedCertificateGenerator struct {
 	ServerHostname      string
 	CertificateBasePath string
 
@@ -44,7 +40,7 @@ type CertificateGenerator struct {
 func NewCertificateGenerator(
 	serverHostname string,
 	certificateBasePath string,
-) (*CertificateGenerator, error) {
+) (CertificateGenerator, error) {
 	const (
 		defaultCACertificateFileName     = "ca.crt"
 		defaultCAKeyFileName             = "ca.key"
@@ -64,14 +60,7 @@ func NewCertificateGenerator(
 		return nil, InvalidCertificateBasePath
 	}
 
-	_, err := os.Stat(certificateBasePath)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, InvalidCertificateBasePath
-	} else if err != nil {
-		return nil, fmt.Errorf("unknown error checking certificate base path exists: %v", err)
-	}
-
-	t := &CertificateGenerator{
+	t := &SelfSignedCertificateGenerator{
 		ServerHostname:            serverHostname,
 		CertificateBasePath:       certificateBasePath,
 		CACertificateFileName:     defaultCACertificateFileName,
@@ -93,30 +82,32 @@ func NewCertificateGenerator(
 	return t, nil
 }
 
-func (t *CertificateGenerator) Generate() error {
+func (t *SelfSignedCertificateGenerator) Generate() (*CertificatePack, error) {
 	_, err := os.Stat(t.CertificateBasePath)
 	if errors.Is(err, os.ErrNotExist) {
 		if err := os.MkdirAll(t.CertificateBasePath, 0750); err != nil {
-			return fmt.Errorf("failed to create certificate base path: %v", err)
+			return nil, fmt.Errorf("failed to create certificate base path: %v", err)
 		}
 	}
 
-	if err := t.generateCACertificate(); err != nil {
-		return fmt.Errorf("failed to generate CA certificate files: %v", err)
+	var certificatePack = &CertificatePack{}
+
+	if err := t.generateCACertificate(certificatePack); err != nil {
+		return nil, fmt.Errorf("failed to generate CA certificate files: %v", err)
 	}
 
-	if err := t.generateServerCertificate(); err != nil {
-		return fmt.Errorf("failed to generate server certificate files: %v", err)
+	if err := t.generateServerCertificate(certificatePack); err != nil {
+		return nil, fmt.Errorf("failed to generate server certificate files: %v", err)
 	}
 
-	if err := t.generateClientCertificate(); err != nil {
-		return fmt.Errorf("failed to generate client certificate files: %v", err)
+	if err := t.generateClientCertificate(certificatePack); err != nil {
+		return nil, fmt.Errorf("failed to generate client certificate files: %v", err)
 	}
 
-	return nil
+	return certificatePack, nil
 }
 
-func (t *CertificateGenerator) generateCACertificate() error {
+func (t *SelfSignedCertificateGenerator) generateCACertificate(certificatePack *CertificatePack) error {
 	caTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
@@ -134,13 +125,16 @@ func (t *CertificateGenerator) generateCACertificate() error {
 		return err
 	}
 
+	certificatePack.CACertificateFilePath = t.CACertificateFilePath
+	certificatePack.CAKeyFilePath = t.CAKeyFilePath
+
 	t.CACertificate = certificate
 	t.CAPrivateKey = key
 
 	return nil
 }
 
-func (t *CertificateGenerator) generateServerCertificate() error {
+func (t *SelfSignedCertificateGenerator) generateServerCertificate(certificatePack *CertificatePack) error {
 	certificateTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
@@ -164,6 +158,9 @@ func (t *CertificateGenerator) generateServerCertificate() error {
 		t.CAPrivateKey,
 	)
 
+	certificatePack.ServerCertificateFilePath = t.ServerCertificateFilePath
+	certificatePack.ServerPrivateKeyFilePath = t.ServerPrivateKeyFilePath
+
 	if err != nil {
 		return err
 	}
@@ -171,7 +168,7 @@ func (t *CertificateGenerator) generateServerCertificate() error {
 	return nil
 }
 
-func (t *CertificateGenerator) generateClientCertificate() error {
+func (t *SelfSignedCertificateGenerator) generateClientCertificate(certificatePack *CertificatePack) error {
 	clientTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(2),
 		Subject: pkix.Name{
@@ -192,6 +189,9 @@ func (t *CertificateGenerator) generateClientCertificate() error {
 		t.CAPrivateKey,
 	)
 
+	certificatePack.ClientCertificateFilePath = t.ClientCertificateFilePath
+	certificatePack.ClientPrivateKeyFilePath = t.ClientPrivateKeyFilePath
+
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func (t *CertificateGenerator) generateClientCertificate() error {
 	return nil
 }
 
-func (t *CertificateGenerator) generateCertificate(
+func (t *SelfSignedCertificateGenerator) generateCertificate(
 	certificateTemplate *x509.Certificate,
 	certificateFileName string,
 	privateKeyFileName string,
