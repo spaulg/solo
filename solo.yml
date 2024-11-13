@@ -8,7 +8,8 @@ services:
     ports:
       - "80:80"
     volumes:
-      - "./src/:/solo"
+      - "./src/solo-entrypoint:/solo/solo-entrypoint"
+      - "./src/shared:/solo/shared"
 
     steps:
       provisioning: # event name
