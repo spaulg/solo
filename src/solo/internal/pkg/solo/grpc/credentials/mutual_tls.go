@@ -10,6 +10,7 @@ import (
 
 type MutualTLS struct {
 	certificateGenerator CertificateGenerator
+	certificatePack      *CertificatePack
 }
 
 func NewMutualTLS(
@@ -23,17 +24,18 @@ func NewMutualTLS(
 func (t *MutualTLS) Build() (credentials.TransportCredentials, error) {
 	fmt.Println("Building transport credentials")
 
-	certificatePack, err := t.certificateGenerator.Generate()
+	var err error
+	t.certificatePack, err = t.certificateGenerator.Generate()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate certificates: %v", err)
 	}
 
-	serverCert, err := tls.LoadX509KeyPair(certificatePack.ServerCertificateFilePath, certificatePack.ServerPrivateKeyFilePath)
+	serverCert, err := tls.LoadX509KeyPair(t.certificatePack.ServerCertificateFilePath, t.certificatePack.ServerPrivateKeyFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load server certificate: %v", err)
 	}
 
-	caCertificate, err := os.ReadFile(certificatePack.CACertificateFilePath)
+	caCertificate, err := os.ReadFile(t.certificatePack.CACertificateFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read CA certificate: %v", err)
 	}
@@ -50,4 +52,8 @@ func (t *MutualTLS) Build() (credentials.TransportCredentials, error) {
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
+}
+
+func (t *MutualTLS) GetCertificatePack() *CertificatePack {
+	return t.certificatePack
 }

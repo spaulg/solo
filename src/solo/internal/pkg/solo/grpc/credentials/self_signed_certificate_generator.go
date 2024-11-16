@@ -77,7 +77,7 @@ func (t *SelfSignedCertificateGenerator) Generate() (*CertificatePack, error) {
 		}
 	}
 
-	var certificatePack = &CertificatePack{}
+	var certificatePack = NewCertificatePack()
 
 	if err := t.generateCACertificate(certificatePack); err != nil {
 		return nil, fmt.Errorf("failed to generate CA certificate files: %v", err)

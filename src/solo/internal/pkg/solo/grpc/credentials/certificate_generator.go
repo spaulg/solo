@@ -8,12 +8,3 @@ var InvalidCertificateBasePath = errors.New("certificate base path invalid")
 type CertificateGenerator interface {
 	Generate() (*CertificatePack, error)
 }
-
-type CertificatePack struct {
-	CACertificateFilePath     string
-	CAKeyFilePath             string
-	ServerCertificateFilePath string
-	ServerPrivateKeyFilePath  string
-	ClientCertificateFilePath string
-	ClientPrivateKeyFilePath  string
-}

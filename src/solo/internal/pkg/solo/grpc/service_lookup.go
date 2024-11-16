@@ -2,50 +2,35 @@ package grpc
 
 import (
 	"fmt"
+	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc/credentials"
 	"gopkg.in/yaml.v3"
 	"os"
+	"strings"
 )
 
 type ServiceLookup struct {
+	stateDirectory            string
 	Hostname                  string
 	Port                      uint16
-	ClientCertificateFileName string
-	ClientKeyFileName         string
+	ClientCertificateFilePath *string `yaml:"client_certificate_file_path,omitempty"`
+	ClientKeyFilePath         *string `yaml:"client_key_file_path,omitempty"`
 }
 type ServiceLookupOptions func(*ServiceLookup)
 
-func WithHostname(hostname string) ServiceLookupOptions {
-	return func(t *ServiceLookup) {
-		t.Hostname = hostname
+func NewServiceLookup(hostname string, port uint16, stateDirectory string) *ServiceLookup {
+	return &ServiceLookup{
+		stateDirectory: stateDirectory,
+		Hostname:       hostname,
+		Port:           port,
 	}
 }
 
-func WithPort(port uint16) ServiceLookupOptions {
-	return func(t *ServiceLookup) {
-		t.Port = port
-	}
-}
+func (t *ServiceLookup) ApplyCertificatePack(certificatePack *credentials.CertificatePack) {
+	clientCertificate := strings.TrimPrefix(certificatePack.ClientCertificateFilePath, t.stateDirectory+"/")
+	t.ClientCertificateFilePath = &clientCertificate
 
-func WithClientCertificate(certificateFileName string) ServiceLookupOptions {
-	return func(t *ServiceLookup) {
-		t.ClientCertificateFileName = certificateFileName
-	}
-}
-
-func WithClientPrivateKey(keyFileName string) ServiceLookupOptions {
-	return func(t *ServiceLookup) {
-		t.ClientKeyFileName = keyFileName
-	}
-}
-
-func NewServiceLookup(opts ...ServiceLookupOptions) *ServiceLookup {
-	t := &ServiceLookup{}
-
-	for _, opt := range opts {
-		opt(t)
-	}
-
-	return t
+	clientKey := strings.TrimPrefix(certificatePack.ClientCertificateFilePath, t.stateDirectory+"/")
+	t.ClientKeyFilePath = &clientKey
 }
 
 func (t *ServiceLookup) MarshallYaml(filename string) error {
