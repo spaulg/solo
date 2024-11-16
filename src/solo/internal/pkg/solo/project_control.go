@@ -54,9 +54,34 @@ func (t *ProjectControl) Start() error {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
-	// todo: refactor in to timer - context object ??
-	fmt.Println("Sleeping...")
-	time.Sleep(30 * time.Second)
+	duration := 30 * time.Second
+	timer := time.NewTimer(duration)
+	startTime := time.Now()
+
+	interrupt := make(chan struct{})
+
+	// Go routine to report timer status
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			remaining := duration - time.Since(startTime)
+			if remaining <= 0 {
+				return
+			}
+
+			fmt.Printf("Time remaining: %v\n", remaining)
+		}
+	}()
+
+	// Wait for confirmation all containers have provisioned
+	// or expiry of the timer
+	select {
+	case <-timer.C:
+		fmt.Println("Timer expired")
+		return errors.New("provisioning timer expired")
+	case <-interrupt:
+		fmt.Println("All containers reported finished")
+	}
 
 	// todo: Exec post start commands (via docker exec)
 	// todo: wait delay period for all containers to checkin for post start commands provisioning
