@@ -1,9 +1,9 @@
-package solo
+package entrypoint
 
 import (
 	"context"
 	"fmt"
-	"github.com/spaulg/solo/agent/internal/pkg/solo/grpc/credentials"
+	"github.com/spaulg/solo/agent/internal/pkg/entrypoint/grpc/credentials"
 	"github.com/spaulg/solo/shared/pkg/solo/grpc/services"
 	"google.golang.org/grpc"
 	"io"

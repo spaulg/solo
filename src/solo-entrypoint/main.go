@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/spaulg/solo/agent/internal/pkg/solo"
+	"github.com/spaulg/solo/agent/internal/pkg/entrypoint"
 	"os"
 	"strings"
 	"syscall"
 )
 
 func main() {
-	provisioner, err := solo.ProvisionerFactory()
+	provisioner, err := entrypoint.ProvisionerFactory()
 	if err != nil {
 		panic(err)
 	}
