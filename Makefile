@@ -35,7 +35,7 @@ test:
 	cd $(SRC_DIR) && $(GOTEST) -coverprofile=coverage.out ./...
 
 lint:
-	$(foreach srv, $(SERVICES), cd $(SRC_DIR)/$(srv) && $(GOLINT) run || exit;)
+	$(GOLINT) run
 
 cover:
 	cd $(SRC_DIR) && $(GOCOVER) -html=coverage.out
