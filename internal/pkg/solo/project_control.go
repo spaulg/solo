@@ -114,7 +114,7 @@ func (t *ProjectControl) Destroy() error {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
-	if err := os.Remove(t.composeFile); err != nil {
+	if err := os.RemoveAll(t.project.GetStateDirectoryRoot()); err != nil {
 		return fmt.Errorf("failed to remove compose file: %v", err)
 	}
 
