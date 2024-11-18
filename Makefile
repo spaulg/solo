@@ -26,10 +26,10 @@ shared:
 		protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 $(NATIVE_SERVICES):
-	cd $(SRC_DIR)/$@ && CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
+	cd $(SRC_DIR)/cmd/$@ && CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
 
 $(LINUX_SERVICES):
-	cd $(SRC_DIR)/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
+	cd $(SRC_DIR)/cmd/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
 
 test:
 	cd $(SRC_DIR) && $(GOTEST) -coverprofile=coverage.out ./...
