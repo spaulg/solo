@@ -1,2 +1,2 @@
-Entrypoint: './src/solo-entrypoint/solo-entrypoint-wrapper.sh'
+Entrypoint: './src/cmd/solo-entrypoint/solo-entrypoint-wrapper.sh'
 GrpcServerPort: 12345

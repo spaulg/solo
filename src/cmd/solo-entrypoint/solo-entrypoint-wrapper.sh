@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
 
-cd /solo/solo-entrypoint
+cd /solo/cmd/solo-entrypoint
 go run main.go "$@"
