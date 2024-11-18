@@ -18,12 +18,12 @@ GOOS_solo-entrypoint := linux
 .PHONY: all build test install clean
 all: build
 
-build: shared $(NATIVE_SERVICES) $(LINUX_SERVICES)
+build: protos $(NATIVE_SERVICES) $(LINUX_SERVICES)
 
-shared:
+protos:
 	mkdir -p $(BUILD_DIR)
 	find $(SRC_DIR)/internal/pkg/shared/grpc/services -name *.proto -exec \
-		protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
+		protoc --proto_path=$(SRC_DIR) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 $(NATIVE_SERVICES):
 	cd $(SRC_DIR)/cmd/$@ && CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
