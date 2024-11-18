@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	config2 "github.com/spaulg/solo/cli/internal/pkg/solo/config"
-	project2 "github.com/spaulg/solo/cli/internal/pkg/solo/project"
+	config2 "github.com/spaulg/solo/internal/pkg/solo/config"
+	project2 "github.com/spaulg/solo/internal/pkg/solo/project"
 	"os"
 
 	"github.com/spf13/cobra"

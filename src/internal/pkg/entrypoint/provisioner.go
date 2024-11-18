@@ -3,8 +3,8 @@ package entrypoint
 import (
 	"context"
 	"fmt"
-	"github.com/spaulg/solo/agent/internal/pkg/entrypoint/grpc/credentials"
-	"github.com/spaulg/solo/shared/pkg/shared/grpc/services"
+	"github.com/spaulg/solo/internal/pkg/entrypoint/grpc/credentials"
+	"github.com/spaulg/solo/internal/pkg/shared/grpc/services"
 	"google.golang.org/grpc"
 	"io"
 	"strconv"

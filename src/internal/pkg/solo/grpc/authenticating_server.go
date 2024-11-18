@@ -2,9 +2,9 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc/credentials"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc/service_definitions"
-	"github.com/spaulg/solo/shared/pkg/shared/grpc/services"
+	"github.com/spaulg/solo/internal/pkg/shared/grpc/services"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"google.golang.org/grpc"
 	"net"
 	"strconv"

@@ -2,11 +2,11 @@ package solo
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc/credentials"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
+	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
+	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
+	"github.com/spaulg/solo/internal/pkg/solo/project"
 )
 
 func ProjectControlFactory(config *config.Config, project *project.Project) (*ProjectControl, error) {

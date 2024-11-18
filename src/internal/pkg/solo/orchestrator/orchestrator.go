@@ -1,8 +1,8 @@
 package orchestrator
 
 import (
-	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
+	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/project"
 )
 
 type Orchestrator interface {

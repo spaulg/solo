@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/grpc/credentials"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
 	"gopkg.in/yaml.v3"
 	"os"
 	"strings"

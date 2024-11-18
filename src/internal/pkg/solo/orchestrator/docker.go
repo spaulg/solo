@@ -6,8 +6,8 @@ import (
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/config"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/project"
+	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"os/exec"
 )
 

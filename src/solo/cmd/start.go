@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/spaulg/solo/cli/internal/pkg/solo"
+	"github.com/spaulg/solo/internal/pkg/solo"
 	"github.com/spf13/cobra"
 )
 

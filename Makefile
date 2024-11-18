@@ -22,7 +22,7 @@ build: shared $(NATIVE_SERVICES) $(LINUX_SERVICES)
 
 shared:
 	mkdir -p $(BUILD_DIR)
-	find src/shared/pkg/shared/grpc/services -name *.proto -exec \
+	find src/internal/pkg/shared/grpc/services -name *.proto -exec \
 		protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 $(NATIVE_SERVICES):
@@ -32,16 +32,17 @@ $(LINUX_SERVICES):
 	cd $(SRC_DIR)/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
 
 test:
-	$(foreach srv, $(SERVICES), cd $(SRC_DIR)/$(srv) && $(GOTEST) -coverprofile=coverage.out ./... || exit;)
+	cd $(SRC_DIR) && $(GOTEST) -coverprofile=coverage.out ./...
 
 lint:
 	$(foreach srv, $(SERVICES), cd $(SRC_DIR)/$(srv) && $(GOLINT) run || exit;)
 
 cover:
-	cd src/$(SERVICE) && $(GOCOVER) -html=coverage.out
+	cd $(SRC_DIR) && $(GOCOVER) -html=coverage.out
 
 install:
 	$(foreach srv, $(NATIVE_SERVICES), install -m 0755 -o root -g admin $(BUILD_DIR)/$(srv) /usr/local/bin/ || exit;)
+	$(foreach srv, $(LINUX_SERVICES), install -m 0755 -o root -g admin $(BUILD_DIR)/$(srv) /usr/local/bin/ || exit;)
 
 clean:
 	rm -rf $(BUILD_DIR)
