@@ -6,7 +6,7 @@ GOLINT=golangci-lint
 
 ROOT_DIR := $(shell pwd)
 BUILD_DIR=$(ROOT_DIR)/build
-SRC_DIR=$(ROOT_DIR)/src
+SRC_DIR=$(ROOT_DIR)
 
 NATIVE_SERVICES := solo
 LINUX_SERVICES := solo-entrypoint
@@ -22,7 +22,7 @@ build: shared $(NATIVE_SERVICES) $(LINUX_SERVICES)
 
 shared:
 	mkdir -p $(BUILD_DIR)
-	find src/internal/pkg/shared/grpc/services -name *.proto -exec \
+	find $(SRC_DIR)/internal/pkg/shared/grpc/services -name *.proto -exec \
 		protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 $(NATIVE_SERVICES):
