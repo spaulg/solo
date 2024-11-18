@@ -1,7 +1,7 @@
 package config
 
 import (
-	_ "github.com/spaulg/solo/cli/test"
+	_ "github.com/spaulg/solo/test"
 	"testing"
 )
 

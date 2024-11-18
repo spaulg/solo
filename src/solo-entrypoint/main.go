@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/spaulg/solo/agent/internal/pkg/entrypoint"
+	"github.com/spaulg/solo/internal/pkg/entrypoint"
 	"os"
 	"strings"
 	"syscall"

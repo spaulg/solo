@@ -1,6 +1,6 @@
 package entrypoint
 
-import "github.com/spaulg/solo/agent/internal/pkg/entrypoint/grpc/credentials"
+import "github.com/spaulg/solo/internal/pkg/entrypoint/grpc/credentials"
 
 func ProvisionerFactory() (Provisioner, error) {
 	credentialsBuilder, err := credentials.NewMutualTLS()

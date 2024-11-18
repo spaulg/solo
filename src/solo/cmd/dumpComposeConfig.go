@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/cli/internal/pkg/solo/orchestrator"
+	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
 	"github.com/spf13/cobra"
 )
 

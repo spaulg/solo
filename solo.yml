@@ -9,7 +9,9 @@ services:
       - "80:80"
     volumes:
       - "./src/solo-entrypoint:/solo/solo-entrypoint"
-      - "./src/shared:/solo/shared"
+      - "./src/internal:/solo/internal"
+      - "./src/go.mod:/solo/go.mod"
+      - "./src/go.sum:/solo/go.sum"
 
     steps:
       provisioning: # event name

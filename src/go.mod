@@ -1,12 +1,9 @@
-module github.com/spaulg/solo/cli
+module github.com/spaulg/solo
 
 go 1.22.2
 
-replace github.com/spaulg/solo/shared v0.0.0 => ./../shared
-
 require (
 	github.com/compose-spec/compose-go/v2 v2.2.0
-	github.com/spaulg/solo/shared v0.0.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	google.golang.org/grpc v1.67.1

@@ -2,7 +2,7 @@ package service_definitions
 
 import (
 	"context"
-	"github.com/spaulg/solo/shared/pkg/shared/grpc/services"
+	"github.com/spaulg/solo/internal/pkg/shared/grpc/services"
 	"google.golang.org/grpc"
 )
 
