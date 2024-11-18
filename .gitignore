@@ -1,4 +1,4 @@
 /.solo
-/build
+/.build
 coverage.out
 **/*.pb.go

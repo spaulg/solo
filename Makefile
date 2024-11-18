@@ -5,7 +5,7 @@ GOCOVER=$(GOCMD) tool cover
 GOLINT=golangci-lint
 
 ROOT_DIR := $(shell pwd)
-BUILD_DIR=$(ROOT_DIR)/build
+BUILD_DIR=$(ROOT_DIR)/.build
 SRC_DIR=$(ROOT_DIR)
 
 NATIVE_SERVICES := solo
