@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/event"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
 	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
@@ -18,6 +20,7 @@ type ProjectControl struct {
 	composeFile  string
 	orchestrator orchestrator.Orchestrator
 	grpcServer   grpc.Server
+	eventStream  event.Stream[events.ProvisioningEvent]
 }
 
 func NewProjectControl(
@@ -25,6 +28,7 @@ func NewProjectControl(
 	project *project.Project,
 	orchestrator orchestrator.Orchestrator,
 	grpcServer grpc.Server,
+	eventStream event.Stream[events.ProvisioningEvent],
 ) *ProjectControl {
 	return &ProjectControl{
 		config:       config,
@@ -32,6 +36,7 @@ func NewProjectControl(
 		composeFile:  project.ResolveStateDirectory("docker-compose.yml"),
 		orchestrator: orchestrator,
 		grpcServer:   grpcServer,
+		eventStream:  eventStream,
 	}
 }
 
