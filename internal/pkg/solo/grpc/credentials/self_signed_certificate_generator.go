@@ -160,6 +160,7 @@ func (t *SelfSignedCertificateGenerator) generateClientCertificate(certificatePa
 		SerialNumber: big.NewInt(2),
 		Subject: pkix.Name{
 			Organization: []string{"Solo Client"},
+			CommonName:   "service:nginx",
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(365 * 24 * time.Hour), // 1 year

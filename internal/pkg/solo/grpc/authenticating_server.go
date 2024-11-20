@@ -17,6 +17,7 @@ type AuthenticatingServer struct {
 	port               uint32
 	stateDirectory     string
 	credentialsBuilder credentials.Builder
+	provisionerServer  *service_definitions.ProvisionerServerImpl
 	server             *grpc.Server
 	grpcServiceErrorCh chan error
 }
@@ -26,12 +27,14 @@ func NewServer(
 	port uint16,
 	stateDirectory string,
 	credentialsBuilder credentials.Builder,
+	provisionerServer *service_definitions.ProvisionerServerImpl,
 ) Server {
 	return &AuthenticatingServer{
 		hostname:           hostname,
 		port:               uint32(port),
 		stateDirectory:     stateDirectory,
 		credentialsBuilder: credentialsBuilder,
+		provisionerServer:  provisionerServer,
 		grpcServiceErrorCh: make(chan error, 1),
 	}
 }
@@ -70,7 +73,7 @@ func (t *AuthenticatingServer) Start() error {
 		}
 
 		t.server = grpc.NewServer(grpc.Creds(grpcCredentials))
-		services.RegisterProvisionerServer(t.server, &service_definitions.ProvisionerServerImpl{})
+		services.RegisterProvisionerServer(t.server, t.provisionerServer)
 
 		// Report port but only if its different
 		allocatedPort := uint32(allocatedPort64)

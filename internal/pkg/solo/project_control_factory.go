@@ -3,13 +3,20 @@ package solo
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/event"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 )
 
 func ProjectControlFactory(config *config.Config, project *project.Project) (*ProjectControl, error) {
+	// Provisioning grpc service
+	eventStream := event.NewStream[events.ProvisioningEvent]()
+	provisionerService := service_definitions.NewProvisionerService(eventStream)
+
 	// Container orchestrator
 	containerOrchestrator := orchestrator.OrchestratorFactory(config)
 
@@ -34,9 +41,10 @@ func ProjectControlFactory(config *config.Config, project *project.Project) (*Pr
 		port,
 		stateDirectory,
 		credentialBuilder,
+		provisionerService,
 	)
 
 	// Project control
-	projectControl := NewProjectControl(config, project, containerOrchestrator, grpcServer)
+	projectControl := NewProjectControl(config, project, containerOrchestrator, grpcServer, eventStream)
 	return projectControl, nil
 }
