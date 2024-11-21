@@ -1,4 +1,4 @@
-package credentials
+package certificate
 
 type CertificatePack struct {
 	CACertificateFilePath     string

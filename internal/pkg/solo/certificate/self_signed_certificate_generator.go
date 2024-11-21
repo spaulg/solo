@@ -1,4 +1,4 @@
-package credentials
+package certificate
 
 import (
 	"crypto/ecdsa"
