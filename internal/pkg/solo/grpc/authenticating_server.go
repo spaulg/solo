@@ -72,7 +72,12 @@ func (t *AuthenticatingServer) Start() error {
 			return
 		}
 
-		t.server = grpc.NewServer(grpc.Creds(grpcCredentials))
+		t.server = grpc.NewServer(
+			grpc.Creds(grpcCredentials),
+			grpc.UnaryInterceptor(ServiceNameInterceptor),
+			//grpc.StreamInterceptor(ServiceNameStreamInterceptor),
+		)
+
 		services.RegisterProvisionerServer(t.server, t.provisionerServer)
 
 		// Report port but only if its different
