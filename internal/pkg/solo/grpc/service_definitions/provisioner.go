@@ -7,9 +7,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/event"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/peer"
-	"strings"
+	"log"
 )
 
 type ProvisionerServerImpl struct {
@@ -35,30 +33,15 @@ func (ProvisionerServerImpl) PublishCommandResult(context.Context, *services.Pub
 	return &services.PublishCommandResultResponse{}, nil
 }
 
-func (t ProvisionerServerImpl) NotifyProvisionerComplete(context context.Context, request *services.NotifyProvisionerCompleteRequest) (*services.NotifyProvisionerCompleteResponse, error) {
-	peer, ok := peer.FromContext(context)
+func (t ProvisionerServerImpl) NotifyProvisionerComplete(ctx context.Context, request *services.NotifyProvisionerCompleteRequest) (*services.NotifyProvisionerCompleteResponse, error) {
+	// Extract service name
+	serviceName, ok := ctx.Value("ServiceName").(string)
 	if !ok {
-		return nil, fmt.Errorf("unexpected peer transport credentials")
+		log.Println("Service name not found")
+		return nil, fmt.Errorf("unauthorized")
 	}
 
-	tlsInfo, ok := peer.AuthInfo.(credentials.TLSInfo)
-	if !ok {
-		return nil, fmt.Errorf("unexpected peer transport credentials")
-	}
-
-	if len(tlsInfo.State.PeerCertificates) == 0 {
-		return nil, fmt.Errorf("missing peer certificate")
-	}
-
-	clientCert := tlsInfo.State.PeerCertificates[0]
-	fmt.Printf("compose service name: %s\n", clientCert.Subject.CommonName)
-
-	lastIndex := strings.LastIndex(clientCert.Subject.CommonName, ":")
-	if lastIndex == -1 {
-		return nil, fmt.Errorf("invalid subject common name")
-	}
-
-	serviceName := clientCert.Subject.CommonName[lastIndex+len(":"):]
+	fmt.Printf("compose service name: %s\n", serviceName)
 
 	t.eventStream.Push(&events.ProvisioningEvent{
 		EventType: events.Finished,
