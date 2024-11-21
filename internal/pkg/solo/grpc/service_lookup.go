@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
+	"github.com/spaulg/solo/internal/pkg/solo/certificate"
 	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
@@ -25,7 +25,7 @@ func NewServiceLookup(hostname string, port uint16, stateDirectory string) *Serv
 	}
 }
 
-func (t *ServiceLookup) ApplyCertificatePack(certificatePack *credentials.CertificatePack) {
+func (t *ServiceLookup) ApplyCertificatePack(certificatePack *certificate.CertificatePack) {
 	clientCertificate := strings.TrimPrefix(certificatePack.ClientCertificateFilePath, t.stateDirectory+"/")
 	t.ClientCertificateFilePath = &clientCertificate
 

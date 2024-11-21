@@ -2,6 +2,7 @@ package solo
 
 import (
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/solo/certificate"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"github.com/spaulg/solo/internal/pkg/solo/event"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
@@ -25,7 +26,7 @@ func ProjectControlFactory(config *config.Config, project *project.Project) (*Pr
 	port := config.GrpcServerPort
 
 	// Certificate generator
-	certificateGenerator, err := credentials.NewCertificateGenerator(hostname, stateDirectory)
+	certificateGenerator, err := certificate.NewCertificateGenerator(hostname, stateDirectory)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create certificate generator: %v", err)
 	}

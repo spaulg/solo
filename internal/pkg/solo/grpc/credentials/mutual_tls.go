@@ -4,17 +4,18 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/solo/certificate"
 	"google.golang.org/grpc/credentials"
 	"os"
 )
 
 type MutualTLS struct {
-	certificateGenerator CertificateGenerator
-	certificatePack      *CertificatePack
+	certificateGenerator certificate.CertificateGenerator
+	certificatePack      *certificate.CertificatePack
 }
 
 func NewMutualTLS(
-	certificateGenerator CertificateGenerator,
+	certificateGenerator certificate.CertificateGenerator,
 ) (Builder, error) {
 	return &MutualTLS{
 		certificateGenerator: certificateGenerator,
@@ -54,6 +55,6 @@ func (t *MutualTLS) Build() (credentials.TransportCredentials, error) {
 	return credentials.NewTLS(tlsConfig), nil
 }
 
-func (t *MutualTLS) GetCertificatePack() *CertificatePack {
+func (t *MutualTLS) GetCertificatePack() *certificate.CertificatePack {
 	return t.certificatePack
 }
