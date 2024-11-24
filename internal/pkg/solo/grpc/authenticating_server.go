@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/shared/grpc/services"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc/interceptors"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"google.golang.org/grpc"
 	"net"
@@ -74,8 +75,8 @@ func (t *AuthenticatingServer) Start() error {
 
 		t.server = grpc.NewServer(
 			grpc.Creds(grpcCredentials),
-			grpc.UnaryInterceptor(ServiceNameInterceptor),
-			//grpc.StreamInterceptor(ServiceNameStreamInterceptor),
+			grpc.UnaryInterceptor(interceptors.ServiceName),
+			//grpc.StreamInterceptor(ServiceNameStream),
 		)
 
 		services.RegisterProvisionerServer(t.server, t.provisionerServer)
