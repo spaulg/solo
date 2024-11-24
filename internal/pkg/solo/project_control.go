@@ -15,38 +15,40 @@ import (
 )
 
 type ProjectControl struct {
-	config       *config.Config
-	project      *project.Project
-	composeFile  string
-	orchestrator orchestrator.Orchestrator
-	grpcServer   grpc.Server
-	eventStream  event.Stream[events.ProvisioningEvent]
+	config            *config.Config
+	project           *project.Project
+	composeFile       string
+	orchestrator      orchestrator.Orchestrator
+	grpcServerFactory grpc.ServerFactory
+	eventStream       event.Stream[events.ProvisioningEvent]
 }
 
 func NewProjectControl(
 	config *config.Config,
 	project *project.Project,
 	orchestrator orchestrator.Orchestrator,
-	grpcServer grpc.Server,
+	grpcServerFactory grpc.ServerFactory,
 	eventStream event.Stream[events.ProvisioningEvent],
 ) *ProjectControl {
 	return &ProjectControl{
-		config:       config,
-		project:      project,
-		composeFile:  project.ResolveStateDirectory("docker-compose.yml"),
-		orchestrator: orchestrator,
-		grpcServer:   grpcServer,
-		eventStream:  eventStream,
+		config:            config,
+		project:           project,
+		composeFile:       project.ResolveStateDirectory("docker-compose.yml"),
+		orchestrator:      orchestrator,
+		grpcServerFactory: grpcServerFactory,
+		eventStream:       eventStream,
 	}
 }
 
 func (t *ProjectControl) Start() error {
+	grpcServer := t.grpcServerFactory.Build(t.project)
+
 	// Start GRPC services
-	if err := t.grpcServer.Start(); err != nil {
+	if err := grpcServer.Start(); err != nil {
 		return err
 	}
 
-	defer t.grpcServer.Stop()
+	defer grpcServer.Stop()
 
 	// Write compose file
 	composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.config, t.project)

@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 )
 
-type AuthenticatingServer struct {
+type AsynchronousServer struct {
 	hostname           string
 	port               uint32
 	stateDirectory     string
@@ -23,14 +23,14 @@ type AuthenticatingServer struct {
 	grpcServiceErrorCh chan error
 }
 
-func NewServer(
+func NewAsynchronousServer(
 	hostname string,
 	port uint16,
 	stateDirectory string,
 	credentialsBuilder credentials.Builder,
 	provisionerServer *service_definitions.ProvisionerServerImpl,
 ) Server {
-	return &AuthenticatingServer{
+	return &AsynchronousServer{
 		hostname:           hostname,
 		port:               uint32(port),
 		stateDirectory:     stateDirectory,
@@ -40,7 +40,7 @@ func NewServer(
 	}
 }
 
-func (t *AuthenticatingServer) Start() error {
+func (t *AsynchronousServer) Start() error {
 
 	go func() {
 		desiredPort := atomic.LoadUint32(&t.port)
@@ -110,6 +110,6 @@ func (t *AuthenticatingServer) Start() error {
 	return nil
 }
 
-func (t *AuthenticatingServer) Stop() {
+func (t *AsynchronousServer) Stop() {
 	t.server.Stop()
 }
