@@ -37,7 +37,7 @@ func ProjectControlFactory(config *config.Config, project *project.Project) (*Pr
 	}
 
 	// GRPC server
-	grpcServer := grpc.NewServer(
+	grpcServer := grpc.NewAsynchronousServerFactory(
 		hostname,
 		port,
 		stateDirectory,
