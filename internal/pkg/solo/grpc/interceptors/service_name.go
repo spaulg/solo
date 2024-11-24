@@ -1,4 +1,4 @@
-package grpc
+package interceptors
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 )
 import "google.golang.org/grpc"
 
-func ServiceNameInterceptor(
+func ServiceName(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
@@ -25,7 +25,7 @@ func ServiceNameInterceptor(
 }
 
 /*
-func ServiceNameStreamInterceptor(
+func ServiceNameStream(
 	srv interface{},
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
