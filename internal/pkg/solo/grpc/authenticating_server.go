@@ -99,13 +99,13 @@ func (t *AuthenticatingServer) Start() error {
 		return fmt.Errorf("failed to start grpc service: %v", err)
 	}
 
-	grpcServiceLookup := NewServiceLookup(t.hostname, uint16(t.port), t.stateDirectory)
-	grpcServiceLookup.ApplyCertificatePack(t.credentialsBuilder.GetCertificatePack())
-
-	grpcServiceLookupFilePath := t.stateDirectory + "/grpcservice.yml"
-	if err := grpcServiceLookup.MarshallYaml(grpcServiceLookupFilePath); err != nil {
-		return fmt.Errorf("failed to generate grpc service lookup definition file: %v", err)
-	}
+	//grpcServiceLookup := NewServiceLookup(t.hostname, uint16(t.port), t.stateDirectory)
+	//grpcServiceLookup.ApplyCertificatePack(t.credentialsBuilder.GetCertificatePack())
+	//
+	//grpcServiceLookupFilePath := t.stateDirectory + "/grpcservice.yml"
+	//if err := grpcServiceLookup.MarshallYaml(grpcServiceLookupFilePath); err != nil {
+	//	return fmt.Errorf("failed to generate grpc service lookup definition file: %v", err)
+	//}
 
 	return nil
 }
