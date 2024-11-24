@@ -41,9 +41,6 @@ func NewProjectControl(
 }
 
 func (t *ProjectControl) Start() error {
-	// todo: create ca and server certificates - place these in new state directory root
-	// todo: create peer certificates for each service
-
 	// Start GRPC services
 	if err := t.grpcServer.Start(); err != nil {
 		return err
