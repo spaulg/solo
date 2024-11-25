@@ -3,10 +3,10 @@ package grpc
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/shared/grpc/services"
-	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/interceptors"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"net"
 	"strconv"
 	"strings"
@@ -14,29 +14,29 @@ import (
 )
 
 type AsynchronousServer struct {
-	hostname           string
-	port               uint32
-	stateDirectory     string
-	credentialsBuilder credentials.Builder
-	provisionerServer  *service_definitions.ProvisionerServerImpl
-	server             *grpc.Server
-	grpcServiceErrorCh chan error
+	hostname             string
+	port                 uint32
+	stateDirectory       string
+	transportCredentials credentials.TransportCredentials
+	provisionerServer    *service_definitions.ProvisionerServerImpl
+	server               *grpc.Server
+	grpcServiceErrorCh   chan error
 }
 
 func NewAsynchronousServer(
 	hostname string,
 	port uint16,
 	stateDirectory string,
-	credentialsBuilder credentials.Builder,
+	transportCredentials credentials.TransportCredentials,
 	provisionerServer *service_definitions.ProvisionerServerImpl,
 ) Server {
 	return &AsynchronousServer{
-		hostname:           hostname,
-		port:               uint32(port),
-		stateDirectory:     stateDirectory,
-		credentialsBuilder: credentialsBuilder,
-		provisionerServer:  provisionerServer,
-		grpcServiceErrorCh: make(chan error, 1),
+		hostname:             hostname,
+		port:                 uint32(port),
+		stateDirectory:       stateDirectory,
+		transportCredentials: transportCredentials,
+		provisionerServer:    provisionerServer,
+		grpcServiceErrorCh:   make(chan error, 1),
 	}
 }
 
@@ -67,14 +67,8 @@ func (t *AsynchronousServer) Start() error {
 			return
 		}
 
-		grpcCredentials, err := t.credentialsBuilder.Build()
-		if err != nil {
-			t.grpcServiceErrorCh <- err
-			return
-		}
-
 		t.server = grpc.NewServer(
-			grpc.Creds(grpcCredentials),
+			grpc.Creds(t.transportCredentials),
 			grpc.UnaryInterceptor(interceptors.ServiceName),
 			//grpc.StreamInterceptor(ServiceNameStream),
 		)
