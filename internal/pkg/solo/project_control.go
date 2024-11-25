@@ -41,7 +41,10 @@ func NewProjectControl(
 }
 
 func (t *ProjectControl) Start() error {
-	grpcServer := t.grpcServerFactory.Build(t.project)
+	grpcServer, err := t.grpcServerFactory.Build(t.project)
+	if err != nil {
+		return err
+	}
 
 	// Start GRPC services
 	if err := grpcServer.Start(); err != nil {

@@ -6,7 +6,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 )
 
-type AsynchronousServerFactory struct {
+type MutualTLSServerFactory struct {
 	hostname           string
 	port               uint16
 	stateDirectory     string
@@ -14,14 +14,14 @@ type AsynchronousServerFactory struct {
 	provisionerServer  *service_definitions.ProvisionerServerImpl
 }
 
-func NewAsynchronousServerFactory(
+func NewMutualTLSServerFactory(
 	hostname string,
 	port uint16,
 	stateDirectory string,
 	credentialsBuilder credentials.Builder,
 	provisionerServer *service_definitions.ProvisionerServerImpl,
 ) ServerFactory {
-	return &AsynchronousServerFactory{
+	return &MutualTLSServerFactory{
 		hostname:           hostname,
 		port:               port,
 		stateDirectory:     stateDirectory,
@@ -30,16 +30,21 @@ func NewAsynchronousServerFactory(
 	}
 }
 
-func (t *AsynchronousServerFactory) Build(project *project.Project) Server {
+func (t *MutualTLSServerFactory) Build(project *project.Project) (Server, error) {
 
 	// todo: Refactor credentials builder to move logic in to the new factory
 	// todo: Make the factory build peer certificates for each service and store in the services state directory
+
+	transportCredentials, err := t.credentialsBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
 
 	return NewAsynchronousServer(
 		t.hostname,
 		t.port,
 		t.stateDirectory,
-		t.credentialsBuilder,
+		transportCredentials,
 		t.provisionerServer,
-	)
+	), nil
 }
