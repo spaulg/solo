@@ -22,7 +22,6 @@ func ProjectControlFactory(config *config.Config, project *project.Project) (*Pr
 
 	hostname := containerOrchestrator.GetHostGatewayHostname()
 	stateDirectory := project.GetAllServicesStateDirectory()
-	port := config.GrpcServerPort
 
 	// Certificate generator
 	certificateGenerator, err := certificate.NewCertificateGenerator(hostname, stateDirectory)
@@ -32,9 +31,6 @@ func ProjectControlFactory(config *config.Config, project *project.Project) (*Pr
 
 	// GRPC server
 	grpcServer := grpc.NewMutualTLSServerFactory(
-		hostname,
-		port,
-		stateDirectory,
 		certificateGenerator,
 		provisionerService,
 	)

@@ -12,39 +12,30 @@ import (
 )
 
 type MutualTLSServerFactory struct {
-	hostname             string
-	port                 uint16
-	stateDirectory       string
 	certificateGenerator certificate.CertificateGenerator
 	provisionerServer    *service_definitions.ProvisionerServerImpl
 }
 
 func NewMutualTLSServerFactory(
-	hostname string,
-	port uint16,
-	stateDirectory string,
 	certificateGenerator certificate.CertificateGenerator,
 	provisionerServer *service_definitions.ProvisionerServerImpl,
 ) ServerFactory {
 	return &MutualTLSServerFactory{
-		hostname:             hostname,
-		port:                 port,
-		stateDirectory:       stateDirectory,
 		certificateGenerator: certificateGenerator,
 		provisionerServer:    provisionerServer,
 	}
 }
 
-func (t *MutualTLSServerFactory) Build(project *project.Project) (Server, error) {
+func (t *MutualTLSServerFactory) Build(hostname string, port uint16, project *project.Project) (Server, error) {
 	transportCredentials, err := t.buildCredentials(project)
 	if err != nil {
 		return nil, err
 	}
 
 	return NewAsynchronousServer(
-		t.hostname,
-		t.port,
-		t.stateDirectory,
+		hostname,
+		port,
+		project.GetAllServicesStateDirectory(),
 		transportCredentials,
 		t.provisionerServer,
 	), nil

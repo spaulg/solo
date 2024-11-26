@@ -41,7 +41,12 @@ func NewProjectControl(
 }
 
 func (t *ProjectControl) Start() error {
-	grpcServer, err := t.grpcServerFactory.Build(t.project)
+	grpcServer, err := t.grpcServerFactory.Build(
+		t.orchestrator.GetHostGatewayHostname(),
+		t.config.GrpcServerPort,
+		t.project,
+	)
+
 	if err != nil {
 		return err
 	}
