@@ -7,7 +7,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/event"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
-	"github.com/spaulg/solo/internal/pkg/solo/grpc/credentials"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
@@ -31,17 +30,12 @@ func ProjectControlFactory(config *config.Config, project *project.Project) (*Pr
 		return nil, fmt.Errorf("failed to create certificate generator: %v", err)
 	}
 
-	credentialBuilder, err := credentials.NewMutualTLS(certificateGenerator)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create credential builder: %v", err)
-	}
-
 	// GRPC server
 	grpcServer := grpc.NewMutualTLSServerFactory(
 		hostname,
 		port,
 		stateDirectory,
-		credentialBuilder,
+		certificateGenerator,
 		provisionerService,
 	)
 
