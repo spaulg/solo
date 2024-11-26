@@ -70,7 +70,7 @@ func (t *AsynchronousServer) Start() error {
 		t.server = grpc.NewServer(
 			grpc.Creds(t.transportCredentials),
 			grpc.UnaryInterceptor(interceptors.ServiceName),
-			//grpc.StreamInterceptor(ServiceNameStream),
+			grpc.StreamInterceptor(interceptors.ServiceNameStream),
 		)
 
 		services.RegisterProvisionerServer(t.server, t.provisionerServer)
