@@ -9,22 +9,23 @@ import (
 )
 import "google.golang.org/grpc"
 
+const contextValue = "ServiceName"
+
 func ServiceName(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	serviceName, err := applyServiceName(ctx)
+	serviceName, err := findServiceName(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx = context.WithValue(ctx, "ServiceName", serviceName)
+	ctx = context.WithValue(ctx, contextValue, serviceName)
 	return handler(ctx, req)
 }
 
-/*
 func ServiceNameStream(
 	srv interface{},
 	ss grpc.ServerStream,
@@ -32,21 +33,16 @@ func ServiceNameStream(
 	handler grpc.StreamHandler,
 ) error {
 	ctx := ss.Context()
-	serviceName, err := applyServiceName(ctx)
+	serviceName, err := findServiceName(ctx)
 	if err != nil {
 		return err
 	}
 
-	wrappedStream := grpc.ServerStreamWrapper{
-		ServerStream:   ss,
-		WrappedContext: context.WithValue(ctx, "ServiceName", serviceName),
-	}
-
-	return handler(srv, wrappedStream)
+	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, contextValue, serviceName))
+	return handler(srv, streamWrapper)
 }
-*/
 
-func applyServiceName(ctx context.Context) (string, error) {
+func findServiceName(ctx context.Context) (string, error) {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
 		return "", fmt.Errorf("unexpected peer transport credentials")
