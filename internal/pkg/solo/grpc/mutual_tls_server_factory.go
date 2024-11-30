@@ -45,6 +45,17 @@ func (t *MutualTLSServerFactory) buildCredentials(project *project.Project) (cre
 
 	// todo: Make the factory build peer certificates for each service and store in the services state directory
 
+	/*
+		tls.Certificate encapsulates both the public and private key. Use this as the value object
+		to return from the generation function to decouple persisting the certificate and key to disk
+
+		Extend the persist functionality by decorating the above type with:
+		  func (t *tls.Certificate) Export(certPath string, keyPath string) {}
+
+
+
+	*/
+
 	var err error
 	certificatePack, err := t.certificateGenerator.Generate()
 	if err != nil {
