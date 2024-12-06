@@ -41,8 +41,8 @@ cover:
 	cd $(SRC_DIR) && $(GOCOVER) -html=coverage.out
 
 install:
-	$(foreach srv, $(NATIVE_SERVICES), install -m 0755 -o root -g admin $(BUILD_DIR)/$(srv) /usr/local/bin/ || exit;)
-	$(foreach srv, $(LINUX_SERVICES), install -m 0755 -o root -g admin $(BUILD_DIR)/$(srv) /usr/local/bin/ || exit;)
+	$(foreach srv, $(NATIVE_SERVICES), install -m 0755 -o root -g root $(BUILD_DIR)/$(srv) /usr/local/bin/ || exit;)
+	$(foreach srv, $(LINUX_SERVICES), install -m 0755 -o root -g root $(BUILD_DIR)/$(srv) /usr/local/bin/ || exit;)
 
 clean:
 	rm -rf $(BUILD_DIR)
