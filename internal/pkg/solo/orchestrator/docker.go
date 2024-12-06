@@ -14,7 +14,7 @@ import (
 type DockerOrchestrator struct{}
 
 func (o *DockerOrchestrator) Up(projectDirectory string, composeFile string) error {
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+	composeCmd := exec.Command("/usr/bin/docker", "compose",
 		"-f", composeFile,
 		"--project-directory", projectDirectory,
 		"up", "-d")
@@ -27,7 +27,7 @@ func (o *DockerOrchestrator) Up(projectDirectory string, composeFile string) err
 }
 
 func (o *DockerOrchestrator) Down(projectDirectory string, composeFile string) error {
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+	composeCmd := exec.Command("/usr/bin/docker", "compose",
 		"-f", composeFile,
 		"--project-directory", projectDirectory,
 		"stop")
@@ -40,7 +40,7 @@ func (o *DockerOrchestrator) Down(projectDirectory string, composeFile string) e
 }
 
 func (o *DockerOrchestrator) Destroy(projectDirectory string, composeFile string) error {
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+	composeCmd := exec.Command("/usr/bin/docker", "compose",
 		"-f", composeFile,
 		"--project-directory", projectDirectory,
 		"down", "-v")
@@ -108,6 +108,9 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 				CreateHostPath: true,
 			},
 		})
+
+		service.ExtraHosts = types.HostsList{}
+		service.ExtraHosts["host.docker.internal"] = []string{"host-gateway"}
 
 		compose.Services[index] = service
 	}
