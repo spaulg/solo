@@ -8,6 +8,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
+	"os"
 	"os/exec"
 )
 
@@ -74,6 +75,18 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 
 	soloEntrypoint := config.Entrypoint
 
+	allServicesDataPath := project.GetAllServicesStateDirectory()
+	_, err = os.Stat(allServicesDataPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(allServicesDataPath, 0750); err != nil {
+				return nil, fmt.Errorf("failed to create all services data directoiry: %v", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to create all services data directoiry: %v", err)
+		}
+	}
+
 	for index, service := range compose.Services {
 		// Replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
 		if len(service.Entrypoint) > 0 {
@@ -83,7 +96,16 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 		service.Entrypoint = []string{"/solo-entrypoint"}
 
 		serviceDataPath := project.GetServiceStateDirectory(service.Name)
-		allServicesDataPath := project.GetAllServicesStateDirectory()
+		_, err := os.Stat(serviceDataPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				if err := os.MkdirAll(serviceDataPath, 0750); err != nil {
+					return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+				}
+			} else {
+				return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+			}
+		}
 
 		// Append volume mounts for the new entrypoint
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
@@ -96,17 +118,11 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 			Source:   serviceDataPath,
 			Target:   "/solo/service",
 			ReadOnly: true,
-			Bind: &types.ServiceVolumeBind{
-				CreateHostPath: true,
-			},
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
 			Source:   allServicesDataPath,
 			Target:   "/solo/services_all",
 			ReadOnly: true,
-			Bind: &types.ServiceVolumeBind{
-				CreateHostPath: true,
-			},
 		})
 
 		service.ExtraHosts = types.HostsList{}
