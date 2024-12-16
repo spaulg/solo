@@ -37,7 +37,7 @@ func FindProject(startPath string) (*Project, error) {
 				return nil, err
 			}
 		} else if fileInfo != nil {
-			return NewProject(projectFilePath), nil
+			return NewProject(projectFilePath)
 		}
 	}
 
