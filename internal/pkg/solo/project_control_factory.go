@@ -20,22 +20,15 @@ func ProjectControlFactory(config *config.Config, project *project.Project) (*Pr
 	// Container orchestrator
 	containerOrchestrator := orchestrator.OrchestratorFactory(config)
 
-	hostname := containerOrchestrator.GetHostGatewayHostname()
-	stateDirectory := project.GetAllServicesStateDirectory()
-
-	// Certificate generator
-	certificateGenerator, err := certificate.NewCertificateGenerator(hostname, stateDirectory)
+	// GRPC server factory
+	certificateAuthority, err := certificate.NewCertificateAuthority()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create certificate generator: %v", err)
+		return nil, fmt.Errorf("failed to initialize certificate authority: %w", err)
 	}
 
-	// GRPC server
-	grpcServer := grpc.NewMutualTLSServerFactory(
-		certificateGenerator,
-		provisionerService,
-	)
+	grpcServerFactory := grpc.NewMutualTLSServerFactory(certificateAuthority, provisionerService)
 
 	// Project control
-	projectControl := NewProjectControl(config, project, containerOrchestrator, grpcServer, eventStream)
+	projectControl := NewProjectControl(config, project, containerOrchestrator, grpcServerFactory, eventStream)
 	return projectControl, nil
 }

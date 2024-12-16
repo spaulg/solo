@@ -1,33 +1,40 @@
 package grpc
 
 import (
+	"crypto/ecdsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo/certificate"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"google.golang.org/grpc/credentials"
 	"os"
+	"time"
 )
 
 type MutualTLSServerFactory struct {
-	certificateGenerator certificate.CertificateGenerator
+	certificateAuthority certificate.Authority
 	provisionerServer    *service_definitions.ProvisionerServerImpl
 }
 
 func NewMutualTLSServerFactory(
-	certificateGenerator certificate.CertificateGenerator,
+	certificateAuthority certificate.Authority,
 	provisionerServer *service_definitions.ProvisionerServerImpl,
 ) ServerFactory {
 	return &MutualTLSServerFactory{
-		certificateGenerator: certificateGenerator,
+		certificateAuthority: certificateAuthority,
 		provisionerServer:    provisionerServer,
 	}
 }
 
-func (t *MutualTLSServerFactory) Build(hostname string, port uint16, project *project.Project) (Server, error) {
-	transportCredentials, err := t.buildCredentials(project)
+func (t *MutualTLSServerFactory) Build(
+	hostname string,
+	port uint16,
+	project *project.Project,
+) (Server, error) {
+	transportCredentials, err := t.buildTransportCredentials(hostname, project)
 	if err != nil {
 		return nil, err
 	}
@@ -41,47 +48,96 @@ func (t *MutualTLSServerFactory) Build(hostname string, port uint16, project *pr
 	), nil
 }
 
-func (t *MutualTLSServerFactory) buildCredentials(project *project.Project) (credentials.TransportCredentials, error) {
-
-	// todo: Make the factory build peer certificates for each service and store in the services state directory
-
-	/*
-		tls.Certificate encapsulates both the public and private key. Use this as the value object
-		to return from the generation function to decouple persisting the certificate and key to disk
-
-		Extend the persist functionality by decorating the above type with:
-		  func (t *tls.Certificate) Export(certPath string, keyPath string) {}
-
-
-
-	*/
-
+func (t *MutualTLSServerFactory) buildTransportCredentials(
+	hostname string,
+	project *project.Project,
+) (credentials.TransportCredentials, error) {
 	var err error
-	certificatePack, err := t.certificateGenerator.Generate()
+
+	err = t.certificateAuthority.ExportCACertificate(project)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate certificates: %v", err)
+		return nil, err
 	}
 
-	serverCert, err := tls.LoadX509KeyPair(certificatePack.ServerCertificateFilePath, certificatePack.ServerPrivateKeyFilePath)
+	caCert := t.certificateAuthority.GetCACertificate()
+
+	// Generate server certificate
+	serverCert, err := t.generateServerCertificate(hostname)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load server certificate: %v", err)
+		return nil, fmt.Errorf("failed to generate server certificate: %v", err)
 	}
 
-	caCertificate, err := os.ReadFile(certificatePack.CACertificateFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read CA certificate: %v", err)
+	// Generate client certificates for each service
+	if err = t.generateClientCertificate(project); err != nil {
+		return nil, fmt.Errorf("failed to generate server certificate: %v", err)
 	}
 
 	caChain := x509.NewCertPool()
-	if !caChain.AppendCertsFromPEM(caCertificate) {
-		return nil, fmt.Errorf("failed to add CA certificate to pool")
-	}
+	caChain.AddCert(caCert.Leaf)
 
 	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{serverCert},
+		Certificates: []tls.Certificate{*serverCert},
 		ClientCAs:    caChain,
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
+}
+
+func (t *MutualTLSServerFactory) generateServerCertificate(hostname string) (*tls.Certificate, error) {
+	return t.certificateAuthority.GenerateCertificate(
+		certificate.WithOrganization([]string{"Solo Server"}),
+		certificate.WithCommonName(hostname),
+		certificate.WithDNSNames([]string{hostname}),
+		certificate.WithDuration(3*time.Hour),
+		certificate.WithKeyUsage(x509.KeyUsageKeyEncipherment|x509.KeyUsageDigitalSignature),
+		certificate.WithExtKeyUsage([]x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}),
+	)
+}
+
+func (t *MutualTLSServerFactory) generateClientCertificate(project *project.Project) error {
+	for _, serviceName := range project.ServiceNames() {
+		clientCert, err := t.certificateAuthority.GenerateCertificate(
+			certificate.WithOrganization([]string{"Solo Client"}),
+			certificate.WithCommonName("service:"+serviceName),
+			certificate.WithDuration(3*time.Hour),
+			certificate.WithKeyUsage(x509.KeyUsageDigitalSignature),
+			certificate.WithExtKeyUsage([]x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}),
+		)
+
+		stateDirectory := project.GetServiceStateDirectory(serviceName)
+
+		err = os.MkdirAll(stateDirectory, 0700)
+		if err != nil {
+			return err
+		}
+
+		certificateFile, err := os.Create(stateDirectory + "/client.crt")
+		if err != nil {
+			return err
+		}
+
+		defer certificateFile.Close()
+
+		err = pem.Encode(certificateFile, &pem.Block{Type: "CERTIFICATE", Bytes: clientCert.Leaf.Raw})
+		if err != nil {
+			return err
+		}
+
+		keyFile, err := os.Create(stateDirectory + "/client.key")
+		if err != nil {
+			return err
+		}
+
+		defer keyFile.Close()
+
+		privateKeyBytes, err := x509.MarshalECPrivateKey(clientCert.PrivateKey.(*ecdsa.PrivateKey))
+		if err != nil {
+			return err
+		}
+
+		err = pem.Encode(keyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
+	}
+
+	return nil
 }

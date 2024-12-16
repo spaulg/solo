@@ -15,7 +15,7 @@ import (
 type DockerOrchestrator struct{}
 
 func (o *DockerOrchestrator) Up(projectDirectory string, composeFile string) error {
-	composeCmd := exec.Command("/usr/bin/docker", "compose",
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", composeFile,
 		"--project-directory", projectDirectory,
 		"up", "-d")
@@ -28,7 +28,7 @@ func (o *DockerOrchestrator) Up(projectDirectory string, composeFile string) err
 }
 
 func (o *DockerOrchestrator) Down(projectDirectory string, composeFile string) error {
-	composeCmd := exec.Command("/usr/bin/docker", "compose",
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", composeFile,
 		"--project-directory", projectDirectory,
 		"stop")
@@ -41,7 +41,7 @@ func (o *DockerOrchestrator) Down(projectDirectory string, composeFile string) e
 }
 
 func (o *DockerOrchestrator) Destroy(projectDirectory string, composeFile string) error {
-	composeCmd := exec.Command("/usr/bin/docker", "compose",
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", composeFile,
 		"--project-directory", projectDirectory,
 		"down", "-v")
