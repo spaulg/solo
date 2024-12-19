@@ -15,7 +15,7 @@ func NewMutualTLS() (Builder, error) {
 }
 
 func (t *MutualTLS) Build() (credentials.TransportCredentials, error) {
-	clientCert, err := tls.LoadX509KeyPair("/solo/services_all/client.crt", "/solo/services_all/client.key")
+	clientCert, err := tls.LoadX509KeyPair("/solo/service/client.crt", "/solo/service/client.key")
 	if err != nil {
 		log.Fatalf("failed to load client certificate: %v", err)
 		return nil, err
