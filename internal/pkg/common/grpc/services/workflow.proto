@@ -1,0 +1,44 @@
+syntax = "proto3";
+package services;
+
+option go_package = "github.com/spaulg/solo/internal/pkg/common/grpc/services";
+
+message WorkflowStreamResponse {
+  WorkflowAction action = 1;
+  optional WorkflowRunCommand run_command = 2;
+}
+
+message WorkflowStreamRequest {
+  WorkflowResult result = 1;
+  optional WorkflowRunResult run_command_result = 2;
+}
+
+enum WorkflowAction {
+  UNKNOWN_WORKFLOW_ACTION = 0;
+  COMPLETE_ACTION = 1;
+  RUN_COMMAND_ACTION = 2;
+}
+
+message WorkflowRunCommand {
+  string command = 2;
+  repeated string arguments = 3;
+  optional string working_directory = 4;
+}
+
+enum WorkflowResult {
+  UNKNOWN_WORKFLOW_RESULT = 0;
+  RUN_COMMAND_RESULT = 1;
+}
+
+message WorkflowRunResult {
+  string stdout = 2;
+  string stderr = 3;
+  optional uint32 exit_code = 4;
+}
+
+service Workflow {
+  rpc BuildWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
+  rpc PreStartWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
+  rpc PostStartWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
+  rpc PreStopWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
+}
