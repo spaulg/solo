@@ -2,12 +2,15 @@ compose_file: docker-compose.yml
 
 services:
   test:
-    steps:
-      provisioning: # event name
-        - name: 'Name for display purposes'
-          command: 'command to run that will work with os.exec (i.e. not shell)'
-          cwd: 'The directory to run the command from within'
-          timeout: 60 # timeout in seconds to wait for the command to complete
+    workflows:
+      build:
+        - name: 'List files in root'
+          command: '/bin/ls'
+          working_directory: '/'
+
+        - name: 'List running processes'
+          command: '/bin/ps aux'
+          working_directory: '/'
 
       pre_start:
       post_start:

@@ -3,11 +3,9 @@ package solo
 import (
 	"errors"
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/solo/container"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
-	"github.com/spaulg/solo/internal/pkg/solo/event"
-	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
-	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
 	"os"
 	"path"
 	"time"
@@ -16,23 +14,20 @@ import (
 type ProjectControl struct {
 	soloCtx           *context.SoloContext
 	composeFile       string
-	orchestrator      orchestrator.Orchestrator
+	orchestrator      container.Orchestrator
 	grpcServerFactory grpc.ServerFactory
-	eventStream       event.Stream[events.ProvisioningEvent]
 }
 
 func NewProjectControl(
 	soloCtx *context.SoloContext,
-	orchestrator orchestrator.Orchestrator,
+	orchestrator container.Orchestrator,
 	grpcServerFactory grpc.ServerFactory,
-	eventStream event.Stream[events.ProvisioningEvent],
 ) *ProjectControl {
 	return &ProjectControl{
 		soloCtx:           soloCtx,
 		composeFile:       soloCtx.Project.ResolveStateDirectory("docker-compose.yml"),
 		orchestrator:      orchestrator,
 		grpcServerFactory: grpcServerFactory,
-		eventStream:       eventStream,
 	}
 }
 
@@ -65,7 +60,7 @@ func (t *ProjectControl) Start() error {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
-	if err := t.waitForWorkflowCompletion(30 * time.Second); err != nil {
+	if err := t.waitForWorkflowCompletion(60 * time.Second); err != nil {
 		return err
 	}
 

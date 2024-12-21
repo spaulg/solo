@@ -1,3 +1,3 @@
-FROM nginx:stable-alpine
+FROM alpine:3.21
 
-RUN apk add --no-cache go
+RUN apk add --no-cache nginx go

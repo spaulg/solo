@@ -7,25 +7,16 @@ import (
 	"path/filepath"
 )
 
-type StepConfig struct {
+type WorkflowStep struct {
 	Name    string `yaml:"name"`
 	Command string `yaml:"command"`
 	Cwd     string `yaml:"cwd"`
-	Timeout int    `yaml:"timeout"`
 }
 
-type StepsConfig struct {
-	Provisioning []StepConfig `yaml:"provisioning"`
-	PreStart     []StepConfig `yaml:"pre_start"`
-	PostStart    []StepConfig `yaml:"post_start"`
-	PreStop      []StepConfig `yaml:"pre_stop"`
-	PostStop     []StepConfig `yaml:"post_stop"`
-	PreDestroy   []StepConfig `yaml:"pre_destroy"`
-	PostDestroy  []StepConfig `yaml:"post_destroy"`
-}
+type Workflows map[string][]WorkflowStep
 
 type ServiceConfig struct {
-	Steps StepsConfig `yaml:"steps"`
+	Workflows Workflows `yaml:"workflows"`
 }
 
 type Services map[string]ServiceConfig
@@ -102,7 +93,7 @@ func (t *Project) GetComposePath() string {
 
 func (t *Project) ServiceNames() []string {
 	if t.serviceNames == nil {
-		serviceNames := make([]string, len(t.config.Services))
+		var serviceNames []string
 		for serviceName := range t.config.Services {
 			serviceNames = append(serviceNames, serviceName)
 		}
@@ -111,4 +102,8 @@ func (t *Project) ServiceNames() []string {
 	}
 
 	return t.serviceNames
+}
+
+func (t *Project) GetServiceWorkflow(serviceName string, eventName string) []WorkflowStep {
+	return t.config.Services[serviceName].Workflows[eventName]
 }

@@ -3,21 +3,25 @@ package solo
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo/certificate"
+	"github.com/spaulg/solo/internal/pkg/solo/container"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
-	"github.com/spaulg/solo/internal/pkg/solo/event"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
-	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
+	"github.com/spaulg/solo/internal/pkg/solo/logs"
+	"github.com/spaulg/solo/internal/pkg/solo/wms"
 )
 
 func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error) {
 	// Provisioning grpc service
-	eventStream := event.NewStream[events.ProvisioningEvent]()
-	provisionerService := service_definitions.NewProvisionerService(eventStream)
+	eventManager := events.NewDefaultEventManager()
+	eventManager.Subscribe(logs.NewLogWriterEventSubscriber(soloCtx))
+
+	workflowFactory := wms.NewWorkflowFactory()
+	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, soloCtx.Project, workflowFactory)
 
 	// Container orchestrator
-	containerOrchestrator := orchestrator.OrchestratorFactory(soloCtx)
+	containerOrchestrator := container.OrchestratorFactory(soloCtx)
 
 	// GRPC server factory
 	certificateAuthority, err := certificate.NewCertificateAuthority()
@@ -25,10 +29,10 @@ func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error
 		return nil, fmt.Errorf("failed to initialize certificate authority: %w", err)
 	}
 
-	grpcServerFactory := grpc.NewMutualTLSServerFactory(certificateAuthority, provisionerService)
+	grpcServerFactory := grpc.NewMutualTLSServerFactory(certificateAuthority, workflowService)
 
 	// Project control
-	projectControl := NewProjectControl(soloCtx, containerOrchestrator, grpcServerFactory, eventStream)
+	projectControl := NewProjectControl(soloCtx, containerOrchestrator, grpcServerFactory)
 
 	return projectControl, nil
 }
