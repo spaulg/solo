@@ -1,4 +1,4 @@
-package orchestrator
+package container
 
 import (
 	"github.com/spaulg/solo/internal/pkg/solo/config"

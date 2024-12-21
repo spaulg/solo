@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/shared/grpc/services"
+	"github.com/spaulg/solo/internal/pkg/common/grpc/services"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/interceptors"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"google.golang.org/grpc"
@@ -18,7 +18,7 @@ type AsynchronousServer struct {
 	port                 uint32
 	stateDirectory       string
 	transportCredentials credentials.TransportCredentials
-	provisionerServer    *service_definitions.ProvisionerServerImpl
+	workflowService      *service_definitions.WorkflowServerImpl
 	server               *grpc.Server
 	grpcServiceErrorCh   chan error
 }
@@ -28,14 +28,14 @@ func NewAsynchronousServer(
 	port uint16,
 	stateDirectory string,
 	transportCredentials credentials.TransportCredentials,
-	provisionerServer *service_definitions.ProvisionerServerImpl,
+	workflowService *service_definitions.WorkflowServerImpl,
 ) Server {
 	return &AsynchronousServer{
 		hostname:             hostname,
 		port:                 uint32(port),
 		stateDirectory:       stateDirectory,
 		transportCredentials: transportCredentials,
-		provisionerServer:    provisionerServer,
+		workflowService:      workflowService,
 		grpcServiceErrorCh:   make(chan error, 1),
 	}
 }
@@ -73,7 +73,7 @@ func (t *AsynchronousServer) Start() error {
 			grpc.StreamInterceptor(interceptors.ServiceNameStream),
 		)
 
-		services.RegisterProvisionerServer(t.server, t.provisionerServer)
+		services.RegisterWorkflowServer(t.server, t.workflowService)
 
 		// Report port but only if its different
 		allocatedPort := uint32(allocatedPort64)

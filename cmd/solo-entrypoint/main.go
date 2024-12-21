@@ -1,6 +1,7 @@
 package main
 
 import (
+	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
 	"github.com/spaulg/solo/internal/pkg/entrypoint"
 	"os"
 	"strings"
@@ -8,17 +9,18 @@ import (
 )
 
 func main() {
-	provisioner, err := entrypoint.ProvisionerFactory()
+	workflowRunner, err := entrypoint.WorkflowRunnerFactory()
 	if err != nil {
 		panic(err)
 	}
 
-	defer provisioner.Close()
+	defer workflowRunner.Close()
 
-	// todo: trigger provisioning actions for particular service
-
-	// Notify provisioner is finished
-	provisioner.Finish()
+	if true { // todo: detect build completed
+		workflowRunner.Execute(commonworkflow.Build)
+	} else {
+		workflowRunner.Execute(commonworkflow.PreStart)
+	}
 
 	err = forkAndExecute(os.Args[1:])
 	panic(err)

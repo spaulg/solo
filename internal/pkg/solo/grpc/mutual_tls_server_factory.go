@@ -16,16 +16,16 @@ import (
 
 type MutualTLSServerFactory struct {
 	certificateAuthority certificate.Authority
-	provisionerServer    *service_definitions.ProvisionerServerImpl
+	workflowService      *service_definitions.WorkflowServerImpl
 }
 
 func NewMutualTLSServerFactory(
 	certificateAuthority certificate.Authority,
-	provisionerServer *service_definitions.ProvisionerServerImpl,
+	workflowService *service_definitions.WorkflowServerImpl,
 ) ServerFactory {
 	return &MutualTLSServerFactory{
 		certificateAuthority: certificateAuthority,
-		provisionerServer:    provisionerServer,
+		workflowService:      workflowService,
 	}
 }
 
@@ -44,7 +44,7 @@ func (t *MutualTLSServerFactory) Build(
 		port,
 		project.GetAllServicesStateDirectory(),
 		transportCredentials,
-		t.provisionerServer,
+		t.workflowService,
 	), nil
 }
 
