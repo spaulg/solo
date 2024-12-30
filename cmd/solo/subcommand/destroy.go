@@ -3,12 +3,13 @@ package subcommand
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
 )
 
-func NewDestroySubCommand(ctx *ProjectConfigContext) *cobra.Command {
+func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
 	var destroyCmdForce bool
 
 	destroyCmd := &cobra.Command{
@@ -33,7 +34,7 @@ func NewDestroySubCommand(ctx *ProjectConfigContext) *cobra.Command {
 			}
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectControl, err := solo.ProjectControlFactory(ctx.Config, ctx.Project)
+			projectControl, err := solo.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err
 			}
