@@ -3,20 +3,18 @@ package solo
 import (
 	"errors"
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/event"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
 	"github.com/spaulg/solo/internal/pkg/solo/orchestrator"
-	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"os"
 	"path"
 	"time"
 )
 
 type ProjectControl struct {
-	config            *config.Config
-	project           *project.Project
+	soloCtx           *context.SoloContext
 	composeFile       string
 	orchestrator      orchestrator.Orchestrator
 	grpcServerFactory grpc.ServerFactory
@@ -24,16 +22,14 @@ type ProjectControl struct {
 }
 
 func NewProjectControl(
-	config *config.Config,
-	project *project.Project,
+	soloCtx *context.SoloContext,
 	orchestrator orchestrator.Orchestrator,
 	grpcServerFactory grpc.ServerFactory,
 	eventStream event.Stream[events.ProvisioningEvent],
 ) *ProjectControl {
 	return &ProjectControl{
-		config:            config,
-		project:           project,
-		composeFile:       project.ResolveStateDirectory("docker-compose.yml"),
+		soloCtx:           soloCtx,
+		composeFile:       soloCtx.Project.ResolveStateDirectory("docker-compose.yml"),
 		orchestrator:      orchestrator,
 		grpcServerFactory: grpcServerFactory,
 		eventStream:       eventStream,
@@ -43,8 +39,8 @@ func NewProjectControl(
 func (t *ProjectControl) Start() error {
 	grpcServer, err := t.grpcServerFactory.Build(
 		t.orchestrator.GetHostGatewayHostname(),
-		t.config.GrpcServerPort,
-		t.project,
+		t.soloCtx.Config.GrpcServerPort,
+		t.soloCtx.Project,
 	)
 
 	if err != nil {
@@ -59,13 +55,13 @@ func (t *ProjectControl) Start() error {
 	defer grpcServer.Stop()
 
 	// Write compose file
-	composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.config, t.project)
+	composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
 	if err := t.exportComposeFile(composeYml); err != nil {
 		return err
 	}
 
 	// Start compose services
-	if err := t.orchestrator.Up(t.project.GetDirectory(), t.composeFile); err != nil {
+	if err := t.orchestrator.Up(t.soloCtx.Project.GetDirectory(), t.composeFile); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
@@ -111,7 +107,7 @@ func (t *ProjectControl) Stop() error {
 
 	// todo: Exec pre stop commands
 
-	if err := t.orchestrator.Down(t.project.GetDirectory(), t.composeFile); err != nil {
+	if err := t.orchestrator.Down(t.soloCtx.Project.GetDirectory(), t.composeFile); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
@@ -125,11 +121,11 @@ func (t *ProjectControl) Destroy() error {
 
 	// todo: Exec pre stop commands
 
-	if err := t.orchestrator.Destroy(t.project.GetDirectory(), t.composeFile); err != nil {
+	if err := t.orchestrator.Destroy(t.soloCtx.Project.GetDirectory(), t.composeFile); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
-	if err := os.RemoveAll(t.project.GetStateDirectoryRoot()); err != nil {
+	if err := os.RemoveAll(t.soloCtx.Project.GetStateDirectoryRoot()); err != nil {
 		return fmt.Errorf("failed to remove compose file: %v", err)
 	}
 

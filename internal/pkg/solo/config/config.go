@@ -5,6 +5,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+type LoggingConfig struct {
+	Enabled bool
+	Level   string
+	Handler string
+}
+
 type Config struct {
 	reader *viper.Viper
 
@@ -12,6 +18,7 @@ type Config struct {
 	LocalDirectory string
 	Orchestrator   string
 	GrpcServerPort uint16
+	Logging        LoggingConfig
 }
 
 const (
@@ -19,6 +26,9 @@ const (
 	DefaultLocalDirectory = "./.solo"
 	DefaultOrchestrator   = "docker"
 	DefaultGrpcServerPort = 0
+	DefaultLoggingEnabled = false
+	DefaultLoggingLevel   = "warning"
+	DefaultLoggingHandler = "text"
 )
 
 func NewConfig() (*Config, error) {
@@ -27,6 +37,12 @@ func NewConfig() (*Config, error) {
 		LocalDirectory: DefaultLocalDirectory,
 		Orchestrator:   DefaultOrchestrator,
 		GrpcServerPort: DefaultGrpcServerPort,
+
+		Logging: LoggingConfig{
+			Enabled: DefaultLoggingEnabled,
+			Level:   DefaultLoggingLevel,
+			Handler: DefaultLoggingHandler,
+		},
 
 		reader: viper.New(),
 	}

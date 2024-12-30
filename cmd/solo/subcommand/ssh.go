@@ -2,10 +2,11 @@ package subcommand
 
 import (
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spf13/cobra"
 )
 
-func NewSSHCommand(_ *ProjectConfigContext) *cobra.Command {
+func NewSSHCommand(_ *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ssh",
 		Short: "Drops into a shell on a service, runs commands",

@@ -2,10 +2,11 @@ package subcommand
 
 import (
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spf13/cobra"
 )
 
-func NewVersionCommand(_ *ProjectConfigContext) *cobra.Command {
+func NewVersionCommand(_ *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Displays the solo version",

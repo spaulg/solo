@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 )
 
@@ -13,6 +14,6 @@ type Orchestrator interface {
 	ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error)
 }
 
-func OrchestratorFactory(config *config.Config) Orchestrator {
+func OrchestratorFactory(soloCtx *context.SoloContext) Orchestrator {
 	return &DockerOrchestrator{}
 }
