@@ -6,21 +6,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var dumpConfigCmd = &cobra.Command{
-	Use:   "dump-config",
-	Short: "Dumps the solo config to stdout",
-	Long:  "Dumps the solo config to stdout",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		configYaml, err := yaml.Marshal(config)
-		if err != nil {
-			return err
-		}
+func NewDumpConfigCommand(ctx *ProjectConfigContext) *cobra.Command {
+	return &cobra.Command{
+		Use:   "dump-config",
+		Short: "Dumps the solo config to stdout",
+		Long:  "Dumps the solo config to stdout",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configYaml, err := yaml.Marshal(ctx.Config)
+			if err != nil {
+				return err
+			}
 
-		fmt.Print(string(configYaml))
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(dumpConfigCmd)
+			fmt.Print(string(configYaml))
+			return nil
+		},
+	}
 }
