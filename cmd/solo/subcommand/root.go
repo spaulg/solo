@@ -2,52 +2,62 @@ package subcommand
 
 import (
 	"fmt"
-	config2 "github.com/spaulg/solo/internal/pkg/solo/config"
-	project2 "github.com/spaulg/solo/internal/pkg/solo/project"
+	"github.com/spaulg/solo/internal/pkg/common/logging"
+	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/solo/project"
+	"log/slog"
 	"os"
+	"path"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
-type ProjectConfigContext struct {
-	Project        *project2.Project
-	Config         *config2.Config
-	ProjectLoadErr error
-	ConfigLoadErr  error
-}
-
-func NewRootCommand(projectConfigContext *ProjectConfigContext) *cobra.Command {
+func NewRootCommand(soloCtx *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
 		Use:          "solo",
 		SilenceUsage: true,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if projectConfigContext.ProjectLoadErr != nil {
-				fmt.Println(projectConfigContext.ProjectLoadErr)
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if soloCtx.ProjectLoadErr != nil {
+				fmt.Println(soloCtx.ProjectLoadErr)
 				os.Exit(1)
 			}
 
-			if projectConfigContext.ConfigLoadErr != nil {
-				fmt.Println(projectConfigContext.ConfigLoadErr)
+			if soloCtx.ConfigLoadErr != nil {
+				fmt.Println(soloCtx.ConfigLoadErr)
 				os.Exit(1)
 			}
+
+			// If logging is enabled override the default logger
+			if soloCtx.Config.Logging.Enabled == true {
+				handler, err := buildLogHandler(soloCtx)
+				if err != nil {
+					return err
+				}
+
+				soloCtx.Logger = slog.New(handler)
+			}
+
+			return nil
 		},
 	}
 }
 
 func Execute() {
-	projectConfigContext := loadConfigAndProject()
+	soloCtx := loadConfigAndProjectContext()
 
-	rootCmd := NewRootCommand(projectConfigContext)
-	rootCmd.AddCommand(NewDestroySubCommand(projectConfigContext))
-	rootCmd.AddCommand(NewDumpComposeConfigCommand(projectConfigContext))
-	rootCmd.AddCommand(NewDumpConfigCommand(projectConfigContext))
-	rootCmd.AddCommand(NewLogsCommand(projectConfigContext))
-	rootCmd.AddCommand(NewRebuildCommand(projectConfigContext))
-	rootCmd.AddCommand(NewRestartCommand(projectConfigContext))
-	rootCmd.AddCommand(NewSSHCommand(projectConfigContext))
-	rootCmd.AddCommand(NewStartCommand(projectConfigContext))
-	rootCmd.AddCommand(NewStopCommand(projectConfigContext))
-	rootCmd.AddCommand(NewVersionCommand(projectConfigContext))
+	rootCmd := NewRootCommand(soloCtx)
+	rootCmd.AddCommand(NewDestroySubCommand(soloCtx))
+	rootCmd.AddCommand(NewDumpComposeConfigCommand(soloCtx))
+	rootCmd.AddCommand(NewDumpConfigCommand(soloCtx))
+	rootCmd.AddCommand(NewLogsCommand(soloCtx))
+	rootCmd.AddCommand(NewRebuildCommand(soloCtx))
+	rootCmd.AddCommand(NewRestartCommand(soloCtx))
+	rootCmd.AddCommand(NewSSHCommand(soloCtx))
+	rootCmd.AddCommand(NewStartCommand(soloCtx))
+	rootCmd.AddCommand(NewStopCommand(soloCtx))
+	rootCmd.AddCommand(NewVersionCommand(soloCtx))
 
 	err := rootCmd.Execute()
 	if err != nil {
@@ -55,18 +65,62 @@ func Execute() {
 	}
 }
 
-func loadConfigAndProject() *ProjectConfigContext {
-	config, configLoadErr := config2.NewConfig()
-	project, projectLoadErr := project2.FindProject("./")
-
-	if project != nil && configLoadErr == nil {
-		configLoadErr = config.AddConfigPath(project.GetDirectory())
+func buildLogHandler(soloCtx *context.SoloContext) (slog.Handler, error) {
+	stateDirectory := path.Join(soloCtx.Project.GetStateDirectoryRoot(), "logs")
+	if err := os.MkdirAll(stateDirectory, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create log directory: %v", err)
 	}
 
-	return &ProjectConfigContext{
-		Config:         config,
+	logFileName := path.Join(stateDirectory, time.Now().Format("cli-2006-01-02.log"))
+
+	logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open log file: %v", err)
+	}
+
+	switch soloCtx.Config.Logging.Handler {
+	case "json":
+		return slog.NewJSONHandler(logFile, &slog.HandlerOptions{
+			Level: buildLogLevel(soloCtx),
+		}), nil
+
+	case "text":
+		fallthrough
+	default:
+		return slog.NewTextHandler(logFile, &slog.HandlerOptions{
+			Level: buildLogLevel(soloCtx),
+		}), nil
+	}
+}
+
+func buildLogLevel(soloCtx *context.SoloContext) slog.Level {
+	switch soloCtx.Config.Logging.Level {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "error":
+		return slog.LevelError
+	case "warning":
+		fallthrough
+	default:
+		return slog.LevelWarn
+	}
+}
+
+func loadConfigAndProjectContext() *context.SoloContext {
+	loadedConfig, configLoadErr := config.NewConfig()
+	loadedProject, projectLoadErr := project.FindProject("./")
+
+	if loadedProject != nil && configLoadErr == nil {
+		configLoadErr = loadedConfig.AddConfigPath(loadedProject.GetDirectory())
+	}
+
+	return &context.SoloContext{
+		Config:         loadedConfig,
 		ConfigLoadErr:  configLoadErr,
-		Project:        project,
+		Project:        loadedProject,
 		ProjectLoadErr: projectLoadErr,
+		Logger:         slog.New(logging.NewBlackHoleHandler()),
 	}
 }

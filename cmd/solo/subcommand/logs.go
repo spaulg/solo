@@ -2,10 +2,11 @@ package subcommand
 
 import (
 	"fmt"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spf13/cobra"
 )
 
-func NewLogsCommand(_ *ProjectConfigContext) *cobra.Command {
+func NewLogsCommand(_ *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "logs",
 		Short: "Displays logs for your app",
