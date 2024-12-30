@@ -6,21 +6,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var composeConfigCmd = &cobra.Command{
-	Use:   "dump-compose-config",
-	Short: "Dumps the compose config to stdout",
-	Long:  "Dumps the compose config to stdout",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		composeYml, err := orchestrator.OrchestratorFactory(config).ExportComposeConfiguration(config, project)
-		if err != nil {
-			return err
-		}
+func NewDumpComposeConfigCommand(ctx *ProjectConfigContext) *cobra.Command {
+	return &cobra.Command{
+		Use:   "dump-compose-config",
+		Short: "Dumps the compose config to stdout",
+		Long:  "Dumps the compose config to stdout",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			composeYml, err := orchestrator.OrchestratorFactory(ctx.Config).
+				ExportComposeConfiguration(ctx.Config, ctx.Project)
 
-		fmt.Println(string(composeYml))
-		return nil
-	},
-}
+			if err != nil {
+				return err
+			}
 
-func init() {
-	rootCmd.AddCommand(composeConfigCmd)
+			fmt.Println(string(composeYml))
+			return nil
+		},
+	}
 }
