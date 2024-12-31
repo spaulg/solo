@@ -31,7 +31,8 @@ type ServiceConfig struct {
 type Services map[string]ServiceConfig
 
 type ProjectConfig struct {
-	Services Services `yaml:"services"`
+	ComposeFile *string  `yaml:"compose_file"`
+	Services    Services `yaml:"services"`
 }
 
 type Project struct {
@@ -85,6 +86,14 @@ func (t *Project) GetDirectory() string {
 
 func (t *Project) GetFilePath() string {
 	return t.filePath
+}
+
+func (t *Project) GetComposePath() string {
+	if t.config.ComposeFile != nil {
+		return *t.config.ComposeFile
+	} else {
+		return t.filePath
+	}
 }
 
 func (t *Project) ServiceNames() []string {
