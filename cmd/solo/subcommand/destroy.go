@@ -39,7 +39,7 @@ func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
 				return err
 			}
 
-			return projectControl.Destroy()
+			return projectControl.Destroy(true)
 		},
 	}
 
