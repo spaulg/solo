@@ -63,14 +63,14 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 		option.ResolvePaths = false  // Keep paths relative in case the user moves their project folder
 	})
 
-	projectOptions, err := cli.NewProjectOptions([]string{project.GetFilePath()}, projectOptionsLoader)
+	projectOptions, err := cli.NewProjectOptions([]string{project.GetComposePath()}, projectOptionsLoader)
 	if err != nil {
-		fmt.Println(fmt.Errorf("error building project options: %v", err))
+		return nil, fmt.Errorf("error building project options: %v", err)
 	}
 
 	compose, err := projectOptions.LoadProject(context.Background())
 	if err != nil {
-		fmt.Println(fmt.Errorf("error loading project: %v", err))
+		return nil, fmt.Errorf("error loading project: %v", err)
 	}
 
 	soloEntrypoint := config.Entrypoint
