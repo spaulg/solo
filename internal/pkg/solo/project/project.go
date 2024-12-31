@@ -72,8 +72,12 @@ func (t *Project) GetAllServicesStateDirectory() string {
 	return t.projectStateDirectory + "/services_all"
 }
 
+func (t *Project) GetServiceStateDirectoryRoot() string {
+	return t.projectStateDirectory + "/services"
+}
+
 func (t *Project) GetServiceStateDirectory(serviceName string) string {
-	return t.projectStateDirectory + "/services/" + serviceName
+	return t.GetServiceStateDirectoryRoot() + "/" + serviceName
 }
 
 func (t *Project) GetStateDirectoryRoot() string {

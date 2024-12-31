@@ -114,7 +114,7 @@ func (t *ProjectControl) Stop() error {
 	return nil
 }
 
-func (t *ProjectControl) Destroy() error {
+func (t *ProjectControl) Destroy(purgeStateDirectory bool) error {
 	if err := t.composeFileExists(); err != nil {
 		return err
 	}
@@ -125,8 +125,23 @@ func (t *ProjectControl) Destroy() error {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
-	if err := os.RemoveAll(t.soloCtx.Project.GetStateDirectoryRoot()); err != nil {
-		return fmt.Errorf("failed to remove compose file: %v", err)
+	var purgeDirectoryList []string
+
+	if purgeStateDirectory {
+		// Purge the entire state directory
+		purgeDirectoryList = []string{t.soloCtx.Project.GetStateDirectoryRoot()}
+	} else {
+		// Purge only certain sub folders
+		purgeDirectoryList = []string{
+			t.soloCtx.Project.GetAllServicesStateDirectory(),
+			t.soloCtx.Project.GetServiceStateDirectoryRoot(),
+		}
+	}
+
+	for _, purgeDirectory := range purgeDirectoryList {
+		if err := os.RemoveAll(purgeDirectory); err != nil {
+			return fmt.Errorf("failed to remove state directory %s: %v", purgeDirectory, err)
+		}
 	}
 
 	return nil
