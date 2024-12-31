@@ -1,18 +1,7 @@
-name: 'Test project'
+compose_file: docker-compose.yml
 
 services:
   test:
-    build: .
-    command: ['/usr/sbin/nginx', '-g', 'daemon off;']
-#    command: nginx -g 'daemon off;'
-    ports:
-      - "80:80"
-    volumes:
-      - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
-      - "./internal:/solo/internal"
-      - "./go.mod:/solo/go.mod"
-      - "./go.sum:/solo/go.sum"
-
     steps:
       provisioning: # event name
         - name: 'Name for display purposes'
