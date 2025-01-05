@@ -48,6 +48,7 @@ func Execute() {
 	soloCtx := loadConfigAndProjectContext()
 
 	rootCmd := NewRootCommand(soloCtx)
+	rootCmd.AddCommand(NewCleanSubCommand(soloCtx))
 	rootCmd.AddCommand(NewDestroySubCommand(soloCtx))
 	rootCmd.AddCommand(NewDumpComposeConfigCommand(soloCtx))
 	rootCmd.AddCommand(NewDumpConfigCommand(soloCtx))
