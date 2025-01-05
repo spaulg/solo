@@ -65,33 +65,8 @@ func (t *ProjectControl) Start() error {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
-	duration := 30 * time.Second
-	timer := time.NewTimer(duration)
-	startTime := time.Now()
-
-	interrupt := make(chan struct{})
-
-	// Go routine to report timer status
-	go func() {
-		for {
-			time.Sleep(1 * time.Second)
-			remaining := duration - time.Since(startTime)
-			if remaining <= 0 {
-				return
-			}
-
-			fmt.Printf("Time remaining: %v\n", remaining)
-		}
-	}()
-
-	// Wait for confirmation all containers have provisioned
-	// or expiry of the timer
-	select {
-	case <-timer.C:
-		fmt.Println("Timer expired")
-		return errors.New("provisioning timer expired")
-	case <-interrupt:
-		fmt.Println("All containers reported finished")
+	if err := t.waitForWorkflowCompletion(30 * time.Second); err != nil {
+		return err
 	}
 
 	// todo: Exec post start commands (via docker exec)
@@ -114,7 +89,7 @@ func (t *ProjectControl) Stop() error {
 	return nil
 }
 
-func (t *ProjectControl) Destroy(purgeStateDirectory bool) error {
+func (t *ProjectControl) Destroy() error {
 	if err := t.composeFileExists(); err != nil {
 		return err
 	}
@@ -125,6 +100,10 @@ func (t *ProjectControl) Destroy(purgeStateDirectory bool) error {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
+	return nil
+}
+
+func (t *ProjectControl) Clean(purgeStateDirectory bool) error {
 	var purgeDirectoryList []string
 
 	if purgeStateDirectory {
@@ -176,4 +155,35 @@ func (t *ProjectControl) composeFileExists() error {
 	}
 
 	return nil
+}
+
+func (t *ProjectControl) waitForWorkflowCompletion(duration time.Duration) error {
+	timer := time.NewTimer(duration)
+	startTime := time.Now()
+
+	interrupt := make(chan struct{})
+
+	// Go routine to report timer status
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			remaining := duration - time.Since(startTime)
+			if remaining <= 0 {
+				return
+			}
+
+			t.soloCtx.Logger.Info(fmt.Sprintf("Time remaining: %v\n", remaining))
+		}
+	}()
+
+	// Wait for confirmation all containers have provisioned
+	// or expiry of the timer
+	select {
+	case <-timer.C:
+		t.soloCtx.Logger.Info("Timer expired")
+		return errors.New("provisioning timer expired")
+	case <-interrupt:
+		t.soloCtx.Logger.Info("All containers reported finished")
+		return nil
+	}
 }

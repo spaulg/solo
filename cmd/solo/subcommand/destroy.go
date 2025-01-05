@@ -39,7 +39,11 @@ func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
 				return err
 			}
 
-			return projectControl.Destroy(true)
+			if err := projectControl.Destroy(); err != nil {
+				return err
+			}
+
+			return projectControl.Clean(false)
 		},
 	}
 
