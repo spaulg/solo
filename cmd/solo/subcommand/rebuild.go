@@ -39,7 +39,11 @@ func NewRebuildCommand(soloCtx *context.SoloContext) *cobra.Command {
 				return err
 			}
 
-			if err := projectControl.Destroy(false); err != nil {
+			if err := projectControl.Destroy(); err != nil {
+				return err
+			}
+
+			if err := projectControl.Clean(false); err != nil {
 				return err
 			}
 
