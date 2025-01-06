@@ -6,3 +6,5 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+    - gochecknoglobals
+    - gochecknoinits
