@@ -41,9 +41,11 @@ func (suite *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
 		Status: "Built",
 	}
 	expected := &ComposeProgressEvent{
-		Action: "Built",
-		Type:   "Image",
-		Entity: "singlepart",
+		Action:            Build,
+		Type:              Image,
+		FullEntityName:    "singlepart",
+		ProjectEntityName: "singlepart",
+		Status:            Complete,
 	}
 
 	event := progress.ToEvent("test_project")
@@ -53,12 +55,14 @@ func (suite *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
 func (suite *StatusTestSuite) TestIDWithMoreThan2Parts() {
 	progress := ComposeProgress{
 		ID:     "Container entity extra",
-		Status: "Running",
+		Status: "Creating",
 	}
 	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity extra",
+		Action:            Create,
+		Type:              Container,
+		FullEntityName:    "entity extra",
+		ProjectEntityName: "entity extra",
+		Status:            InProgress,
 	}
 
 	event := progress.ToEvent("test_project")
@@ -68,12 +72,14 @@ func (suite *StatusTestSuite) TestIDWithMoreThan2Parts() {
 func (suite *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
 	progress := ComposeProgress{
 		ID:     "Container test_project-entity",
-		Status: "Running",
+		Status: "Creating",
 	}
 	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity",
+		Action:            Create,
+		Type:              Container,
+		FullEntityName:    "test_project-entity",
+		ProjectEntityName: "entity",
+		Status:            InProgress,
 	}
 
 	event := progress.ToEvent("test_project")
@@ -83,12 +89,14 @@ func (suite *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
 func (suite *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
 	progress := ComposeProgress{
 		ID:     "Container test_project_entity",
-		Status: "Running",
+		Status: "Creating",
 	}
 	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity",
+		Action:            Create,
+		Type:              Container,
+		FullEntityName:    "test_project_entity",
+		ProjectEntityName: "entity",
+		Status:            InProgress,
 	}
 
 	event := progress.ToEvent("test_project")
@@ -98,12 +106,14 @@ func (suite *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
 func (suite *StatusTestSuite) TestValidIDAndStatusWithQuotes() {
 	progress := ComposeProgress{
 		ID:     "Container \"test_project-entity\"",
-		Status: "Running",
+		Status: "Creating",
 	}
 	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity",
+		Action:            Create,
+		Type:              Container,
+		FullEntityName:    "test_project-entity",
+		ProjectEntityName: "entity",
+		Status:            InProgress,
 	}
 
 	event := progress.ToEvent("test_project")

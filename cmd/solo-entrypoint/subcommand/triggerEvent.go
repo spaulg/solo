@@ -18,7 +18,7 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 				return errors.New("requires exactly one argument")
 			}
 
-			if _, err := commonworkflow.FromString(args[0]); err != nil {
+			if _, err := commonworkflow.WorkflowNameFromString(args[0]); err != nil {
 				return errors.New("unknown event name")
 			}
 
@@ -30,7 +30,7 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 				panic(err)
 			}
 
-			name, _ := commonworkflow.FromString(args[0])
+			name, _ := commonworkflow.WorkflowNameFromString(args[0])
 			workflowRunner.Execute(name)
 		},
 	}

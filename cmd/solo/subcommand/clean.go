@@ -2,8 +2,11 @@ package subcommand
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/solo"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spaulg/solo/internal/pkg/solo/bubbletea/models"
+	"github.com/spaulg/solo/internal/pkg/solo/bubbletea/subscribers"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
@@ -37,16 +40,21 @@ func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 			return nil
 		},
 		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
-			projectControl, err := solo.ProjectControlFactory(soloCtx)
+			model, err := models.NewCleanModel(soloCtx)
 			if err != nil {
 				return err
 			}
 
-			if err := projectControl.Destroy(); err != nil {
+			p := tea.NewProgram(*model)
+
+			eventManager := events.GetEventManagerInstance()
+			eventManager.Subscribe(subscribers.NewEventBusToBubbleTeaBridge(soloCtx, p))
+
+			if _, err := p.Run(); err != nil {
 				return err
 			}
 
-			return projectControl.Clean(true)
+			return nil
 		}),
 	}
 

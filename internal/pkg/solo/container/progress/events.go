@@ -1,7 +1,9 @@
 package progress
 
 type ComposeProgressEvent struct {
-	Action string
-	Type   string
-	Entity string
+	Action            ComposeProgressAction
+	Type              ComposeProgressEntityTypeName
+	FullEntityName    string
+	ProjectEntityName string
+	Status            ComposeProgressStatus
 }

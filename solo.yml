@@ -14,12 +14,24 @@ services:
       - "./go.mod:/solo/go.mod"
       - "./go.sum:/solo/go.sum"
 
+    x-workflows:
+      first_pre_start:
+        timeout: 180s
+
+        steps:
+          - name: Update apt
+            run: apt update -y
+
+          - name: Install vim
+            run: apt install -y vim
+
   php:
     build:
       context: .
       dockerfile: ./examples/symfony-webapp/Dockerfile.php
     command: /usr/sbin/php-fpm8.4 -FO
     volumes:
+      - "composer:/root/.cache/composer"
       - "./examples/symfony-webapp:/var/www/project"
       - "./examples/symfony-webapp/pool.conf:/etc/php/8.4/fpm/pool.d/www.conf"
       - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
@@ -29,6 +41,8 @@ services:
 
     x-workflows:
       first_pre_start:
+        timeout: 180s
+
         steps:
           - name: Download composer setup
             run: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
@@ -45,3 +59,12 @@ services:
           - name: composer install
             run: composer install
             cwd: /var/www/project
+
+          - name: Update apt
+            run: apt update -y
+
+          - name: Install vim
+            run: apt install -y vim
+
+volumes:
+  composer:

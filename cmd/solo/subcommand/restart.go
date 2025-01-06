@@ -1,8 +1,11 @@
 package subcommand
 
 import (
-	"github.com/spaulg/solo/internal/pkg/solo"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spaulg/solo/internal/pkg/solo/bubbletea/models"
+	"github.com/spaulg/solo/internal/pkg/solo/bubbletea/subscribers"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spf13/cobra"
 )
 
@@ -13,16 +16,21 @@ func NewRestartCommand(soloCtx *context.CliContext) *cobra.Command {
 		Short:   "Restarts your app",
 		Long:    "Restarts your app",
 		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
-			projectControl, err := solo.ProjectControlFactory(soloCtx)
+			model, err := models.NewRestartModel(soloCtx)
 			if err != nil {
 				return err
 			}
 
-			if err := projectControl.Stop(); err != nil {
+			p := tea.NewProgram(*model)
+
+			eventManager := events.GetEventManagerInstance()
+			eventManager.Subscribe(subscribers.NewEventBusToBubbleTeaBridge(soloCtx, p))
+
+			if _, err := p.Run(); err != nil {
 				return err
 			}
 
-			return projectControl.Start()
+			return nil
 		}),
 	}
 }
