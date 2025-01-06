@@ -31,7 +31,7 @@ services:
 
     x-workflows:
       first_pre_start:
-        timeout: 180s
+        timeout: 240s
 
         steps:
           - name: Update apt
@@ -39,6 +39,14 @@ services:
 
           - name: Install vim
             run: apt install -y vim
+
+      pre_start:
+        timeout: 240s
+
+        steps:
+          - name: List source contents
+            run: ls -lh
+            cwd: /var/www/project
 
   php:
     build:
@@ -59,7 +67,7 @@ services:
 
     x-workflows:
       first_pre_start:
-        timeout: 180s
+        timeout: 240s
 
         steps:
           - name: Download composer setup

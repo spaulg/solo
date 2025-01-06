@@ -72,64 +72,51 @@ func (t *LogWriterEventSubscriber) writeStepOutput(e *wms_types.WorkflowStepOutp
 
 	if e.Stderr != "" {
 		stderrPath := path.Join(outputDirectory, e.StepId+".stderr")
-		stderrFile, err := os.OpenFile(stderrPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
-		if err != nil {
-			t.soloCtx.Logger.Error(fmt.Sprintf(
-				"Failed to write step output to log file: failed to open stderr file: %s: %v",
-				stderrPath,
-				err,
-			))
+		t.writeStepOutputFile(stderrPath, e.Stderr)
 
-			return
-		}
-
-		defer func(stderrFile *os.File) {
-			if err = stderrFile.Close(); err != nil {
-				t.soloCtx.Logger.Error(fmt.Sprintf(
-					"Failed to close step stderr output file: %v",
-					err,
-				))
-			}
-		}(stderrFile)
-
-		if n, err := stderrFile.WriteString(e.Stderr); err != nil || n != len(e.Stderr) {
-			t.soloCtx.Logger.Error(fmt.Sprintf(
-				"Failed to write complete step stderr output to file: %s: %v",
-				stderrPath,
-				err,
-			))
-		}
+		combinedOutputPath := path.Join(outputDirectory, e.StepId+".out")
+		t.writeStepOutputFile(combinedOutputPath, e.Stderr)
 	}
 
 	if e.Stdout != "" {
 		stdoutPath := path.Join(outputDirectory, e.StepId+".stdout")
-		stdoutFile, err := os.OpenFile(stdoutPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
-		if err != nil {
+		t.writeStepOutputFile(stdoutPath, e.Stdout)
+
+		combinedOutputPath := path.Join(outputDirectory, e.StepId+".out")
+		t.writeStepOutputFile(combinedOutputPath, e.Stdout)
+	}
+}
+
+func (t *LogWriterEventSubscriber) writeStepOutputFile(
+	outputFilePath string,
+	output string,
+) {
+	stdoutFile, err := os.OpenFile(outputFilePath, os.O_SYNC|os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		t.soloCtx.Logger.Error(fmt.Sprintf(
+			"Failed to write step output to log file: failed to open stdout file: %s: %v",
+			outputFilePath,
+			err,
+		))
+
+		return
+	}
+
+	defer func(stdoutFile *os.File) {
+		if err = stdoutFile.Close(); err != nil {
 			t.soloCtx.Logger.Error(fmt.Sprintf(
-				"Failed to write step output to log file: failed to open stdout file: %s: %v",
-				stdoutPath,
+				"Failed to close step stdout output file: %v",
 				err,
 			))
-
-			return
 		}
+	}(stdoutFile)
 
-		defer func(stdoutFile *os.File) {
-			if err = stdoutFile.Close(); err != nil {
-				t.soloCtx.Logger.Error(fmt.Sprintf(
-					"Failed to close step stdout output file: %v",
-					err,
-				))
-			}
-		}(stdoutFile)
-
-		if n, err := stdoutFile.WriteString(e.Stdout); err != nil || n != len(e.Stdout) {
-			t.soloCtx.Logger.Error(fmt.Sprintf(
-				"Failed to write complete step stdout output to file: %s: %v",
-				stdoutPath,
-				err,
-			))
-		}
+	if n, err := stdoutFile.WriteString(output); err != nil || n != len(output) {
+		t.soloCtx.Logger.Error(fmt.Sprintf(
+			"Failed to write complete step stdout output to file: %s: %v",
+			outputFilePath,
+			err,
+		))
 	}
 }
 
@@ -249,7 +236,7 @@ func (t *LogWriterEventSubscriber) writeStepResult(e *wms_types.WorkflowStepComp
 		}
 	}
 
-	workflowMeta[e.ServiceName] = append(workflowMeta[e.ServiceName], e.StepId)
+	workflowMeta[e.ContainerName] = append(workflowMeta[e.ContainerName], e.StepId)
 
 	workflowMetaData, err = json.MarshalIndent(workflowMeta, "", "  ")
 	if err != nil {

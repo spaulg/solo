@@ -1,5 +1,6 @@
 /.solo
 /.build
+/.cache
 /coverage.out
 /filtered.coverage.out
 **/*.pb.go
