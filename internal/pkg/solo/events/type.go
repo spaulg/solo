@@ -3,11 +3,19 @@ package events
 type EventType int
 
 const (
-	CommandProgress EventType = iota
-	CommandFinished
-	WorkflowFinished
+	WorkflowStarted EventType = iota
+	WorkflowStepStarted
+	WorkflowStepOutput
+	WorkflowStepComplete
+	WorkflowComplete
 )
 
 func (t EventType) String() string {
-	return [...]string{"CommandProgress"}[t]
+	return [...]string{
+		"WorkflowStarted",
+		"WorkflowStepStarted",
+		"WorkflowStepOutput",
+		"WorkflowStepComplete",
+		"WorkflowComplete",
+	}[t]
 }

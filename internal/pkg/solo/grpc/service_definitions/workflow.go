@@ -68,12 +68,26 @@ func (t WorkflowServerImpl) workflowStream(
 		t.soloCtx.Logger.Info("Service name not found")
 		return fmt.Errorf("unauthorized")
 	}
+	
+	t.eventManager.Publish(events.WorkflowStarted, &events.Event{
+		ServiceName:  serviceName,
+		WorkflowName: workflowName,
+		// todo: add data
+	})
 
 	workflow := t.workflowFactory.Make(t.project, serviceName, workflowName)
 
 	for step := range workflow.StepIterator() {
 		err := step.Trigger(func() error {
 			// Trigger callback
+
+			// todo: workflow step issued
+			t.eventManager.Publish(events.WorkflowStepStarted, &events.Event{
+				ServiceName:  serviceName,
+				WorkflowName: workflowName,
+				// todo: add data
+			})
+
 			return server.Send(&services.WorkflowStreamResponse{
 				Action: services.WorkflowAction_RUN_COMMAND_ACTION,
 				RunCommand: &services.WorkflowRunCommand{
@@ -93,17 +107,22 @@ func (t WorkflowServerImpl) workflowStream(
 				var exitCodePtr *uint8
 				var exitCode uint8
 
-				if result.RunCommandResult.ExitCode != nil {
+				if result.RunCommandResult.ExitCode == nil {
+					t.eventManager.Publish(events.WorkflowStepOutput, &events.Event{
+						ServiceName:  serviceName,
+						WorkflowName: workflowName,
+						// todo: add data
+					})
+				} else {
 					exitCode = uint8(*result.RunCommandResult.ExitCode)
 					exitCodePtr = &exitCode
-				}
 
-				// Notify progress subscribers
-				t.eventManager.Publish(events.CommandProgress, &events.Event{
-					ServiceName:  serviceName,
-					WorkflowName: workflowName,
-					// todo: add data
-				})
+					t.eventManager.Publish(events.WorkflowStepComplete, &events.Event{
+						ServiceName:  serviceName,
+						WorkflowName: workflowName,
+						// todo: add data
+					})
+				}
 
 				return &wms.StepProgress{
 					ExitCode: exitCodePtr,
@@ -115,7 +134,7 @@ func (t WorkflowServerImpl) workflowStream(
 			}
 		}, func() error {
 			// Completion callback
-			t.eventManager.Publish(events.CommandFinished, &events.Event{
+			t.eventManager.Publish(events.WorkflowStepComplete, &events.Event{
 				ServiceName:  serviceName,
 				WorkflowName: workflowName,
 				// todo: add data
@@ -129,7 +148,7 @@ func (t WorkflowServerImpl) workflowStream(
 		}
 	}
 
-	t.eventManager.Publish(events.WorkflowFinished, &events.Event{
+	t.eventManager.Publish(events.WorkflowComplete, &events.Event{
 		ServiceName:  serviceName,
 		WorkflowName: workflowName,
 		// todo: add data
