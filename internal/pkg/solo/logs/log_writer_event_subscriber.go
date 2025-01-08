@@ -16,13 +16,13 @@ func NewLogWriterEventSubscriber(soloCtx *context.SoloContext) events.Subscriber
 }
 
 func (t *LogWriterEventSubscriber) GetSubscribedEvents() []events.EventType {
-	return []events.EventType{events.CommandProgress, events.CommandFinished}
+	return []events.EventType{events.WorkflowStepOutput, events.WorkflowStepComplete}
 }
 
 func (t *LogWriterEventSubscriber) Publish(eventType events.EventType, event *events.Event) {
 	t.soloCtx.Logger.Info("LogWriterEventSubscriber:Publish")
 
-	if eventType == events.CommandProgress { // todo: CommandOutput
+	if eventType == events.WorkflowStepOutput { // todo: CommandOutput
 		// todo: implement write of command output and exit code to disk
 	}
 }
