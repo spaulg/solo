@@ -1,5 +1,7 @@
 package events
 
+import "sync"
+
 type Manager interface {
 	Subscribe(eventSubscriber Subscriber)
 	Publish(data Event)
@@ -7,6 +9,19 @@ type Manager interface {
 
 type DefaultManager struct {
 	subscribers []Subscriber
+}
+
+var (
+	eventManagerInstance Manager
+	eventManagerOnce     sync.Once
+)
+
+func GetEventManagerInstance() Manager {
+	eventManagerOnce.Do(func() {
+		eventManagerInstance = NewDefaultEventManager()
+	})
+
+	return eventManagerInstance
 }
 
 func NewDefaultEventManager() Manager {
