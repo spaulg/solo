@@ -1,32 +1,33 @@
 package wms
 
-type StepProgress struct {
-	ExitCode *uint8
-	Stdout   *string
-	Stderr   *string
-}
-
 type StepTriggerLambda func() error
-type StepProgressLambda func() (*StepProgress, error)
-type StepCompleteLambda func() error
+type StepProgressLambda func() (*uint8, error)
+type StepCompleteLambda func(exitCode uint8) error
 
 type Step interface {
 	Trigger(trigger StepTriggerLambda, progress StepProgressLambda, complete StepCompleteLambda) error
+	GetName() string
 	GetCommand() string
 	GetCommandArguments() []string
 	GetWorkingDirectory() *string
 }
 
 type DefaultStep struct {
+	name             string
 	command          string
 	workingDirectory *string
 }
 
-func NewStep(command string, workingDirectory string) Step {
+func NewStep(name string, command string, workingDirectory string) Step {
 	return &DefaultStep{
+		name:             name,
 		command:          command,
 		workingDirectory: &workingDirectory,
 	}
+}
+
+func (t *DefaultStep) GetName() string {
+	return t.name
 }
 
 func (t *DefaultStep) GetCommand() string {
@@ -49,15 +50,15 @@ func (t *DefaultStep) Trigger(start StepTriggerLambda, progress StepProgressLamb
 
 	// Cycle progress
 	for {
-		progressStatus, err := progress()
+		exitCode, err := progress()
 
 		if err != nil {
 			return err
 		}
 
-		if progressStatus.ExitCode != nil {
+		if exitCode != nil {
 			// Report complete and exit
-			if err := complete(); err != nil {
+			if err := complete(*exitCode); err != nil {
 				return err
 			}
 

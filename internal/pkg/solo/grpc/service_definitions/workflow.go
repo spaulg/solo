@@ -7,7 +7,6 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
-	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"github.com/spaulg/solo/internal/pkg/solo/wms"
 	"google.golang.org/grpc"
 )
@@ -16,20 +15,17 @@ type WorkflowServerImpl struct {
 	soloCtx *context.SoloContext
 	services.UnimplementedWorkflowServer
 	eventManager    events.Manager
-	project         *project.Project
 	workflowFactory wms.Factory
 }
 
 func NewWorkflowService(
 	soloCtx *context.SoloContext,
 	eventManager events.Manager,
-	project *project.Project,
 	workflowFactory wms.Factory,
 ) *WorkflowServerImpl {
 	return &WorkflowServerImpl{
 		soloCtx:         soloCtx,
 		eventManager:    eventManager,
-		project:         project,
 		workflowFactory: workflowFactory,
 	}
 }
@@ -68,24 +64,25 @@ func (t WorkflowServerImpl) workflowStream(
 		t.soloCtx.Logger.Info("Service name not found")
 		return fmt.Errorf("unauthorized")
 	}
-	
-	t.eventManager.Publish(events.WorkflowStarted, &events.Event{
-		ServiceName:  serviceName,
-		WorkflowName: workflowName,
-		// todo: add data
+
+	t.eventManager.Publish(&wms.WorkflowStartedEvent{
+		BaseEvent: events.BaseEvent{
+			ServiceName:  serviceName,
+			WorkflowName: workflowName,
+		},
 	})
 
-	workflow := t.workflowFactory.Make(t.project, serviceName, workflowName)
+	workflow := t.workflowFactory.Make(t.soloCtx.Project, serviceName, workflowName)
 
 	for step := range workflow.StepIterator() {
 		err := step.Trigger(func() error {
 			// Trigger callback
-
-			// todo: workflow step issued
-			t.eventManager.Publish(events.WorkflowStepStarted, &events.Event{
-				ServiceName:  serviceName,
-				WorkflowName: workflowName,
-				// todo: add data
+			t.eventManager.Publish(&wms.WorkflowStepStartedEvent{
+				BaseEvent: events.BaseEvent{
+					ServiceName:  serviceName,
+					WorkflowName: workflowName,
+				},
+				Name: step.GetName(),
 			})
 
 			return server.Send(&services.WorkflowStreamResponse{
@@ -96,7 +93,7 @@ func (t WorkflowServerImpl) workflowStream(
 					WorkingDirectory: step.GetWorkingDirectory(),
 				},
 			})
-		}, func() (*wms.StepProgress, error) {
+		}, func() (*uint8, error) {
 			// Progress callback
 			result, err := server.Recv()
 			if err != nil {
@@ -107,51 +104,55 @@ func (t WorkflowServerImpl) workflowStream(
 				var exitCodePtr *uint8
 				var exitCode uint8
 
-				if result.RunCommandResult.ExitCode == nil {
-					t.eventManager.Publish(events.WorkflowStepOutput, &events.Event{
-						ServiceName:  serviceName,
-						WorkflowName: workflowName,
-						// todo: add data
-					})
-				} else {
+				if result.RunCommandResult.ExitCode != nil {
 					exitCode = uint8(*result.RunCommandResult.ExitCode)
 					exitCodePtr = &exitCode
-
-					t.eventManager.Publish(events.WorkflowStepComplete, &events.Event{
-						ServiceName:  serviceName,
-						WorkflowName: workflowName,
-						// todo: add data
-					})
 				}
 
-				return &wms.StepProgress{
-					ExitCode: exitCodePtr,
-					Stdout:   &result.RunCommandResult.Stdout,
-					Stderr:   &result.RunCommandResult.Stderr,
-				}, nil
+				t.eventManager.Publish(&wms.WorkflowStepOutputEvent{
+					BaseEvent: events.BaseEvent{
+						ServiceName:  serviceName,
+						WorkflowName: workflowName,
+					},
+					Stdout: result.RunCommandResult.Stdout,
+					Stderr: result.RunCommandResult.Stderr,
+				})
+
+				return exitCodePtr, nil
 			} else {
 				return nil, errors.New("unknown result")
 			}
-		}, func() error {
+		}, func(exitCode uint8) error {
 			// Completion callback
-			t.eventManager.Publish(events.WorkflowStepComplete, &events.Event{
-				ServiceName:  serviceName,
-				WorkflowName: workflowName,
-				// todo: add data
+			t.eventManager.Publish(&wms.WorkflowStepCompleteEvent{
+				BaseEvent: events.BaseEvent{
+					ServiceName:  serviceName,
+					WorkflowName: workflowName,
+				},
+				ExitCode: exitCode,
 			})
 
 			return nil
 		})
 
 		if err != nil {
+			t.eventManager.Publish(&wms.WorkflowErrorEvent{
+				BaseEvent: events.BaseEvent{
+					ServiceName:  serviceName,
+					WorkflowName: workflowName,
+				},
+				Err: err,
+			})
+
 			return err
 		}
 	}
 
-	t.eventManager.Publish(events.WorkflowComplete, &events.Event{
-		ServiceName:  serviceName,
-		WorkflowName: workflowName,
-		// todo: add data
+	t.eventManager.Publish(&wms.WorkflowCompleteEvent{
+		BaseEvent: events.BaseEvent{
+			ServiceName:  serviceName,
+			WorkflowName: workflowName,
+		},
 	})
 
 	t.soloCtx.Logger.Error("Workflow finished")
