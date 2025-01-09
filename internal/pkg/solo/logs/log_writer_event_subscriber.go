@@ -3,6 +3,7 @@ package logs
 import (
 	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
+	"github.com/spaulg/solo/internal/pkg/solo/wms"
 )
 
 type LogWriterEventSubscriber struct {
@@ -15,14 +16,11 @@ func NewLogWriterEventSubscriber(soloCtx *context.SoloContext) events.Subscriber
 	}
 }
 
-func (t *LogWriterEventSubscriber) GetSubscribedEvents() []events.EventType {
-	return []events.EventType{events.WorkflowStepOutput, events.WorkflowStepComplete}
-}
-
-func (t *LogWriterEventSubscriber) Publish(eventType events.EventType, event *events.Event) {
+func (t *LogWriterEventSubscriber) Publish(event events.Event) {
 	t.soloCtx.Logger.Info("LogWriterEventSubscriber:Publish")
 
-	if eventType == events.WorkflowStepOutput { // todo: CommandOutput
+	switch event.(type) {
+	case wms.WorkflowStepOutputEvent:
 		// todo: implement write of command output and exit code to disk
 	}
 }

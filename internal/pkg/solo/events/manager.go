@@ -2,27 +2,25 @@ package events
 
 type Manager interface {
 	Subscribe(eventSubscriber Subscriber)
-	Publish(eventType EventType, data *Event)
+	Publish(data Event)
 }
 
 type DefaultManager struct {
-	subscribers map[EventType][]Subscriber
+	subscribers []Subscriber
 }
 
 func NewDefaultEventManager() Manager {
 	return &DefaultManager{
-		subscribers: make(map[EventType][]Subscriber),
+		subscribers: []Subscriber{},
 	}
 }
 
 func (t *DefaultManager) Subscribe(eventSubscriber Subscriber) {
-	for _, eventType := range eventSubscriber.GetSubscribedEvents() {
-		t.subscribers[eventType] = append(t.subscribers[eventType], eventSubscriber)
-	}
+	t.subscribers = append(t.subscribers, eventSubscriber)
 }
 
-func (t *DefaultManager) Publish(eventType EventType, event *Event) {
-	for _, subscriber := range t.subscribers[eventType] {
-		subscriber.Publish(eventType, event)
+func (t *DefaultManager) Publish(event Event) {
+	for _, subscriber := range t.subscribers {
+		subscriber.Publish(event)
 	}
 }
