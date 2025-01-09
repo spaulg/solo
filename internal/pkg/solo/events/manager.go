@@ -11,6 +11,7 @@ type DefaultManager struct {
 	subscribers []Subscriber
 }
 
+// nolint:gochecknoglobals
 var (
 	eventManagerInstance Manager
 	eventManagerOnce     sync.Once

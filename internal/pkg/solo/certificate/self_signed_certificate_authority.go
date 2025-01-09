@@ -80,6 +80,9 @@ func NewCertificateAuthority() (Authority, error) {
 		&privateKey.PublicKey,
 		privateKey,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create certificate: %v", err)
+	}
 
 	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
@@ -163,6 +166,9 @@ func (t *SelfSignedCertificateAuthority) GenerateCertificate(
 		&privateKey.PublicKey,
 		t.caCertificate.PrivateKey,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
