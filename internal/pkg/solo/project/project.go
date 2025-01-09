@@ -1,10 +1,15 @@
 package project
 
 import (
+	"context"
 	"fmt"
-	"gopkg.in/yaml.v3"
+	"github.com/compose-spec/compose-go/v2/cli"
+	"github.com/compose-spec/compose-go/v2/loader"
+	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type WorkflowStep struct {
@@ -15,44 +20,45 @@ type WorkflowStep struct {
 
 type Workflows map[string][]WorkflowStep
 
-type ServiceConfig struct {
-	Workflows Workflows `yaml:"workflows"`
-}
-
-type Services map[string]ServiceConfig
-
-type ProjectConfig struct {
-	ComposeFile *string  `yaml:"compose_file"`
-	Services    Services `yaml:"services"`
-}
-
 type Project struct {
 	projectStateDirectory string
 	directory             string
 	filePath              string
-	config                ProjectConfig
-	serviceNames          []string
+	compose               *types.Project
 }
 
 func NewProject(projectFilePath string) (*Project, error) {
-	workingDirectory := filepath.Dir(projectFilePath)
+	projectOptions, err := cli.NewProjectOptions(nil,
+		WithComposeFiles(projectFilePath),
+		cli.WithLoadOptions(func(option *loader.Options) {
+			option.ResolvePaths = false // Keep paths relative in case the user moves their project folder
+		}),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("error building project options: %v", err)
+	}
+
+	compose, err := projectOptions.LoadProject(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("error loading project: %v", err)
+	}
+
+	projectDirectory := filepath.Dir(projectFilePath)
 
 	project := &Project{
-		projectStateDirectory: workingDirectory + "/.solo",
-		directory:             workingDirectory,
+		projectStateDirectory: projectDirectory + "/.solo",
+		directory:             projectDirectory,
 		filePath:              projectFilePath,
-	}
-
-	bytes, err := os.ReadFile(projectFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read project file: %v", err)
-	}
-
-	if err := yaml.Unmarshal(bytes, &project.config); err != nil {
-		return nil, fmt.Errorf("failed to parse project file: %v", err)
+		compose:               compose,
 	}
 
 	return project, nil
+}
+
+func (t *Project) GetCompose() *types.Project {
+	composeCopy := *t.compose
+	return &composeCopy
 }
 
 func (t *Project) ResolveStateDirectory(relativePath string) string {
@@ -83,27 +89,61 @@ func (t *Project) GetFilePath() string {
 	return t.filePath
 }
 
-func (t *Project) GetComposePath() string {
-	if t.config.ComposeFile != nil {
-		return *t.config.ComposeFile
-	} else {
-		return t.filePath
-	}
-}
-
 func (t *Project) ServiceNames() []string {
-	if t.serviceNames == nil {
-		var serviceNames []string
-		for serviceName := range t.config.Services {
-			serviceNames = append(serviceNames, serviceName)
-		}
-
-		t.serviceNames = serviceNames
-	}
-
-	return t.serviceNames
+	return t.compose.ServiceNames()
 }
 
 func (t *Project) GetServiceWorkflow(serviceName string, eventName string) []WorkflowStep {
-	return t.config.Services[serviceName].Workflows[eventName]
+	workflows := Workflows{}
+	if ok, _ := t.compose.Services[serviceName].Extensions.Get("x-workflows", &workflows); !ok {
+		return nil
+	}
+
+	return workflows[eventName]
+}
+
+func WithComposeFiles(projectFilePath string) func(o *cli.ProjectOptions) error {
+	return func(o *cli.ProjectOptions) error {
+		projectDirectory := filepath.Dir(projectFilePath)
+		candidates := findFiles(cli.DefaultFileNames, projectDirectory)
+
+		if len(candidates) > 0 {
+			winner := candidates[0]
+			if len(candidates) > 1 {
+				// todo: fix use of unsupported logger
+				logrus.Warnf("Found multiple config files with supported names: %s", strings.Join(candidates, ", "))
+				logrus.Warnf("Using %s", winner)
+			}
+
+			o.ConfigPaths = append(o.ConfigPaths, winner)
+
+			overrides := findFiles(cli.DefaultOverrideFileNames, projectDirectory)
+			if len(overrides) > 0 {
+				if len(overrides) > 1 {
+					// todo: fix use of unsupported logger
+					logrus.Warnf("Found multiple override files with supported names: %s", strings.Join(overrides, ", "))
+					logrus.Warnf("Using %s", overrides[0])
+				}
+
+				o.ConfigPaths = append(o.ConfigPaths, overrides[0])
+			}
+		}
+
+		o.ConfigPaths = append(o.ConfigPaths, projectFilePath)
+
+		return nil
+	}
+}
+
+func findFiles(names []string, findDirectory string) []string {
+	var candidates []string
+
+	for _, n := range names {
+		f := filepath.Join(findDirectory, n)
+		if _, err := os.Stat(f); err == nil {
+			candidates = append(candidates, f)
+		}
+	}
+
+	return candidates
 }
