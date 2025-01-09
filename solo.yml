@@ -1,8 +1,17 @@
-compose_file: docker-compose.yml
-
 services:
   test:
-    workflows:
+    build: .
+    command: ['/usr/sbin/nginx', '-g', 'daemon off;']
+    #    command: nginx -g 'daemon off;'
+    ports:
+      - "80:80"
+    volumes:
+      - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
+      - "./internal:/solo/internal"
+      - "./go.mod:/solo/go.mod"
+      - "./go.sum:/solo/go.sum"
+
+    x-workflows:
       build:
         - name: 'List files in root'
           command: '/bin/ls'
