@@ -3,11 +3,11 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	"strings"
 )
-import "google.golang.org/grpc"
 
 const contextValue = "ServiceName"
 
