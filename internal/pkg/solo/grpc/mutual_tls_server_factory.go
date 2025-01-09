@@ -104,6 +104,9 @@ func (t *MutualTLSServerFactory) generateClientCertificate(project *project.Proj
 			certificate.WithKeyUsage(x509.KeyUsageDigitalSignature),
 			certificate.WithExtKeyUsage([]x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}),
 		)
+		if err != nil {
+			return err
+		}
 
 		stateDirectory := project.GetServiceStateDirectory(serviceName)
 
@@ -137,6 +140,9 @@ func (t *MutualTLSServerFactory) generateClientCertificate(project *project.Proj
 		}
 
 		err = pem.Encode(keyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

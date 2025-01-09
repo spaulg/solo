@@ -30,7 +30,7 @@ func NewRootCommand(soloCtx *context.SoloContext) *cobra.Command {
 			}
 
 			// If logging is enabled override the default logger
-			if soloCtx.Config.Logging.Enabled == true {
+			if soloCtx.Config.Logging.Enabled {
 				handler, err := buildLogHandler(soloCtx)
 				if err != nil {
 					return err
