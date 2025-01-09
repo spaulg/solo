@@ -14,7 +14,7 @@ import (
 
 func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error) {
 	// Provisioning grpc service
-	eventManager := events.NewDefaultEventManager()
+	eventManager := events.GetEventManagerInstance()
 	eventManager.Subscribe(logs.NewLogWriterEventSubscriber(soloCtx))
 
 	workflowFactory := wms.NewWorkflowFactory()
