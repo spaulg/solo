@@ -18,7 +18,7 @@ func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error
 	eventManager.Subscribe(logs.NewLogWriterEventSubscriber(soloCtx))
 
 	workflowFactory := wms.NewWorkflowFactory()
-	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, soloCtx.Project, workflowFactory)
+	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, workflowFactory)
 
 	// Container orchestrator
 	containerOrchestrator := container.OrchestratorFactory(soloCtx)
