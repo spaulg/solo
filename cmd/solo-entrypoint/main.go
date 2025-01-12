@@ -18,9 +18,9 @@ func main() {
 
 	if true { // todo: detect build completed
 		workflowRunner.Execute(commonworkflow.Build)
-	} else {
-		workflowRunner.Execute(commonworkflow.PreStart)
 	}
+
+	workflowRunner.Execute(commonworkflow.PreStart)
 
 	err = forkAndExecute(os.Args[1:])
 	panic(err)

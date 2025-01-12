@@ -155,7 +155,6 @@ func (t WorkflowServerImpl) workflowStream(
 		},
 	})
 
-	t.soloCtx.Logger.Error("Workflow finished")
 	return server.Send(&services.WorkflowStreamResponse{
 		Action: services.WorkflowAction_COMPLETE_ACTION,
 	})
