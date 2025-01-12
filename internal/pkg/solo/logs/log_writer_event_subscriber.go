@@ -17,8 +17,6 @@ func NewLogWriterEventSubscriber(soloCtx *context.SoloContext) events.Subscriber
 }
 
 func (t *LogWriterEventSubscriber) Publish(event events.Event) {
-	t.soloCtx.Logger.Info("LogWriterEventSubscriber:Publish")
-
 	switch event.(type) {
 	case wms.WorkflowStepOutputEvent:
 		// todo: implement write of command output and exit code to disk

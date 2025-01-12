@@ -32,7 +32,7 @@ func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error
 	grpcServerFactory := grpc.NewMutualTLSServerFactory(certificateAuthority, workflowService)
 
 	// Project control
-	projectControl := NewProjectControl(soloCtx, containerOrchestrator, grpcServerFactory)
+	projectControl := NewProjectControl(soloCtx, eventManager, containerOrchestrator, grpcServerFactory)
 
 	return projectControl, nil
 }

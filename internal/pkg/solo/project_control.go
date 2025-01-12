@@ -3,8 +3,10 @@ package solo
 import (
 	"errors"
 	"fmt"
+	workflowcommon "github.com/spaulg/solo/internal/pkg/common/wms"
 	"github.com/spaulg/solo/internal/pkg/solo/container"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
 	"os"
 	"path"
@@ -13,6 +15,7 @@ import (
 
 type ProjectControl struct {
 	soloCtx           *context.SoloContext
+	workflowManager   events.Manager
 	composeFile       string
 	orchestrator      container.Orchestrator
 	grpcServerFactory grpc.ServerFactory
@@ -20,11 +23,13 @@ type ProjectControl struct {
 
 func NewProjectControl(
 	soloCtx *context.SoloContext,
+	workflowManager events.Manager,
 	orchestrator container.Orchestrator,
 	grpcServerFactory grpc.ServerFactory,
 ) *ProjectControl {
 	return &ProjectControl{
 		soloCtx:           soloCtx,
+		workflowManager:   workflowManager,
 		composeFile:       soloCtx.Project.ResolveStateDirectory("docker-compose.yml"),
 		orchestrator:      orchestrator,
 		grpcServerFactory: grpcServerFactory,
@@ -49,6 +54,22 @@ func (t *ProjectControl) Start() error {
 
 	defer grpcServer.Stop()
 
+	// Build workflow service map
+	workflowMap, err := t.buildWorkflowServiceMap([]workflowcommon.Name{
+		workflowcommon.Build,
+		workflowcommon.PreStart,
+		workflowcommon.PostStart,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	// Register workflow guard
+	guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
+	t.workflowManager.Subscribe(guard)
+	defer t.workflowManager.Unsubscribe(guard)
+
 	// Write compose file
 	composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
 	if err := t.exportComposeFile(composeYml); err != nil {
@@ -60,7 +81,12 @@ func (t *ProjectControl) Start() error {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
-	if err := t.waitForWorkflowCompletion(60 * time.Second); err != nil {
+	// todo: only wait for Build if not previously started
+	if err := guard.WaitForCompletion(workflowcommon.Build, 60*time.Second); err != nil {
+		return err
+	}
+
+	if err := guard.WaitForCompletion(workflowcommon.PreStart, 60*time.Second); err != nil {
 		return err
 	}
 
@@ -152,33 +178,13 @@ func (t *ProjectControl) composeFileExists() error {
 	return nil
 }
 
-func (t *ProjectControl) waitForWorkflowCompletion(duration time.Duration) error {
-	timer := time.NewTimer(duration)
-	startTime := time.Now()
+func (t *ProjectControl) buildWorkflowServiceMap(workflowNames []workflowcommon.Name) (WorkflowServiceMap, error) {
+	serviceNames := t.soloCtx.Project.ServiceNames()
+	workflowMap := make(WorkflowServiceMap)
 
-	interrupt := make(chan struct{})
-
-	// Go routine to report timer status
-	go func() {
-		for {
-			time.Sleep(1 * time.Second)
-			remaining := duration - time.Since(startTime)
-			if remaining <= 0 {
-				return
-			}
-
-			t.soloCtx.Logger.Info(fmt.Sprintf("Time remaining: %v\n", remaining))
-		}
-	}()
-
-	// Wait for confirmation all containers have provisioned
-	// or expiry of the timer
-	select {
-	case <-timer.C:
-		t.soloCtx.Logger.Info("Timer expired")
-		return errors.New("provisioning timer expired")
-	case <-interrupt:
-		t.soloCtx.Logger.Info("All containers reported finished")
-		return nil
+	for _, workflowName := range workflowNames {
+		workflowMap[workflowName] = serviceNames
 	}
+
+	return workflowMap, nil
 }
