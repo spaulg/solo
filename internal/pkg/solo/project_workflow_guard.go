@@ -1,0 +1,97 @@
+package solo
+
+import (
+	"errors"
+	"fmt"
+	workflowcommon "github.com/spaulg/solo/internal/pkg/common/wms"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
+	"github.com/spaulg/solo/internal/pkg/solo/wms"
+	"math"
+	"time"
+)
+
+type WorkflowServiceMap map[workflowcommon.Name][]string
+type WorkflowChannelMap map[workflowcommon.Name]chan interface{}
+
+type ProjectWorkflowGuard struct {
+	soloCtx          *context.SoloContext
+	workflowServices WorkflowServiceMap
+	workflowStatus   WorkflowServiceMap
+	workflowComplete WorkflowChannelMap
+}
+
+func NewProjectWorkflowGuard(soloCtx *context.SoloContext, workflowServices WorkflowServiceMap) *ProjectWorkflowGuard {
+	channels := make(WorkflowChannelMap)
+	for workflow := range workflowServices {
+		channels[workflow] = make(chan interface{})
+	}
+
+	return &ProjectWorkflowGuard{
+		soloCtx:          soloCtx,
+		workflowServices: workflowServices,
+		workflowStatus:   make(WorkflowServiceMap),
+		workflowComplete: channels,
+	}
+}
+
+func (t *ProjectWorkflowGuard) Publish(event events.Event) {
+	var workflowName workflowcommon.Name
+
+	switch e := event.(type) {
+	case *wms.WorkflowCompleteEvent:
+		workflowName = e.WorkflowName
+		t.workflowStatus[workflowName] = append(t.workflowStatus[workflowName], e.ServiceName)
+		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event %s for service %s", workflowName, e.ServiceName))
+	default:
+		return
+	}
+
+	if len(t.workflowServices[workflowName]) == len(t.workflowStatus[workflowName]) {
+		t.soloCtx.Logger.Debug(fmt.Sprintf("All services completed workflow %s. Closing channel", workflowName))
+		close(t.workflowComplete[workflowName])
+	}
+}
+
+func (t *ProjectWorkflowGuard) WaitForCompletion(
+	workflowName workflowcommon.Name,
+	duration time.Duration,
+) error {
+	timer := time.NewTimer(duration)
+	startTime := time.Now()
+	stopped := false
+
+	t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for all services to complete %s workflow, time remaining: %v", workflowName, duration.Seconds()))
+
+	// Report timer status through logs
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			remainingDuration := duration - time.Since(startTime)
+			remaining := remainingDuration.Seconds()
+
+			if stopped || remaining < 0 {
+				return
+			}
+
+			remainingRounded := int(math.Floor(remaining))
+			if (remainingRounded % 10) == 0 {
+				t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for all services to complete %s workflow, time remaining: %v", workflowName, remainingRounded))
+			}
+		}
+	}()
+
+	// Wait for confirmation all containers have provisioned
+	// or expiry of the timer
+	select {
+	case <-timer.C:
+		t.soloCtx.Logger.Error(fmt.Sprintf("One or more services failed to complete workflow %s before timeout", workflowName))
+		return errors.New("provisioning timer expired")
+
+	case <-t.workflowComplete[workflowName]:
+		t.soloCtx.Logger.Info(fmt.Sprintf("All services completed workflow %s before timeout", workflowName))
+		timer.Stop()
+		stopped = true
+		return nil
+	}
+}

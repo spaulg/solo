@@ -4,6 +4,7 @@ import "sync"
 
 type Manager interface {
 	Subscribe(eventSubscriber Subscriber)
+	Unsubscribe(eventSubscriber Subscriber)
 	Publish(data Event)
 }
 
@@ -33,6 +34,22 @@ func NewDefaultEventManager() Manager {
 
 func (t *DefaultManager) Subscribe(eventSubscriber Subscriber) {
 	t.subscribers = append(t.subscribers, eventSubscriber)
+}
+
+func (t *DefaultManager) Unsubscribe(eventSubscriber Subscriber) {
+	for index, targetSubscriber := range t.subscribers {
+		if targetSubscriber == eventSubscriber {
+			subscriberCount := len(t.subscribers)
+			if subscriberCount > 1 {
+				t.subscribers[index] = t.subscribers[subscriberCount-1]
+				t.subscribers = t.subscribers[:subscriberCount-1]
+			} else {
+				t.subscribers = []Subscriber{}
+			}
+
+			return
+		}
+	}
 }
 
 func (t *DefaultManager) Publish(event Event) {
