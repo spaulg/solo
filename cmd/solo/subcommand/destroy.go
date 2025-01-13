@@ -13,9 +13,10 @@ func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
 	var destroyCmdForce bool
 
 	destroyCmd := &cobra.Command{
-		Use:   "destroy",
-		Short: "Destroys your app",
-		Long:  "Destroys your app",
+		Use:     "destroy",
+		GroupID: "lifecycle",
+		Short:   "Destroys your app",
+		Long:    "Destroys your app",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := soloCtx.TryLock(); err != nil {
 				return err

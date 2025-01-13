@@ -9,9 +9,10 @@ import (
 
 func NewDumpConfigCommand(soloCtx *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
-		Use:   "dump-config",
-		Short: "Dumps the solo config to stdout",
-		Long:  "Dumps the solo config to stdout",
+		Use:     "dump-config",
+		GroupID: "config",
+		Short:   "Dumps the solo config to stdout",
+		Long:    "Dumps the solo config to stdout",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configYaml, err := yaml.Marshal(soloCtx.Config)
 			if err != nil {

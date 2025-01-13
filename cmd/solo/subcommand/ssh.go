@@ -8,8 +8,9 @@ import (
 
 func NewSSHCommand(_ *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
-		Use:   "ssh",
-		Short: "Drops into a shell on a service, runs commands",
+		Use:     "ssh",
+		GroupID: "tooling",
+		Short:   "Drops into a shell on a service, runs commands",
 		Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 

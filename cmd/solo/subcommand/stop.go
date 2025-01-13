@@ -8,9 +8,10 @@ import (
 
 func NewStopCommand(soloCtx *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
-		Use:   "stop",
-		Short: "Stops your app",
-		Long:  "Stops your app",
+		Use:     "stop",
+		GroupID: "lifecycle",
+		Short:   "Stops your app",
+		Long:    "Stops your app",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return soloCtx.TryLock()
 		},
