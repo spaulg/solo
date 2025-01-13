@@ -9,7 +9,8 @@ import (
 	"github.com/spaulg/solo/internal/pkg/entrypoint/grpc/credentials"
 	"google.golang.org/grpc"
 	"io"
-	"strconv"
+	"os"
+	"strings"
 )
 
 type GrpcWorkflowRunner struct {
@@ -20,18 +21,20 @@ type GrpcWorkflowRunner struct {
 type WorkflowStream grpc.BidiStreamingClient[services.WorkflowStreamRequest, services.WorkflowStreamResponse]
 
 func NewGrpcWorkflowRunner(credentialsBuilder credentials.Builder) (WorkflowRunner, error) {
-	var err error
-
 	fmt.Println("Connect to grpc server")
-	port := 12345                  // todo: obtain from file stored in bind mount
-	host := "host.docker.internal" // todo: obtain host from container
 
 	creds, err := credentialsBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
 
-	conn, err := grpc.NewClient(host+":"+strconv.Itoa(port), grpc.WithTransportCredentials(creds))
+	targetBytes, err := os.ReadFile("/solo/services_all/provisioner_host")
+	if err != nil {
+		return nil, err
+	}
+
+	target := strings.TrimSpace(string(targetBytes))
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -65,7 +68,7 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.Name) {
 		switch instruction.Action {
 		case services.WorkflowAction_RUN_COMMAND_ACTION:
 			var exitCode uint32 = 0
-			
+
 			fmt.Printf("Running command: %s\n", instruction.RunCommand.Command)
 
 			if err := stream.Send(&services.WorkflowStreamRequest{
