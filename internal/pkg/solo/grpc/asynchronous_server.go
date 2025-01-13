@@ -8,10 +8,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"sync/atomic"
 )
+
+const hostFileName = "provisioner_host"
 
 type AsynchronousServer struct {
 	hostname             string
@@ -75,7 +79,7 @@ func (t *AsynchronousServer) Start() error {
 
 		services.RegisterWorkflowServer(t.server, t.workflowService)
 
-		// Report port but only if its different
+		// Report port but only if it's different
 		allocatedPort := uint32(allocatedPort64)
 		if desiredPort != allocatedPort {
 			atomic.StoreUint32(&t.port, allocatedPort)
@@ -93,17 +97,23 @@ func (t *AsynchronousServer) Start() error {
 		return fmt.Errorf("failed to start grpc service: %v", err)
 	}
 
-	//grpcServiceLookup := NewServiceLookup(t.hostname, uint16(t.port), t.stateDirectory)
-	//grpcServiceLookup.ApplyCertificatePack(t.credentialsBuilder.GetCertificatePack())
-	//
-	//grpcServiceLookupFilePath := t.stateDirectory + "/grpcservice.yml"
-	//if err := grpcServiceLookup.MarshallYaml(grpcServiceLookupFilePath); err != nil {
-	//	return fmt.Errorf("failed to generate grpc service lookup definition file: %v", err)
-	//}
-
-	return nil
+	return t.writeHostFile()
 }
 
 func (t *AsynchronousServer) Stop() {
 	t.server.Stop()
+}
+
+func (t *AsynchronousServer) writeHostFile() error {
+	hostFilePath := path.Join(t.stateDirectory, hostFileName)
+	hostFile, err := os.OpenFile(hostFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open host file: %v", err)
+	}
+
+	if _, err := hostFile.WriteString(t.hostname + ":" + strconv.Itoa(int(t.port))); err != nil {
+		return fmt.Errorf("failed to write to host file: %v", err)
+	}
+
+	return nil
 }

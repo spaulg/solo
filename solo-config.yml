@@ -1,5 +1,4 @@
 Entrypoint: './cmd/solo-entrypoint/solo-entrypoint-wrapper.sh'
-GrpcServerPort: 12345
 Logging:
   Enabled: true
   Level: debug
