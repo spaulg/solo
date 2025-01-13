@@ -45,19 +45,32 @@ func NewRootCommand(soloCtx *context.SoloContext) *cobra.Command {
 }
 
 func Execute() {
+	cobra.EnableCommandSorting = false
+
 	soloCtx := loadConfigAndProjectContext()
 
 	rootCmd := NewRootCommand(soloCtx)
-	rootCmd.AddCommand(NewCleanSubCommand(soloCtx))
-	rootCmd.AddCommand(NewDestroySubCommand(soloCtx))
-	rootCmd.AddCommand(NewDumpComposeConfigCommand(soloCtx))
-	rootCmd.AddCommand(NewDumpConfigCommand(soloCtx))
-	rootCmd.AddCommand(NewLogsCommand(soloCtx))
-	rootCmd.AddCommand(NewRebuildCommand(soloCtx))
-	rootCmd.AddCommand(NewRestartCommand(soloCtx))
-	rootCmd.AddCommand(NewSSHCommand(soloCtx))
+	rootCmd.AddGroup(&cobra.Group{ID: "lifecycle", Title: "Life Cycle Commands:"})
+	rootCmd.AddGroup(&cobra.Group{ID: "tooling", Title: "Tooling Commands:"})
+	rootCmd.AddGroup(&cobra.Group{ID: "config", Title: "Config Commands:"})
+
+	// Lifecycle
 	rootCmd.AddCommand(NewStartCommand(soloCtx))
 	rootCmd.AddCommand(NewStopCommand(soloCtx))
+	rootCmd.AddCommand(NewRestartCommand(soloCtx))
+	rootCmd.AddCommand(NewRebuildCommand(soloCtx))
+	rootCmd.AddCommand(NewDestroySubCommand(soloCtx))
+	rootCmd.AddCommand(NewCleanSubCommand(soloCtx))
+
+	// Tooling
+	rootCmd.AddCommand(NewSSHCommand(soloCtx))
+	rootCmd.AddCommand(NewLogsCommand(soloCtx))
+
+	// Config
+	rootCmd.AddCommand(NewDumpConfigCommand(soloCtx))
+	rootCmd.AddCommand(NewDumpComposeConfigCommand(soloCtx))
+
+	// Other
 	rootCmd.AddCommand(NewVersionCommand(soloCtx))
 
 	err := rootCmd.Execute()

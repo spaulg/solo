@@ -13,9 +13,10 @@ func NewRebuildCommand(soloCtx *context.SoloContext) *cobra.Command {
 	var rebuildCmdForce bool
 
 	rebuildCmd := &cobra.Command{
-		Use:   "rebuild",
-		Short: "Rebuilds your app from scratch, preserving data",
-		Long:  "Rebuilds your app from scratch, preserving data",
+		Use:     "rebuild",
+		GroupID: "lifecycle",
+		Short:   "Rebuilds your app from scratch, preserving data",
+		Long:    "Rebuilds your app from scratch, preserving data",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := soloCtx.TryLock(); err != nil {
 				return err
