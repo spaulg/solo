@@ -9,9 +9,10 @@ import (
 
 func NewDumpComposeConfigCommand(soloCtx *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
-		Use:   "dump-compose-config",
-		Short: "Dumps the compose config to stdout",
-		Long:  "Dumps the compose config to stdout",
+		Use:     "dump-compose-config",
+		GroupID: "config",
+		Short:   "Dumps the compose config to stdout",
+		Long:    "Dumps the compose config to stdout",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			composeYml, err := container.OrchestratorFactory(soloCtx).
 				ExportComposeConfiguration(soloCtx.Config, soloCtx.Project)

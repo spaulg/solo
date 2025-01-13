@@ -8,9 +8,10 @@ import (
 
 func NewLogsCommand(_ *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
-		Use:   "logs",
-		Short: "Displays logs for your app",
-		Long:  "Displays logs for your app",
+		Use:     "logs",
+		GroupID: "tooling",
+		Short:   "Displays logs for your app",
+		Long:    "Displays logs for your app",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("logs called")
 		},

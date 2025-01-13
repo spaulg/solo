@@ -10,9 +10,10 @@ import (
 
 func NewCleanSubCommand(soloCtx *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
-		Use:   "clean",
-		Short: "Clean the app",
-		Long:  "Clean the app",
+		Use:     "clean",
+		GroupID: "lifecycle",
+		Short:   "Clean the app",
+		Long:    "Clean the app",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return soloCtx.TryLock()
 		},

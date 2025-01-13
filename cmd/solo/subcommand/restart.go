@@ -8,9 +8,10 @@ import (
 
 func NewRestartCommand(soloCtx *context.SoloContext) *cobra.Command {
 	return &cobra.Command{
-		Use:   "restart",
-		Short: "Restarts your app",
-		Long:  "Restarts your app",
+		Use:     "restart",
+		GroupID: "lifecycle",
+		Short:   "Restarts your app",
+		Long:    "Restarts your app",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return soloCtx.TryLock()
 		},
