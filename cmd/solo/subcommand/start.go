@@ -11,6 +11,9 @@ func NewStartCommand(soloCtx *context.SoloContext) *cobra.Command {
 		Use:   "start",
 		Short: "Starts your app",
 		Long:  "Starts your app",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.TryLock()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectControl, err := solo.ProjectControlFactory(soloCtx)
 			if err != nil {
@@ -18,6 +21,9 @@ func NewStartCommand(soloCtx *context.SoloContext) *cobra.Command {
 			}
 
 			return projectControl.Start()
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.Unlock()
 		},
 	}
 }

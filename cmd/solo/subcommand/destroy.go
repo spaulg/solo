@@ -16,7 +16,11 @@ func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
 		Use:   "destroy",
 		Short: "Destroys your app",
 		Long:  "Destroys your app",
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := soloCtx.TryLock(); err != nil {
+				return err
+			}
+
 			if !destroyCmdForce {
 				var destroyCmdForceString string
 				for {
@@ -26,12 +30,15 @@ func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
 					if err != nil {
 						continue
 					} else if strings.ToLower(destroyCmdForceString) == "n" {
+						_ = soloCtx.Unlock()
 						os.Exit(0)
 					} else if strings.ToLower(destroyCmdForceString) == "y" {
 						break
 					}
 				}
 			}
+
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectControl, err := solo.ProjectControlFactory(soloCtx)
@@ -44,6 +51,9 @@ func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
 			}
 
 			return projectControl.Clean(false)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.Unlock()
 		},
 	}
 

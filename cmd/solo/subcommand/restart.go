@@ -11,6 +11,9 @@ func NewRestartCommand(soloCtx *context.SoloContext) *cobra.Command {
 		Use:   "restart",
 		Short: "Restarts your app",
 		Long:  "Restarts your app",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.TryLock()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectControl, err := solo.ProjectControlFactory(soloCtx)
 			if err != nil {
@@ -22,6 +25,9 @@ func NewRestartCommand(soloCtx *context.SoloContext) *cobra.Command {
 			}
 
 			return projectControl.Start()
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.Unlock()
 		},
 	}
 }
