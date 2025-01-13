@@ -11,6 +11,9 @@ func NewStopCommand(soloCtx *context.SoloContext) *cobra.Command {
 		Use:   "stop",
 		Short: "Stops your app",
 		Long:  "Stops your app",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.TryLock()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectControl, err := solo.ProjectControlFactory(soloCtx)
 			if err != nil {
@@ -18,6 +21,9 @@ func NewStopCommand(soloCtx *context.SoloContext) *cobra.Command {
 			}
 
 			return projectControl.Stop()
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.Unlock()
 		},
 	}
 }

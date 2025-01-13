@@ -16,7 +16,11 @@ func NewRebuildCommand(soloCtx *context.SoloContext) *cobra.Command {
 		Use:   "rebuild",
 		Short: "Rebuilds your app from scratch, preserving data",
 		Long:  "Rebuilds your app from scratch, preserving data",
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := soloCtx.TryLock(); err != nil {
+				return err
+			}
+
 			if !rebuildCmdForce {
 				var rebuildCmdForceString string
 				for {
@@ -26,12 +30,18 @@ func NewRebuildCommand(soloCtx *context.SoloContext) *cobra.Command {
 					if err != nil {
 						continue
 					} else if strings.ToLower(rebuildCmdForceString) == "n" {
+						_ = soloCtx.Unlock()
 						os.Exit(0)
 					} else if strings.ToLower(rebuildCmdForceString) == "y" {
 						break
 					}
 				}
 			}
+
+			return nil
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return soloCtx.Unlock()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectControl, err := solo.ProjectControlFactory(soloCtx)
