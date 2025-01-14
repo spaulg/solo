@@ -12,19 +12,13 @@ func NewStartCommand(soloCtx *context.SoloContext) *cobra.Command {
 		GroupID: "lifecycle",
 		Short:   "Starts your app",
 		Long:    "Starts your app",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return soloCtx.TryLock()
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
 			projectControl, err := solo.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err
 			}
 
 			return projectControl.Start()
-		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return soloCtx.Unlock()
-		},
+		}),
 	}
 }
