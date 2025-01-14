@@ -12,10 +12,7 @@ func NewRestartCommand(soloCtx *context.SoloContext) *cobra.Command {
 		GroupID: "lifecycle",
 		Short:   "Restarts your app",
 		Long:    "Restarts your app",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return soloCtx.TryLock()
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
 			projectControl, err := solo.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err
@@ -26,9 +23,6 @@ func NewRestartCommand(soloCtx *context.SoloContext) *cobra.Command {
 			}
 
 			return projectControl.Start()
-		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return soloCtx.Unlock()
-		},
+		}),
 	}
 }
