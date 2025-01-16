@@ -74,77 +74,79 @@ func (t WorkflowServerImpl) workflowStream(
 
 	workflow := t.workflowFactory.Make(t.soloCtx.Project, serviceName, workflowName)
 
-	for step := range workflow.StepIterator() {
-		err := step.Trigger(func() error {
-			// Trigger callback
-			t.eventManager.Publish(&wms.WorkflowStepStartedEvent{
-				BaseEvent: events.BaseEvent{
-					ServiceName:  serviceName,
-					WorkflowName: workflowName,
-				},
-				Name: step.GetName(),
-			})
-
-			return server.Send(&services.WorkflowStreamResponse{
-				Action: services.WorkflowAction_RUN_COMMAND_ACTION,
-				RunCommand: &services.WorkflowRunCommand{
-					Command:          step.GetCommand(),
-					Arguments:        step.GetCommandArguments(),
-					WorkingDirectory: step.GetWorkingDirectory(),
-				},
-			})
-		}, func() (*uint8, error) {
-			// Progress callback
-			result, err := server.Recv()
-			if err != nil {
-				return nil, err
-			}
-
-			if result.Result == services.WorkflowResult_RUN_COMMAND_RESULT {
-				var exitCodePtr *uint8
-				var exitCode uint8
-
-				if result.RunCommandResult.ExitCode != nil {
-					exitCode = uint8(*result.RunCommandResult.ExitCode)
-					exitCodePtr = &exitCode
-				}
-
-				t.eventManager.Publish(&wms.WorkflowStepOutputEvent{
+	if workflow != nil {
+		for step := range workflow.StepIterator() {
+			err := step.Trigger(func() error {
+				// Trigger callback
+				t.eventManager.Publish(&wms.WorkflowStepStartedEvent{
 					BaseEvent: events.BaseEvent{
 						ServiceName:  serviceName,
 						WorkflowName: workflowName,
 					},
-					Stdout: result.RunCommandResult.Stdout,
-					Stderr: result.RunCommandResult.Stderr,
+					Name: step.GetName(),
 				})
 
-				return exitCodePtr, nil
-			} else {
-				return nil, errors.New("unknown result")
+				return server.Send(&services.WorkflowStreamResponse{
+					Action: services.WorkflowAction_RUN_COMMAND_ACTION,
+					RunCommand: &services.WorkflowRunCommand{
+						Command:          step.GetCommand(),
+						Arguments:        step.GetCommandArguments(),
+						WorkingDirectory: step.GetWorkingDirectory(),
+					},
+				})
+			}, func() (*uint8, error) {
+				// Progress callback
+				result, err := server.Recv()
+				if err != nil {
+					return nil, err
+				}
+
+				if result.Result == services.WorkflowResult_RUN_COMMAND_RESULT {
+					var exitCodePtr *uint8
+					var exitCode uint8
+
+					if result.RunCommandResult.ExitCode != nil {
+						exitCode = uint8(*result.RunCommandResult.ExitCode)
+						exitCodePtr = &exitCode
+					}
+
+					t.eventManager.Publish(&wms.WorkflowStepOutputEvent{
+						BaseEvent: events.BaseEvent{
+							ServiceName:  serviceName,
+							WorkflowName: workflowName,
+						},
+						Stdout: result.RunCommandResult.Stdout,
+						Stderr: result.RunCommandResult.Stderr,
+					})
+
+					return exitCodePtr, nil
+				} else {
+					return nil, errors.New("unknown result")
+				}
+			}, func(exitCode uint8) error {
+				// Completion callback
+				t.eventManager.Publish(&wms.WorkflowStepCompleteEvent{
+					BaseEvent: events.BaseEvent{
+						ServiceName:  serviceName,
+						WorkflowName: workflowName,
+					},
+					ExitCode: exitCode,
+				})
+
+				return nil
+			})
+
+			if err != nil {
+				t.eventManager.Publish(&wms.WorkflowErrorEvent{
+					BaseEvent: events.BaseEvent{
+						ServiceName:  serviceName,
+						WorkflowName: workflowName,
+					},
+					Err: err,
+				})
+
+				return err
 			}
-		}, func(exitCode uint8) error {
-			// Completion callback
-			t.eventManager.Publish(&wms.WorkflowStepCompleteEvent{
-				BaseEvent: events.BaseEvent{
-					ServiceName:  serviceName,
-					WorkflowName: workflowName,
-				},
-				ExitCode: exitCode,
-			})
-
-			return nil
-		})
-
-		if err != nil {
-			t.eventManager.Publish(&wms.WorkflowErrorEvent{
-				BaseEvent: events.BaseEvent{
-					ServiceName:  serviceName,
-					WorkflowName: workflowName,
-				},
-				Err: err,
-			})
-
-			return err
 		}
 	}
 

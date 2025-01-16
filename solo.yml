@@ -11,21 +11,22 @@ services:
       - "./go.mod:/solo/go.mod"
       - "./go.sum:/solo/go.sum"
 
-    x-workflows:
-      build:
-        - name: 'List files in root'
-          command: '/bin/ls'
-          working_directory: '/'
+    x-solo:
+      workflows:
+        build:
+          - name: 'List files in root'
+            command: '/bin/ls'
+            working_directory: '/'
 
-        - name: 'List running processes'
-          command: '/bin/ps aux'
-          working_directory: '/'
+          - name: 'List running processes'
+            command: '/bin/ps aux'
+            working_directory: '/'
 
-      pre_start:
-      post_start:
+        pre_start:
+        post_start:
 
-      pre_stop:
-      post_stop:
+        pre_stop:
+        post_stop:
 
-      pre_destroy:
-      post_destroy:
+        pre_destroy:
+        post_destroy:
