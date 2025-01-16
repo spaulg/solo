@@ -7,24 +7,14 @@ import (
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/sirupsen/logrus"
+	workflowcommon "github.com/spaulg/solo/internal/pkg/common/wms"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type compose = types.Project
-
-type WorkflowStep struct {
-	Name    string `yaml:"name"`
-	Command string `yaml:"command"`
-	Cwd     string `yaml:"cwd"`
-}
-
-type Workflows map[string][]WorkflowStep
-
-type SoloServiceConfig struct {
-	Workflows Workflows `yaml:"workflows"`
-}
 
 type Project struct {
 	*compose
@@ -40,6 +30,7 @@ func NewProject(projectFilePath string) (*Project, error) {
 		cli.WithLoadOptions(func(option *loader.Options) {
 			option.ResolvePaths = false // Keep paths relative in case the user moves their project folder
 		}),
+		cli.WithExtension(ServiceWorkflowExtensionName, NewServiceWorkflows()),
 	)
 
 	if err != nil {
@@ -52,13 +43,17 @@ func NewProject(projectFilePath string) (*Project, error) {
 	}
 
 	projectDirectory := filepath.Dir(projectFilePath)
-
-	return &Project{
+	project := &Project{
 		projectStateDirectory: projectDirectory + "/.solo",
 		directory:             projectDirectory,
 		filePath:              projectFilePath,
 		compose:               compose,
-	}, nil
+	}
+
+	// Set default values in extensions
+	project.loadServiceExtensionDefaults()
+
+	return project, nil
 }
 
 func (t *Project) ResolveStateDirectory(relativePath string) string {
@@ -89,13 +84,23 @@ func (t *Project) GetFilePath() string {
 	return t.filePath
 }
 
-func (t *Project) GetServiceWorkflow(serviceName string, eventName string) []WorkflowStep {
-	config := SoloServiceConfig{}
-	if ok, _ := t.Services[serviceName].Extensions.Get("x-solo", &config); !ok {
-		return nil
+func (t *Project) GetServiceWorkflow(serviceName string, eventName string) ServiceWorkflowConfig {
+	config := t.Services[serviceName].Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
+	return config[eventName]
+}
+
+func (t *Project) GetMaxWorkflowTimeout(eventName string) time.Duration {
+	maxTimeout := types.Duration(0)
+
+	for _, serviceConfig := range t.Services {
+		config := serviceConfig.Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
+
+		if v, ok := config[eventName]; ok && *v.Timeout > maxTimeout {
+			maxTimeout = *v.Timeout
+		}
 	}
 
-	return config.Workflows[eventName]
+	return time.Duration(maxTimeout)
 }
 
 func WithComposeFiles(projectFilePath string) func(o *cli.ProjectOptions) error {
@@ -128,6 +133,38 @@ func WithComposeFiles(projectFilePath string) func(o *cli.ProjectOptions) error 
 		o.ConfigPaths = append(o.ConfigPaths, projectFilePath)
 
 		return nil
+	}
+}
+
+func (t *Project) loadServiceExtensionDefaults() {
+	defaultDuration := types.Duration(60 * time.Second)
+
+	for serviceName, serviceConfig := range t.Services {
+		if serviceConfig.Extensions == nil {
+			serviceConfig.Extensions = make(types.Extensions)
+		}
+
+		v, ok := serviceConfig.Extensions[ServiceWorkflowExtensionName]
+		if !ok {
+			v = NewServiceWorkflows()
+			serviceConfig.Extensions[ServiceWorkflowExtensionName] = v
+		}
+
+		workflows := v.(ServiceWorkflows)
+		for _, workflowName := range workflowcommon.WorkflowNames {
+			if _, ok := workflows[workflowName.String()]; !ok {
+				workflows[workflowName.String()] = ServiceWorkflowConfig{
+					Timeout: &defaultDuration,
+				}
+			} else if workflows[workflowName.String()].Timeout == nil {
+				workflowConfig := workflows[workflowName.String()]
+				workflowConfig.Timeout = &defaultDuration
+
+				workflows[workflowName.String()] = workflowConfig
+			}
+		}
+
+		t.Services[serviceName] = serviceConfig
 	}
 }
 

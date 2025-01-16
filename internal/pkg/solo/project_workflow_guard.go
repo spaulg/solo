@@ -53,10 +53,8 @@ func (t *ProjectWorkflowGuard) Publish(event events.Event) {
 	}
 }
 
-func (t *ProjectWorkflowGuard) WaitForCompletion(
-	workflowName workflowcommon.Name,
-	duration time.Duration,
-) error {
+func (t *ProjectWorkflowGuard) WaitForCompletion(workflowName workflowcommon.Name) error {
+	duration := t.soloCtx.Project.GetMaxWorkflowTimeout(workflowName.String())
 	timer := time.NewTimer(duration)
 	startTime := time.Now()
 	stopped := false
