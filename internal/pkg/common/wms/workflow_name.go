@@ -6,6 +6,16 @@ import (
 
 type Name int
 
+var WorkflowNames = []Name{
+	Build,
+	PreStart,
+	PostStart,
+	PreStop,
+	PostStop,
+	PreDestroy,
+	PostDestroy,
+}
+
 func FromString(name string) (Name, error) {
 	switch name {
 	case "build":
@@ -23,7 +33,7 @@ func FromString(name string) (Name, error) {
 	case "post_destroy":
 		return PostDestroy, nil
 	default:
-		return Unknown, fmt.Errorf("unknown workflow name: %s", name)
+		return Undefined, fmt.Errorf("unknown workflow name: %s", name)
 	}
 }
 
@@ -49,7 +59,7 @@ func (c Name) String() string {
 }
 
 const (
-	Unknown Name = iota
+	Undefined Name = iota
 	Build
 	PreStart
 	PostStart

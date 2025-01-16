@@ -14,10 +14,10 @@ type DefaultOrchestrator struct {
 }
 
 func NewOrchestrator(
-	steps []project.WorkflowStep,
+	workflow project.ServiceWorkflowConfig,
 ) Orchestrator {
 	return &DefaultOrchestrator{
-		steps: steps,
+		steps: workflow.Steps,
 	}
 }
 
