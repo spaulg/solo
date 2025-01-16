@@ -10,7 +10,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
 	"os"
 	"path"
-	"time"
 )
 
 type ProjectControl struct {
@@ -82,11 +81,11 @@ func (t *ProjectControl) Start() error {
 	}
 
 	// todo: only wait for Build if not previously started
-	if err := guard.WaitForCompletion(workflowcommon.Build, 60*time.Second); err != nil {
+	if err := guard.WaitForCompletion(workflowcommon.Build); err != nil {
 		return err
 	}
 
-	if err := guard.WaitForCompletion(workflowcommon.PreStart, 60*time.Second); err != nil {
+	if err := guard.WaitForCompletion(workflowcommon.PreStart); err != nil {
 		return err
 	}
 
