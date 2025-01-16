@@ -55,8 +55,6 @@ func (o *DockerOrchestrator) GetHostGatewayHostname() string {
 }
 
 func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error) {
-	compose := project.GetCompose()
-
 	soloEntrypoint := config.Entrypoint
 
 	allServicesDataPath := project.GetAllServicesStateDirectory()
@@ -71,7 +69,7 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 		}
 	}
 
-	for index, service := range compose.Services {
+	for index, service := range project.Services {
 		// Replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
 		if len(service.Entrypoint) > 0 {
 			service.Command = append(service.Entrypoint, service.Command...)
@@ -112,8 +110,8 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 		service.ExtraHosts = types.HostsList{}
 		service.ExtraHosts["host.docker.internal"] = []string{"host-gateway"}
 
-		compose.Services[index] = service
+		project.Services[index] = service
 	}
 
-	return compose.MarshalYAML()
+	return project.MarshalYAML()
 }

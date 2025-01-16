@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+type compose = types.Project
+
 type WorkflowStep struct {
 	Name    string `yaml:"name"`
 	Command string `yaml:"command"`
@@ -20,11 +22,16 @@ type WorkflowStep struct {
 
 type Workflows map[string][]WorkflowStep
 
+type SoloServiceConfig struct {
+	Workflows Workflows `yaml:"workflows"`
+}
+
 type Project struct {
+	*compose
+
 	projectStateDirectory string
 	directory             string
 	filePath              string
-	compose               *types.Project
 }
 
 func NewProject(projectFilePath string) (*Project, error) {
@@ -46,19 +53,12 @@ func NewProject(projectFilePath string) (*Project, error) {
 
 	projectDirectory := filepath.Dir(projectFilePath)
 
-	project := &Project{
+	return &Project{
 		projectStateDirectory: projectDirectory + "/.solo",
 		directory:             projectDirectory,
 		filePath:              projectFilePath,
 		compose:               compose,
-	}
-
-	return project, nil
-}
-
-func (t *Project) GetCompose() *types.Project {
-	composeCopy := *t.compose
-	return &composeCopy
+	}, nil
 }
 
 func (t *Project) ResolveStateDirectory(relativePath string) string {
@@ -89,17 +89,13 @@ func (t *Project) GetFilePath() string {
 	return t.filePath
 }
 
-func (t *Project) ServiceNames() []string {
-	return t.compose.ServiceNames()
-}
-
 func (t *Project) GetServiceWorkflow(serviceName string, eventName string) []WorkflowStep {
-	workflows := Workflows{}
-	if ok, _ := t.compose.Services[serviceName].Extensions.Get("x-workflows", &workflows); !ok {
+	config := SoloServiceConfig{}
+	if ok, _ := t.Services[serviceName].Extensions.Get("x-solo", &config); !ok {
 		return nil
 	}
 
-	return workflows[eventName]
+	return config.Workflows[eventName]
 }
 
 func WithComposeFiles(projectFilePath string) func(o *cli.ProjectOptions) error {
