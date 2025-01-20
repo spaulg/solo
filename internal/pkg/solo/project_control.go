@@ -15,7 +15,6 @@ import (
 type ProjectControl struct {
 	soloCtx           *context.SoloContext
 	workflowManager   events.Manager
-	composeFile       string
 	orchestrator      container.Orchestrator
 	grpcServerFactory grpc.ServerFactory
 }
@@ -29,7 +28,6 @@ func NewProjectControl(
 	return &ProjectControl{
 		soloCtx:           soloCtx,
 		workflowManager:   workflowManager,
-		composeFile:       soloCtx.Project.ResolveStateDirectory("docker-compose.yml"),
 		orchestrator:      orchestrator,
 		grpcServerFactory: grpcServerFactory,
 	}
@@ -76,7 +74,7 @@ func (t *ProjectControl) Start() error {
 	}
 
 	// Start compose services
-	if err := t.orchestrator.Up(t.soloCtx.Project.GetDirectory(), t.composeFile); err != nil {
+	if err := t.orchestrator.Up(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
 
@@ -102,7 +100,7 @@ func (t *ProjectControl) Stop() error {
 
 	// todo: Exec pre stop commands
 
-	if err := t.orchestrator.Down(t.soloCtx.Project.GetDirectory(), t.composeFile); err != nil {
+	if err := t.orchestrator.Down(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
@@ -116,7 +114,7 @@ func (t *ProjectControl) Destroy() error {
 
 	// todo: Exec pre stop commands
 
-	if err := t.orchestrator.Destroy(t.soloCtx.Project.GetDirectory(), t.composeFile); err != nil {
+	if err := t.orchestrator.Destroy(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
@@ -132,6 +130,7 @@ func (t *ProjectControl) Clean(purgeStateDirectory bool) error {
 	} else {
 		// Purge only certain sub folders
 		purgeDirectoryList = []string{
+			t.soloCtx.Project.GetGeneratedComposeFilePath(),
 			t.soloCtx.Project.GetAllServicesStateDirectory(),
 			t.soloCtx.Project.GetServiceStateDirectoryRoot(),
 		}
@@ -147,7 +146,7 @@ func (t *ProjectControl) Clean(purgeStateDirectory bool) error {
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
-	composeDirectory := path.Dir(t.composeFile)
+	composeDirectory := path.Dir(t.soloCtx.Project.GetGeneratedComposeFilePath())
 	if _, err := os.Stat(composeDirectory); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("failed to check .solo directory existence: %v", err)
@@ -158,7 +157,7 @@ func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
 		}
 	}
 
-	if err := os.WriteFile(t.composeFile, composeYml, 0640); err != nil {
+	if err := os.WriteFile(t.soloCtx.Project.GetGeneratedComposeFilePath(), composeYml, 0640); err != nil {
 		return fmt.Errorf("failed to write compose file: %v", err)
 	}
 
@@ -166,7 +165,7 @@ func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
 }
 
 func (t *ProjectControl) composeFileExists() error {
-	if _, err := os.Stat(t.composeFile); err != nil {
+	if _, err := os.Stat(t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("compose file not found")
 		} else {

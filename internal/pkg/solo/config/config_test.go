@@ -15,8 +15,8 @@ func TestConfigLoading(t *testing.T) {
 		t.Fatal("Entrypoint does not match default")
 	}
 
-	if config.LocalDirectory != DefaultLocalDirectory {
-		t.Fatal("LocalDirectory does not match default")
+	if config.StateDirectoryName != DefaultStateDirectoryName {
+		t.Fatal("StateDirectoryName does not match default")
 	}
 
 	if err := config.AddConfigPath("test/data/config"); err != nil {
@@ -27,8 +27,8 @@ func TestConfigLoading(t *testing.T) {
 		t.Fatalf("Entrypoint %s does not match overridden config %s", config.Entrypoint, "/opt/bin/solo-custom-entrypoint.sh")
 	}
 
-	if config.LocalDirectory != "/opt/solo" {
-		t.Fatalf("LocalDirectory %s does not match overridden config %s", config.LocalDirectory, "/opt/solo")
+	if config.StateDirectoryName != "/opt/solo" {
+		t.Fatalf("StateDirectoryName %s does not match overridden config %s", config.StateDirectoryName, "/opt/solo")
 	}
 }
 
@@ -42,8 +42,8 @@ func TestConfigPathNotFound(t *testing.T) {
 		t.Fatal("Entrypoint does not match default")
 	}
 
-	if config.LocalDirectory != DefaultLocalDirectory {
-		t.Fatal("LocalDirectory does not match default")
+	if config.StateDirectoryName != DefaultStateDirectoryName {
+		t.Fatal("StateDirectoryName does not match default")
 	}
 
 	if err := config.AddConfigPath("test/data/config/notfound"); err != nil {
@@ -54,7 +54,7 @@ func TestConfigPathNotFound(t *testing.T) {
 		t.Fatal("Entrypoint does not match default")
 	}
 
-	if config.LocalDirectory != DefaultLocalDirectory {
-		t.Fatal("LocalDirectory does not match default")
+	if config.StateDirectoryName != DefaultStateDirectoryName {
+		t.Fatal("StateDirectoryName does not match default")
 	}
 }

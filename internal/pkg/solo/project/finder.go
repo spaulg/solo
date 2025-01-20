@@ -2,6 +2,7 @@ package project
 
 import (
 	"errors"
+	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"os"
 	"path/filepath"
 )
@@ -11,7 +12,7 @@ const DefaultProjectFileName = "solo.yml"
 // FindProject Find the project file by navigating up the
 // filesystem tree until the project file is found, or
 // return error if no project file is found
-func FindProject(startPath string) (*Project, error) {
+func FindProject(startPath string, config *config.Config) (*Project, error) {
 	var projectFilePath string
 
 	path, err := filepath.Abs(startPath)
@@ -37,7 +38,7 @@ func FindProject(startPath string) (*Project, error) {
 				return nil, err
 			}
 		} else if fileInfo != nil {
-			return NewProject(projectFilePath)
+			return NewProject(projectFilePath, config)
 		}
 	}
 

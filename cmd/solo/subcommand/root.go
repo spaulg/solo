@@ -123,11 +123,17 @@ func buildLogLevel(soloCtx *context.SoloContext) slog.Level {
 }
 
 func loadConfigAndProjectContext() *context.SoloContext {
-	loadedConfig, configLoadErr := config.NewConfig()
-	loadedProject, projectLoadErr := project.FindProject("./")
+	var loadedProject *project.Project
+	var projectLoadErr error
 
-	if loadedProject != nil && configLoadErr == nil {
-		configLoadErr = loadedConfig.AddConfigPath(loadedProject.GetDirectory())
+	loadedConfig, configLoadErr := config.NewConfig()
+
+	if configLoadErr == nil {
+		loadedProject, projectLoadErr = project.FindProject("./", loadedConfig)
+
+		if projectLoadErr == nil {
+			configLoadErr = loadedConfig.AddConfigPath(loadedProject.GetDirectory())
+		}
 	}
 
 	return &context.SoloContext{
