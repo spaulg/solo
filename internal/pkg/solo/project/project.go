@@ -8,7 +8,9 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/sirupsen/logrus"
 	workflowcommon "github.com/spaulg/solo/internal/pkg/common/wms"
+	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,14 +21,15 @@ type compose = types.Project
 type Project struct {
 	*compose
 
-	projectStateDirectory string
-	directory             string
-	filePath              string
+	projectStateDirectory    string
+	generatedComposeFilepath string
+	directory                string
+	filePath                 string
 }
 
-func NewProject(projectFilePath string) (*Project, error) {
+func NewProject(projectFilePath string, config *config.Config) (*Project, error) {
 	projectOptions, err := cli.NewProjectOptions(nil,
-		WithComposeFiles(projectFilePath),
+		WithComposeFiles(projectFilePath, config),
 		cli.WithLoadOptions(func(option *loader.Options) {
 			option.ResolvePaths = false // Keep paths relative in case the user moves their project folder
 		}),
@@ -44,10 +47,11 @@ func NewProject(projectFilePath string) (*Project, error) {
 
 	projectDirectory := filepath.Dir(projectFilePath)
 	project := &Project{
-		projectStateDirectory: projectDirectory + "/.solo",
-		directory:             projectDirectory,
-		filePath:              projectFilePath,
-		compose:               compose,
+		projectStateDirectory:    path.Join(projectDirectory, config.StateDirectoryName),
+		generatedComposeFilepath: config.ComposeFileName,
+		directory:                projectDirectory,
+		filePath:                 projectFilePath,
+		compose:                  compose,
 	}
 
 	// Set default values in extensions
@@ -57,19 +61,19 @@ func NewProject(projectFilePath string) (*Project, error) {
 }
 
 func (t *Project) ResolveStateDirectory(relativePath string) string {
-	return t.projectStateDirectory + "/" + relativePath
+	return path.Join(t.projectStateDirectory, relativePath)
 }
 
 func (t *Project) GetAllServicesStateDirectory() string {
-	return t.projectStateDirectory + "/services_all"
+	return path.Join(t.projectStateDirectory, "services_all")
 }
 
 func (t *Project) GetServiceStateDirectoryRoot() string {
-	return t.projectStateDirectory + "/services"
+	return path.Join(t.projectStateDirectory, "services")
 }
 
 func (t *Project) GetServiceStateDirectory(serviceName string) string {
-	return t.GetServiceStateDirectoryRoot() + "/" + serviceName
+	return path.Join(t.GetServiceStateDirectoryRoot(), serviceName)
 }
 
 func (t *Project) GetStateDirectoryRoot() string {
@@ -85,17 +89,21 @@ func (t *Project) GetFilePath() string {
 }
 
 func (t *Project) GetServiceWorkflow(serviceName string, eventName string) ServiceWorkflowConfig {
-	config := t.Services[serviceName].Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
-	return config[eventName]
+	serviceWorkflows := t.Services[serviceName].Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
+	return serviceWorkflows[eventName]
+}
+
+func (t *Project) GetGeneratedComposeFilePath() string {
+	return path.Join(t.projectStateDirectory, t.generatedComposeFilepath)
 }
 
 func (t *Project) GetMaxWorkflowTimeout(eventName string) time.Duration {
 	maxTimeout := types.Duration(0)
 
 	for _, serviceConfig := range t.Services {
-		config := serviceConfig.Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
+		serviceWorkflows := serviceConfig.Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
 
-		if v, ok := config[eventName]; ok && *v.Timeout > maxTimeout {
+		if v, ok := serviceWorkflows[eventName]; ok && *v.Timeout > maxTimeout {
 			maxTimeout = *v.Timeout
 		}
 	}
@@ -103,10 +111,20 @@ func (t *Project) GetMaxWorkflowTimeout(eventName string) time.Duration {
 	return time.Duration(maxTimeout)
 }
 
-func WithComposeFiles(projectFilePath string) func(o *cli.ProjectOptions) error {
+func WithComposeFiles(projectFilePath string, config *config.Config) func(o *cli.ProjectOptions) error {
 	return func(o *cli.ProjectOptions) error {
 		projectDirectory := filepath.Dir(projectFilePath)
-		candidates := findFiles(cli.DefaultFileNames, projectDirectory)
+
+		// Look for generated compose yaml file in the state directory
+		// If found, use this, if not, find normal compose and override
+		candidates := findFiles([]string{"docker-compose.yml"}, projectDirectory+"/"+config.StateDirectoryName)
+		if len(candidates) == 1 {
+			o.ConfigPaths = append(o.ConfigPaths, candidates[0])
+			return nil
+		}
+
+		// Look for compose files in the project directory
+		candidates = findFiles(cli.DefaultFileNames, projectDirectory)
 
 		if len(candidates) > 0 {
 			winner := candidates[0]

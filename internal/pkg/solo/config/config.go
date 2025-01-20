@@ -14,29 +14,32 @@ type LoggingConfig struct {
 type Config struct {
 	reader *viper.Viper
 
-	Entrypoint     string
-	LocalDirectory string
-	Orchestrator   string
-	GrpcServerPort uint16
-	Logging        LoggingConfig
+	Entrypoint         string
+	StateDirectoryName string
+	ComposeFileName    string
+	Orchestrator       string
+	GrpcServerPort     uint16
+	Logging            LoggingConfig
 }
 
 const (
-	DefaultEntrypoint     = "/usr/local/bin/solo-entrypoint"
-	DefaultLocalDirectory = "./.solo"
-	DefaultOrchestrator   = "docker"
-	DefaultGrpcServerPort = 0
-	DefaultLoggingEnabled = false
-	DefaultLoggingLevel   = "warning"
-	DefaultLoggingHandler = "text"
+	DefaultEntrypoint         = "/usr/local/bin/solo-entrypoint"
+	DefaultStateDirectoryName = "./.solo"
+	DefaultOrchestrator       = "docker"
+	DefaultGrpcServerPort     = 0
+	DefaultLoggingEnabled     = false
+	DefaultLoggingLevel       = "warning"
+	DefaultLoggingHandler     = "text"
+	DefaultComposeFileName    = "docker-compose.yml"
 )
 
 func NewConfig() (*Config, error) {
 	config := Config{
-		Entrypoint:     DefaultEntrypoint,
-		LocalDirectory: DefaultLocalDirectory,
-		Orchestrator:   DefaultOrchestrator,
-		GrpcServerPort: DefaultGrpcServerPort,
+		Entrypoint:         DefaultEntrypoint,
+		StateDirectoryName: DefaultStateDirectoryName,
+		Orchestrator:       DefaultOrchestrator,
+		GrpcServerPort:     DefaultGrpcServerPort,
+		ComposeFileName:    DefaultComposeFileName,
 
 		Logging: LoggingConfig{
 			Enabled: DefaultLoggingEnabled,
