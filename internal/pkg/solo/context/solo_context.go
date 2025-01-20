@@ -2,6 +2,7 @@ package context
 
 import (
 	"errors"
+	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"github.com/spf13/cobra"
@@ -26,17 +27,15 @@ func (t *SoloContext) ProtectWithLock(impl func(*cobra.Command, []string) error)
 			return err
 		}
 
-		if err := impl(cmd, args); err != nil {
-			return err
-		}
+		commandErr := impl(cmd, args)
 
 		if err := t.Unlock(); err != nil {
 			if !errors.Is(err, os.ErrNotExist) {
-				return err
+				return fmt.Errorf("%v: %v", err, commandErr)
 			}
 		}
 
-		return nil
+		return commandErr
 	}
 }
 
