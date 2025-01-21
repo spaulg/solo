@@ -10,7 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
+	"sync"
 )
 
 type GrpcWorkflowRunner struct {
@@ -67,9 +69,23 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.Name) {
 
 		switch instruction.Action {
 		case services.WorkflowAction_RUN_COMMAND_ACTION:
-			var exitCode uint32 = 0
+			fmt.Printf("Running command: %s %v\n", instruction.RunCommand.Command, instruction.RunCommand.Arguments)
 
-			fmt.Printf("Running command: %s\n", instruction.RunCommand.Command)
+			exitCode, err := t.execute(
+				instruction.RunCommand.Command,
+				instruction.RunCommand.Arguments,
+				instruction.RunCommand.WorkingDirectory,
+				func(stdout string, stderr string) error {
+					fmt.Printf("%s\n", stdout)
+					fmt.Printf("%s\n", stderr)
+
+					return nil
+				},
+			)
+
+			if err != nil {
+				panic(err)
+			}
 
 			if err := stream.Send(&services.WorkflowStreamRequest{
 				Result: services.WorkflowResult_RUN_COMMAND_RESULT,
@@ -104,4 +120,83 @@ func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.Name) (Work
 	default:
 		return nil, errors.New("invalid wms name")
 	}
+}
+
+func (t *GrpcWorkflowRunner) execute(
+	command string,
+	arguments []string,
+	workingDirectory *string,
+	streamOutput func(stdout string, stderr string) error,
+) (uint32, error) {
+	cmd := exec.Command(command, arguments...)
+
+	if workingDirectory == nil {
+		cmd.Dir = "/"
+	} else {
+		cmd.Dir = *workingDirectory
+	}
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Printf("Error creating stdout pipe: %v\n", err)
+		return 0, err
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		fmt.Printf("Error creating stderr pipe: %v\n", err)
+		return 0, err
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		fmt.Printf("Error starting command: %v\n", err)
+		return 0, err
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		stdoutBuffer := make([]byte, 64*1024)
+		stderrBuffer := make([]byte, 64*1024)
+
+		for {
+			stdoutBytesRead, stdoutErr := stdout.Read(stdoutBuffer)
+			stderrBytesRead, stderrErr := stderr.Read(stderrBuffer)
+
+			// If either err returned not null and not EOF, break
+			if (stdoutErr != nil && stdoutErr != io.EOF) || (stderrErr != nil && stderrErr != io.EOF) {
+				fmt.Printf("Error reading from output stream: %v\n", stdoutErr)
+				break
+			}
+
+			stdoutStr := string(stdoutBuffer[:stdoutBytesRead])
+			stderrStr := string(stderrBuffer[:stderrBytesRead])
+
+			if err := streamOutput(stdoutStr, stderrStr); err != nil {
+				fmt.Println("failed to stream output")
+				break
+			}
+
+			// End of streams
+			if stdoutErr != nil && stdoutErr == io.EOF && stderrErr != nil && stderrErr == io.EOF {
+				break
+			}
+		}
+	}()
+
+	err = cmd.Wait()
+	exitCode := cmd.ProcessState.ExitCode()
+
+	var exitErr *exec.ExitError
+	if err != nil && !errors.As(err, &exitErr) || exitCode == -1 {
+		fmt.Printf("Command finished with error: %v\n", err)
+		return 0, nil
+	}
+
+	wg.Wait()
+
+	return uint32(exitCode), nil
 }

@@ -16,7 +16,7 @@ services:
 
         steps:
           - name: 'List files in root'
-            command: '/bin/ls'
+            command: '/bin/ls -lh'
             working_directory: '/'
 
           - name: 'List running processes'
