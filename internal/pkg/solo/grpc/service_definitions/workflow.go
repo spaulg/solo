@@ -90,7 +90,7 @@ func (t WorkflowServerImpl) workflowStream(
 					Action: services.WorkflowAction_RUN_COMMAND_ACTION,
 					RunCommand: &services.WorkflowRunCommand{
 						Command:          step.GetCommand(),
-						Arguments:        step.GetCommandArguments(),
+						Arguments:        step.GetArguments(),
 						WorkingDirectory: step.GetWorkingDirectory(),
 					},
 				})
