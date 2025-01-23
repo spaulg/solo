@@ -1,4 +1,4 @@
-package logs
+package subscribers
 
 import (
 	"github.com/spaulg/solo/internal/pkg/solo/context"
