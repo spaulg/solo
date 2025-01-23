@@ -24,6 +24,7 @@ type WorkflowStepCompleteEvent struct {
 
 type WorkflowCompleteEvent struct {
 	events.BaseEvent
+	Successful bool
 }
 
 type WorkflowErrorEvent struct {

@@ -73,6 +73,7 @@ func (t WorkflowServerImpl) workflowStream(
 	})
 
 	workflow := t.workflowFactory.Make(t.soloCtx.Project, serviceName, workflowName)
+	workflowSuccess := true
 
 	if workflow != nil {
 		for step := range workflow.StepIterator() {
@@ -133,6 +134,10 @@ func (t WorkflowServerImpl) workflowStream(
 					ExitCode: exitCode,
 				})
 
+				if exitCode != 0 {
+					workflowSuccess = false
+				}
+
 				return nil
 			})
 
@@ -155,6 +160,7 @@ func (t WorkflowServerImpl) workflowStream(
 			ServiceName:  serviceName,
 			WorkflowName: workflowName,
 		},
+		Successful: workflowSuccess,
 	})
 
 	return server.Send(&services.WorkflowStreamResponse{

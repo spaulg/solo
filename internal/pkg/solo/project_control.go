@@ -68,17 +68,18 @@ func (t *ProjectControl) Start() error {
 	defer t.workflowManager.Unsubscribe(guard)
 
 	// Write compose file
-	composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
-	if err := t.exportComposeFile(composeYml); err != nil {
-		return err
+	if exists, _ := t.composeFileExists(); !exists {
+		composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
+		if err := t.exportComposeFile(composeYml); err != nil {
+			return err
+		}
 	}
 
 	// Start compose services
 	if err := t.orchestrator.Up(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
-
-	// todo: only wait for Build if not previously started
+	
 	if err := guard.WaitForCompletion(workflowcommon.Build); err != nil {
 		return err
 	}
@@ -94,7 +95,7 @@ func (t *ProjectControl) Start() error {
 }
 
 func (t *ProjectControl) Stop() error {
-	if err := t.composeFileExists(); err != nil {
+	if exists, err := t.composeFileExists(); !exists || err != nil {
 		return err
 	}
 
@@ -108,7 +109,7 @@ func (t *ProjectControl) Stop() error {
 }
 
 func (t *ProjectControl) Destroy() error {
-	if err := t.composeFileExists(); err != nil {
+	if exists, err := t.composeFileExists(); !exists || err != nil {
 		return err
 	}
 
@@ -164,16 +165,16 @@ func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
 	return nil
 }
 
-func (t *ProjectControl) composeFileExists() error {
+func (t *ProjectControl) composeFileExists() (bool, error) {
 	if _, err := os.Stat(t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("compose file not found")
+			return false, nil
 		} else {
-			return fmt.Errorf("error looking for compose file: %v", err)
+			return false, fmt.Errorf("error looking for compose file: %v", err)
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func (t *ProjectControl) buildWorkflowServiceMap(workflowNames []workflowcommon.Name) (WorkflowServiceMap, error) {
@@ -181,7 +182,15 @@ func (t *ProjectControl) buildWorkflowServiceMap(workflowNames []workflowcommon.
 	workflowMap := make(WorkflowServiceMap)
 
 	for _, workflowName := range workflowNames {
-		workflowMap[workflowName] = serviceNames
+		if workflowName == workflowcommon.Build {
+			servicesToBuild := t.soloCtx.Project.ServicesPendingBuildWorkflow()
+
+			if len(servicesToBuild) > 0 {
+				workflowMap[workflowName] = servicesToBuild
+			}
+		} else {
+			workflowMap[workflowName] = serviceNames
+		}
 	}
 
 	return workflowMap, nil

@@ -77,7 +77,7 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 
 		service.Entrypoint = []string{"/solo-entrypoint"}
 
-		serviceDataPath := project.GetServiceStateDirectory(service.Name)
+		serviceDataPath := project.GetServiceMountDirectory(service.Name)
 		_, err := os.Stat(serviceDataPath)
 		if err != nil {
 			if os.IsNotExist(err) {

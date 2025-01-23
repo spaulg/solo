@@ -108,7 +108,7 @@ func (t *MutualTLSServerFactory) generateClientCertificate(project *project.Proj
 			return err
 		}
 
-		stateDirectory := project.GetServiceStateDirectory(serviceName)
+		stateDirectory := project.GetServiceMountDirectory(serviceName)
 
 		err = os.MkdirAll(stateDirectory, 0700)
 		if err != nil {

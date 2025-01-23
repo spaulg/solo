@@ -76,6 +76,24 @@ func (t *Project) GetServiceStateDirectory(serviceName string) string {
 	return path.Join(t.GetServiceStateDirectoryRoot(), serviceName)
 }
 
+func (t *Project) GetServiceMountDirectory(serviceName string) string {
+	return path.Join(t.GetServiceStateDirectoryRoot(), serviceName, "mount")
+}
+
+func (t *Project) ServicesPendingBuildWorkflow() []string {
+	var servicesPendingBuild []string
+	serviceNames := t.ServiceNames()
+
+	for _, serviceName := range serviceNames {
+		markerFile := path.Join(t.GetServiceMountDirectory(serviceName), "build_complete")
+		if _, err := os.Stat(markerFile); os.IsNotExist(err) {
+			servicesPendingBuild = append(servicesPendingBuild, serviceName)
+		}
+	}
+
+	return servicesPendingBuild
+}
+
 func (t *Project) GetStateDirectoryRoot() string {
 	return t.projectStateDirectory
 }

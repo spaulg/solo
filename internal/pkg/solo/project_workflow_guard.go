@@ -59,7 +59,13 @@ func (t *ProjectWorkflowGuard) WaitForCompletion(workflowName workflowcommon.Nam
 	startTime := time.Now()
 	stopped := false
 
-	t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for all services to complete %s workflow, time remaining: %v", workflowName, duration.Seconds()))
+	// If the workflow is not present in the map, return immediately
+	if _, ok := t.workflowComplete[workflowName]; !ok {
+		t.soloCtx.Logger.Info(fmt.Sprintf("Cannot wait for workflow %s to complete as this is not mapped", workflowName))
+		return nil
+	}
+
+	t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for services to complete %s workflow, time remaining: %v", workflowName, duration.Seconds()))
 
 	// Report timer status through logs
 	go func() {
@@ -74,7 +80,7 @@ func (t *ProjectWorkflowGuard) WaitForCompletion(workflowName workflowcommon.Nam
 
 			remainingRounded := int(math.Floor(remaining))
 			if (remainingRounded % 10) == 0 {
-				t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for all services to complete %s workflow, time remaining: %v", workflowName, remainingRounded))
+				t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for services to complete %s workflow, time remaining: %v", workflowName, remainingRounded))
 			}
 		}
 	}()
