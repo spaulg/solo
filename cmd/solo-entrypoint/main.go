@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
 	"github.com/spaulg/solo/internal/pkg/entrypoint"
 	"os"
+	"path"
 	"strings"
 	"syscall"
 )
@@ -16,12 +18,15 @@ func main() {
 
 	defer workflowRunner.Close()
 
-	if true { // todo: detect build completed
+	if !isServiceBuilt() {
+		fmt.Println("Executing Build workflow")
 		workflowRunner.Execute(commonworkflow.Build)
 	}
 
+	fmt.Println("Executing PreStart workflow")
 	workflowRunner.Execute(commonworkflow.PreStart)
 
+	fmt.Printf("%+v\n", os.Args)
 	err = forkAndExecute(os.Args[1:])
 	panic(err)
 }
@@ -37,4 +42,13 @@ func forkAndExecute(args []string) error {
 
 		return syscall.Exec("/bin/sh", shellArgs, nil)
 	}
+}
+
+func isServiceBuilt() bool {
+	markerFile := path.Join("solo", "service", "build_complete")
+	if _, err := os.Stat(markerFile); err != nil {
+		return false
+	}
+
+	return true
 }

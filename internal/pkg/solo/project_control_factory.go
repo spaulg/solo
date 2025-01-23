@@ -8,14 +8,15 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
-	"github.com/spaulg/solo/internal/pkg/solo/logs"
+	"github.com/spaulg/solo/internal/pkg/solo/subscribers"
 	"github.com/spaulg/solo/internal/pkg/solo/wms"
 )
 
 func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error) {
 	// Provisioning grpc service
 	eventManager := events.GetEventManagerInstance()
-	eventManager.Subscribe(logs.NewLogWriterEventSubscriber(soloCtx))
+	eventManager.Subscribe(subscribers.NewLogWriterEventSubscriber(soloCtx))
+	eventManager.Subscribe(subscribers.NewBuildCompleteEventSubscriber(soloCtx))
 
 	workflowFactory := wms.NewWorkflowFactory()
 	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, workflowFactory)
