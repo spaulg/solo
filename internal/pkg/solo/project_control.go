@@ -79,7 +79,7 @@ func (t *ProjectControl) Start() error {
 	if err := t.orchestrator.Up(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		return fmt.Errorf("error running composeCmd: %v", err)
 	}
-	
+
 	if err := guard.WaitForCompletion(workflowcommon.Build); err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (t *ProjectControl) Stop() error {
 
 func (t *ProjectControl) Destroy() error {
 	if exists, err := t.composeFileExists(); !exists || err != nil {
-		return err
+		return nil
 	}
 
 	// todo: Exec pre stop commands
