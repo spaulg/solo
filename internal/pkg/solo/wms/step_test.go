@@ -3,16 +3,16 @@ package wms
 import "testing"
 import asserter "github.com/stretchr/testify/assert"
 
-var expectedStepName = "step name"
-var expectedStepCommand = "/path/to/file"
-var expectedWorkingDirectory = "/path/to/working/directory"
+const expectedStepName = "step name"
+const expectedStepCommand = "/path/to/file"
+const expectedWorkingDirectory = "/path/to/working/directory"
 
 func TestStepAccessors(t *testing.T) {
 	assert := asserter.New(t)
 	step := NewStep(expectedStepName, expectedStepCommand, expectedWorkingDirectory)
 
 	assert.Equal(expectedStepName, step.GetName())
-	assert.Equal(&expectedWorkingDirectory, step.GetWorkingDirectory())
+	assert.Equal(expectedWorkingDirectory, *step.GetWorkingDirectory())
 }
 
 func TestExecWithoutArg(t *testing.T) {
@@ -22,7 +22,7 @@ func TestExecWithoutArg(t *testing.T) {
 	assert.Equal(expectedStepName, step.GetName())
 	assert.Equal(expectedStepCommand, step.GetCommand())
 	assert.Equal([]string{}, step.GetArguments())
-	assert.Equal(&expectedWorkingDirectory, step.GetWorkingDirectory())
+	assert.Equal(expectedWorkingDirectory, *step.GetWorkingDirectory())
 }
 
 func TestExecWithArg(t *testing.T) {
