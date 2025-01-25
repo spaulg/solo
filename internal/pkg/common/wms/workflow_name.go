@@ -6,6 +6,7 @@ import (
 
 type Name int
 
+// nolint:gochecknoglobals
 var WorkflowNames = []Name{
 	Build,
 	PreStart,
