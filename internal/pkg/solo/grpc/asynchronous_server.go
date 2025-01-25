@@ -73,8 +73,8 @@ func (t *AsynchronousServer) Start() error {
 
 		t.server = grpc.NewServer(
 			grpc.Creds(t.transportCredentials),
-			grpc.UnaryInterceptor(interceptors.ServiceName),
-			grpc.StreamInterceptor(interceptors.ServiceNameStream),
+			grpc.UnaryInterceptor(interceptors.ServiceNameInterceptor),
+			grpc.StreamInterceptor(interceptors.ServiceNameStreamInterceptor),
 		)
 
 		services.RegisterWorkflowServer(t.server, t.workflowService)
