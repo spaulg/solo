@@ -23,7 +23,7 @@ build: protos $(NATIVE_SERVICES) $(LINUX_SERVICES)
 protos:
 	mkdir -p $(BUILD_DIR)
 	find $(SRC_DIR)/internal/pkg/common/grpc/services -name *.proto -exec \
-		protoc --proto_path=$(SRC_DIR) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
+		protoc --experimental_allow_proto3_optional --proto_path=$(SRC_DIR) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 $(NATIVE_SERVICES):
 	cd $(SRC_DIR)/cmd/$@ && CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@

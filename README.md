@@ -1,23 +1,24 @@
-## Prerequisites
+# Development Setup
 
-* Go
-* Docker compose API v3 compatible container provisioner
+### Install the Protobuf compiler
 
-## Development Setup
+Linux with apt: `apt install -y protobuf-compiler`
 
-Install protoc [for your system](https://grpc.io/docs/protoc-installation/)
+MacOS with brew: `brew install protobuf`
 
-Install protobuf grpc Go plugins  
+### Install GRPC/protobuf compiler plugins
 
 `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`
 
 `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest`
 
-## Building
+# Make commands
+
+### Building
 
 `make`
 
-## Testing/Linting/Code Coverage
+### Testing/Linting/Code Coverage
 
 `make test`
 
@@ -25,10 +26,10 @@ Install protobuf grpc Go plugins
 
 `make cover`
 
-## Installation
+### Installation
 
 `make install`
 
-## Build cleanup
+### Build cleanup
 
 `make clean`
