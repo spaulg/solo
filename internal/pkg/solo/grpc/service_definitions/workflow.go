@@ -7,6 +7,7 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
+	"github.com/spaulg/solo/internal/pkg/solo/grpc/interceptors"
 	"github.com/spaulg/solo/internal/pkg/solo/wms"
 	"google.golang.org/grpc"
 )
@@ -59,7 +60,8 @@ func (t WorkflowServerImpl) workflowStream(
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
 ) error {
 	// Extract service name
-	serviceName, ok := server.Context().Value("ServiceName").(string)
+	contextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
+	serviceName, ok := server.Context().Value(contextValueName).(string)
 	if !ok {
 		t.soloCtx.Logger.Info("Service name not found")
 		return fmt.Errorf("unauthorized")

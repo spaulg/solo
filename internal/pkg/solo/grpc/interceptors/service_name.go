@@ -9,9 +9,11 @@ import (
 	"strings"
 )
 
-const contextValue = "ServiceName"
+const ServiceNameContextValueName = "ServiceName"
 
-func ServiceName(
+type ServiceName string
+
+func ServiceNameInterceptor(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
@@ -22,11 +24,11 @@ func ServiceName(
 		return nil, err
 	}
 
-	ctx = context.WithValue(ctx, contextValue, serviceName)
+	ctx = context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName)
 	return handler(ctx, req)
 }
 
-func ServiceNameStream(
+func ServiceNameStreamInterceptor(
 	srv interface{},
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
@@ -38,7 +40,7 @@ func ServiceNameStream(
 		return err
 	}
 
-	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, contextValue, serviceName))
+	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName))
 	return handler(srv, streamWrapper)
 }
 

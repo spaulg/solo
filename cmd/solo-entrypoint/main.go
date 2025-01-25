@@ -32,13 +32,13 @@ func main() {
 }
 
 func forkAndExecute(args []string) error {
-	if strings.HasPrefix(args[0], "/") {
+	if []rune(args[0])[0] == '/' {
 		// Full path of executable given
 		return syscall.Exec(args[0], args, nil)
 	} else {
-		// todo: Requires $PATH env var and needs a shell
+		// Shell command
 		shellArgs := []string{"/bin/sh", "-c"}
-		shellArgs = append(args, strings.Join(args, " "))
+		shellArgs = append(shellArgs, strings.Join(args, " "))
 
 		return syscall.Exec("/bin/sh", shellArgs, nil)
 	}
