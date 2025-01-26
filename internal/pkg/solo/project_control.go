@@ -13,29 +13,31 @@ import (
 )
 
 type ProjectControl struct {
-	soloCtx           *context.SoloContext
-	workflowManager   events.Manager
-	orchestrator      container.Orchestrator
-	grpcServerFactory grpc.ServerFactory
+	soloCtx             *context.SoloContext
+	workflowManager     events.Manager
+	orchestratorFactory container.OrchestratorFactory
+	grpcServerFactory   grpc.ServerFactory
 }
 
 func NewProjectControl(
 	soloCtx *context.SoloContext,
 	workflowManager events.Manager,
-	orchestrator container.Orchestrator,
+	orchestratorFactory container.OrchestratorFactory,
 	grpcServerFactory grpc.ServerFactory,
 ) *ProjectControl {
 	return &ProjectControl{
-		soloCtx:           soloCtx,
-		workflowManager:   workflowManager,
-		orchestrator:      orchestrator,
-		grpcServerFactory: grpcServerFactory,
+		soloCtx:             soloCtx,
+		workflowManager:     workflowManager,
+		orchestratorFactory: orchestratorFactory,
+		grpcServerFactory:   grpcServerFactory,
 	}
 }
 
 func (t *ProjectControl) Start() error {
+	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+
 	grpcServer, err := t.grpcServerFactory.Build(
-		t.orchestrator.GetHostGatewayHostname(),
+		orchestrator.GetHostGatewayHostname(),
 		t.soloCtx.Config.GrpcServerPort,
 		t.soloCtx.Project,
 	)
@@ -69,15 +71,15 @@ func (t *ProjectControl) Start() error {
 
 	// Write compose file
 	if exists, _ := t.composeFileExists(); !exists {
-		composeYml, _ := t.orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
+		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
 		if err := t.exportComposeFile(composeYml); err != nil {
 			return err
 		}
 	}
 
 	// Start compose services
-	if err := t.orchestrator.Up(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
-		return fmt.Errorf("error running composeCmd: %v", err)
+	if err := orchestrator.Up(); err != nil {
+		return fmt.Errorf("error running compose: %v", err)
 	}
 
 	if err := guard.WaitForCompletion(workflowcommon.Build); err != nil {
@@ -88,8 +90,17 @@ func (t *ProjectControl) Start() error {
 		return err
 	}
 
-	// todo: Exec post start commands (via docker exec)
-	// todo: wait delay period for all containers to checkin for post start commands provisioning
+	// Exec post start commands
+	postStartCommand := []string{"/usr/local/sbin/solo", "trigger-event", "post_start"}
+	serviceNames := t.soloCtx.Project.ServiceNames()
+
+	if err := orchestrator.Execute(serviceNames, postStartCommand); err != nil {
+		return fmt.Errorf("error running compose: %v", err)
+	}
+
+	if err := guard.WaitForCompletion(workflowcommon.PostStart); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -100,8 +111,8 @@ func (t *ProjectControl) Stop() error {
 	}
 
 	// todo: Exec pre stop commands
-
-	if err := t.orchestrator.Down(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
+	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+	if err := orchestrator.Down(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
@@ -114,8 +125,8 @@ func (t *ProjectControl) Destroy() error {
 	}
 
 	// todo: Exec pre stop commands
-
-	if err := t.orchestrator.Destroy(t.soloCtx.Project.GetDirectory(), t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
+	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+	if err := orchestrator.Destroy(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 

@@ -14,7 +14,7 @@ func NewDumpComposeConfigCommand(soloCtx *context.SoloContext) *cobra.Command {
 		Short:   "Dumps the compose config to stdout",
 		Long:    "Dumps the compose config to stdout",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			composeYml, err := container.OrchestratorFactory(soloCtx).
+			composeYml, err := container.NewOrchestratorFactory().Build(soloCtx).
 				ExportComposeConfiguration(soloCtx.Config, soloCtx.Project)
 
 			if err != nil {
