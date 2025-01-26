@@ -21,8 +21,8 @@ func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error
 	workflowFactory := wms.NewWorkflowFactory()
 	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, workflowFactory)
 
-	// Container orchestrator
-	containerOrchestrator := container.OrchestratorFactory(soloCtx)
+	// Container orchestrator factory
+	orchestratorFactory := container.NewOrchestratorFactory()
 
 	// GRPC server factory
 	certificateAuthority, err := certificate.NewCertificateAuthority()
@@ -33,7 +33,7 @@ func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error
 	grpcServerFactory := grpc.NewMutualTLSServerFactory(certificateAuthority, workflowService)
 
 	// Project control
-	projectControl := NewProjectControl(soloCtx, eventManager, containerOrchestrator, grpcServerFactory)
+	projectControl := NewProjectControl(soloCtx, eventManager, orchestratorFactory, grpcServerFactory)
 
 	return projectControl, nil
 }

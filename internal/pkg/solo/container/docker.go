@@ -9,12 +9,15 @@ import (
 	"os/exec"
 )
 
-type DockerOrchestrator struct{}
+type DockerOrchestrator struct {
+	projectDirectory string
+	composeFile      string
+}
 
-func (o *DockerOrchestrator) Up(projectDirectory string, composeFile string) error {
+func (t *DockerOrchestrator) Up() error {
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", composeFile,
-		"--project-directory", projectDirectory,
+		"-f", t.composeFile,
+		"--project-directory", t.projectDirectory,
 		"up", "-d")
 
 	if err := composeCmd.Run(); err != nil {
@@ -24,10 +27,10 @@ func (o *DockerOrchestrator) Up(projectDirectory string, composeFile string) err
 	return nil
 }
 
-func (o *DockerOrchestrator) Down(projectDirectory string, composeFile string) error {
+func (t *DockerOrchestrator) Down() error {
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", composeFile,
-		"--project-directory", projectDirectory,
+		"-f", t.composeFile,
+		"--project-directory", t.projectDirectory,
 		"stop")
 
 	if err := composeCmd.Run(); err != nil {
@@ -37,10 +40,10 @@ func (o *DockerOrchestrator) Down(projectDirectory string, composeFile string) e
 	return nil
 }
 
-func (o *DockerOrchestrator) Destroy(projectDirectory string, composeFile string) error {
+func (t *DockerOrchestrator) Destroy() error {
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", composeFile,
-		"--project-directory", projectDirectory,
+		"-f", t.composeFile,
+		"--project-directory", t.projectDirectory,
 		"down", "-v")
 
 	if err := composeCmd.Run(); err != nil {
@@ -50,11 +53,27 @@ func (o *DockerOrchestrator) Destroy(projectDirectory string, composeFile string
 	return nil
 }
 
-func (o *DockerOrchestrator) GetHostGatewayHostname() string {
+func (t *DockerOrchestrator) Execute(serviceNames []string, command []string) error {
+	for _, serviceName := range serviceNames {
+		composeCmd := exec.Command("/usr/local/bin/docker", append([]string{"compose",
+			"-f", t.composeFile,
+			"--project-directory", t.projectDirectory,
+			"exec", "-d", serviceName,
+		}, command...)...)
+
+		if err := composeCmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (t *DockerOrchestrator) GetHostGatewayHostname() string {
 	return "host.docker.internal"
 }
 
-func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error) {
+func (t *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error) {
 	soloEntrypoint := config.Entrypoint
 
 	allServicesDataPath := project.GetAllServicesStateDirectory()
@@ -75,7 +94,7 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 			service.Command = append(service.Entrypoint, service.Command...)
 		}
 
-		service.Entrypoint = []string{"/solo-entrypoint"}
+		service.Entrypoint = []string{"/usr/local/sbin/solo", "entrypoint"}
 
 		serviceDataPath := project.GetServiceMountDirectory(service.Name)
 		_, err := os.Stat(serviceDataPath)
@@ -93,7 +112,7 @@ func (o *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
 			Source:   soloEntrypoint,
-			Target:   "/solo-entrypoint",
+			Target:   "/usr/local/sbin/solo",
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
