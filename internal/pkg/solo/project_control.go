@@ -13,14 +13,14 @@ import (
 )
 
 type ProjectControl struct {
-	soloCtx             *context.SoloContext
+	soloCtx             *context.CliContext
 	workflowManager     events.Manager
 	orchestratorFactory container.OrchestratorFactory
 	grpcServerFactory   grpc.ServerFactory
 }
 
 func NewProjectControl(
-	soloCtx *context.SoloContext,
+	soloCtx *context.CliContext,
 	workflowManager events.Manager,
 	orchestratorFactory container.OrchestratorFactory,
 	grpcServerFactory grpc.ServerFactory,

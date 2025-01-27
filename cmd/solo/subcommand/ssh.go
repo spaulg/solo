@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewSSHCommand(_ *context.SoloContext) *cobra.Command {
+func NewSSHCommand(_ *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "ssh",
 		GroupID: "tooling",

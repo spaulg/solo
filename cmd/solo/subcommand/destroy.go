@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func NewDestroySubCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 	var destroyCmdForce bool
 
 	destroyCmd := &cobra.Command{

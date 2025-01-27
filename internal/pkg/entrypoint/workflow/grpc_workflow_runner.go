@@ -1,4 +1,4 @@
-package entrypoint
+package workflow
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/common/grpc/services"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
+	entrypointcontext "github.com/spaulg/solo/internal/pkg/entrypoint/context"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/grpc/credentials"
 	"google.golang.org/grpc"
 	"io"
@@ -16,14 +17,18 @@ import (
 )
 
 type GrpcWorkflowRunner struct {
+	entrypointCtx  *entrypointcontext.EntrypointContext
 	conn           *grpc.ClientConn
 	workflowClient services.WorkflowClient
 }
 
 type WorkflowStream grpc.BidiStreamingClient[services.WorkflowStreamRequest, services.WorkflowStreamResponse]
 
-func NewGrpcWorkflowRunner(credentialsBuilder credentials.Builder) (WorkflowRunner, error) {
-	fmt.Println("Connect to grpc server")
+func NewGrpcWorkflowRunner(
+	entrypointCtx *entrypointcontext.EntrypointContext,
+	credentialsBuilder credentials.Builder,
+) (WorkflowRunner, error) {
+	entrypointCtx.Logger.Info("Connect to grpc server")
 
 	creds, err := credentialsBuilder.Build()
 	if err != nil {
@@ -42,10 +47,11 @@ func NewGrpcWorkflowRunner(credentialsBuilder credentials.Builder) (WorkflowRunn
 		return nil, err
 	}
 
-	fmt.Println("Creating new service client")
+	entrypointCtx.Logger.Info("Creating new service client")
 	client := services.NewWorkflowClient(conn)
 
 	return &GrpcWorkflowRunner{
+		entrypointCtx:  entrypointCtx,
 		conn:           conn,
 		workflowClient: client,
 	}, nil
@@ -69,15 +75,15 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.Name) {
 
 		switch instruction.Action {
 		case services.WorkflowAction_RUN_COMMAND_ACTION:
-			fmt.Printf("Running command: %s %v\n", instruction.RunCommand.Command, instruction.RunCommand.Arguments)
+			t.entrypointCtx.Logger.Info(fmt.Sprintf("Running command: %s %v\n", instruction.RunCommand.Command, instruction.RunCommand.Arguments))
 
 			exitCode, err := t.execute(
 				instruction.RunCommand.Command,
 				instruction.RunCommand.Arguments,
 				instruction.RunCommand.WorkingDirectory,
 				func(stdout string, stderr string) error {
-					fmt.Printf("%s\n", stdout)
-					fmt.Printf("%s\n", stderr)
+					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stdout))
+					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stderr))
 
 					return nil
 				},
@@ -138,19 +144,19 @@ func (t *GrpcWorkflowRunner) execute(
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Printf("Error creating stdout pipe: %v\n", err)
+		t.entrypointCtx.Logger.Error(fmt.Sprintf("Error creating stdout pipe: %v\n", err))
 		return 0, err
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		fmt.Printf("Error creating stderr pipe: %v\n", err)
+		t.entrypointCtx.Logger.Error(fmt.Sprintf("Error creating stderr pipe: %v\n", err))
 		return 0, err
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		fmt.Printf("Error starting command: %v\n", err)
+		t.entrypointCtx.Logger.Error(fmt.Sprintf("Error starting command: %v\n", err))
 		return 0, err
 	}
 
@@ -168,7 +174,7 @@ func (t *GrpcWorkflowRunner) execute(
 
 			// If either err returned not null and not EOF, break
 			if (stdoutErr != nil && stdoutErr != io.EOF) || (stderrErr != nil && stderrErr != io.EOF) {
-				fmt.Printf("Error reading from output stream: %v\n", stdoutErr)
+				t.entrypointCtx.Logger.Error(fmt.Sprintf("Error reading from output stream: %v\n", stdoutErr))
 				break
 			}
 
@@ -176,7 +182,7 @@ func (t *GrpcWorkflowRunner) execute(
 			stderrStr := string(stderrBuffer[:stderrBytesRead])
 
 			if err := streamOutput(stdoutStr, stderrStr); err != nil {
-				fmt.Println("failed to stream output")
+				t.entrypointCtx.Logger.Error("failed to stream output")
 				break
 			}
 
@@ -192,7 +198,7 @@ func (t *GrpcWorkflowRunner) execute(
 
 	var exitErr *exec.ExitError
 	if err != nil && !errors.As(err, &exitErr) || exitCode == -1 {
-		fmt.Printf("Command finished with error: %v\n", err)
+		t.entrypointCtx.Logger.Error(fmt.Sprintf("Command finished with error: %v\n", err))
 		return 0, nil
 	}
 

@@ -3,11 +3,12 @@ package subcommand
 import (
 	"errors"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
-	"github.com/spaulg/solo/internal/pkg/entrypoint"
+	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
+	"github.com/spaulg/solo/internal/pkg/entrypoint/workflow"
 	"github.com/spf13/cobra"
 )
 
-func NewTriggerEventCommand() *cobra.Command {
+func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "trigger-event [event]",
 		Short: "Trigger a provisioning event",
@@ -24,7 +25,7 @@ func NewTriggerEventCommand() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			workflowRunner, err := entrypoint.WorkflowRunnerFactory()
+			workflowRunner, err := workflow.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)
 			}

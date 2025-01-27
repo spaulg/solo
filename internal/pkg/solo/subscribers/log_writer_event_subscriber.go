@@ -7,10 +7,10 @@ import (
 )
 
 type LogWriterEventSubscriber struct {
-	soloCtx *context.SoloContext
+	soloCtx *context.CliContext
 }
 
-func NewLogWriterEventSubscriber(soloCtx *context.SoloContext) events.Subscriber {
+func NewLogWriterEventSubscriber(soloCtx *context.CliContext) events.Subscriber {
 	return &LogWriterEventSubscriber{
 		soloCtx: soloCtx,
 	}

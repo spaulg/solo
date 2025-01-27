@@ -13,14 +13,14 @@ import (
 )
 
 type WorkflowServerImpl struct {
-	soloCtx *context.SoloContext
+	soloCtx *context.CliContext
 	services.UnimplementedWorkflowServer
 	eventManager    events.Manager
 	workflowFactory wms.Factory
 }
 
 func NewWorkflowService(
-	soloCtx *context.SoloContext,
+	soloCtx *context.CliContext,
 	eventManager events.Manager,
 	workflowFactory wms.Factory,
 ) *WorkflowServerImpl {

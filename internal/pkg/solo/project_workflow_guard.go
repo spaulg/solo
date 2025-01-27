@@ -15,13 +15,13 @@ type WorkflowServiceMap map[workflowcommon.Name][]string
 type WorkflowChannelMap map[workflowcommon.Name]chan interface{}
 
 type ProjectWorkflowGuard struct {
-	soloCtx          *context.SoloContext
+	soloCtx          *context.CliContext
 	workflowServices WorkflowServiceMap
 	workflowStatus   WorkflowServiceMap
 	workflowComplete WorkflowChannelMap
 }
 
-func NewProjectWorkflowGuard(soloCtx *context.SoloContext, workflowServices WorkflowServiceMap) *ProjectWorkflowGuard {
+func NewProjectWorkflowGuard(soloCtx *context.CliContext, workflowServices WorkflowServiceMap) *ProjectWorkflowGuard {
 	channels := make(WorkflowChannelMap)
 	for workflow := range workflowServices {
 		channels[workflow] = make(chan interface{})

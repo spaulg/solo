@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewDumpComposeConfigCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "dump-compose-config",
 		GroupID: "config",

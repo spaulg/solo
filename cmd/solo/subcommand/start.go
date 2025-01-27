@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewStartCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewStartCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "start",
 		GroupID: "lifecycle",
