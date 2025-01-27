@@ -12,7 +12,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/wms"
 )
 
-func ProjectControlFactory(soloCtx *context.SoloContext) (*ProjectControl, error) {
+func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error) {
 	// Provisioning grpc service
 	eventManager := events.GetEventManagerInstance()
 	eventManager.Subscribe(subscribers.NewLogWriterEventSubscriber(soloCtx))

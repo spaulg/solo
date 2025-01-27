@@ -12,7 +12,7 @@ import (
 
 const lockFileName = "lock"
 
-type SoloContext struct {
+type CliContext struct {
 	Project        *project.Project
 	Config         *config.Config
 	ProjectLoadErr error
@@ -21,7 +21,7 @@ type SoloContext struct {
 	lockFile       *os.File
 }
 
-func (t *SoloContext) ProtectWithLock(impl func(*cobra.Command, []string) error) func(cmd *cobra.Command, args []string) error {
+func (t *CliContext) ProtectWithLock(impl func(*cobra.Command, []string) error) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		if err := t.TryLock(); err != nil {
 			return err
@@ -39,7 +39,7 @@ func (t *SoloContext) ProtectWithLock(impl func(*cobra.Command, []string) error)
 	}
 }
 
-func (t *SoloContext) TryLock() error {
+func (t *CliContext) TryLock() error {
 	var err error
 	lockFile := t.Project.ResolveStateDirectory(lockFileName)
 	t.lockFile, err = os.OpenFile(lockFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
@@ -50,7 +50,7 @@ func (t *SoloContext) TryLock() error {
 	return err
 }
 
-func (t *SoloContext) Unlock() error {
+func (t *CliContext) Unlock() error {
 	lockFile := t.lockFile.Name()
 
 	if err := t.lockFile.Close(); err != nil {

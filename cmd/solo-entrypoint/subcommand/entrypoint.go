@@ -2,7 +2,8 @@ package subcommand
 
 import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
-	"github.com/spaulg/solo/internal/pkg/entrypoint"
+	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
+	"github.com/spaulg/solo/internal/pkg/entrypoint/workflow"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
@@ -10,7 +11,7 @@ import (
 	"syscall"
 )
 
-func NewEntrypointCommand() *cobra.Command {
+func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {
 	return &cobra.Command{
 		Use:                "entrypoint",
 		Short:              "Container entrypoint",
@@ -18,7 +19,7 @@ func NewEntrypointCommand() *cobra.Command {
 		DisableFlagParsing: true,
 		Args:               cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			workflowRunner, err := entrypoint.WorkflowRunnerFactory()
+			workflowRunner, err := workflow.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)
 			}

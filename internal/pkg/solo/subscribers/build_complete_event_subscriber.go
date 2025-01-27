@@ -11,10 +11,10 @@ import (
 )
 
 type BuildCompleteEventSubscriber struct {
-	soloCtx *context.SoloContext
+	soloCtx *context.CliContext
 }
 
-func NewBuildCompleteEventSubscriber(soloCtx *context.SoloContext) events.Subscriber {
+func NewBuildCompleteEventSubscriber(soloCtx *context.CliContext) events.Subscriber {
 	return &BuildCompleteEventSubscriber{
 		soloCtx: soloCtx,
 	}

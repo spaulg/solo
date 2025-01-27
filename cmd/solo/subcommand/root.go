@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewRootCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:          "solo",
 		SilenceUsage: true,
@@ -47,7 +47,7 @@ func NewRootCommand(soloCtx *context.SoloContext) *cobra.Command {
 func Execute() {
 	cobra.EnableCommandSorting = false
 
-	soloCtx := loadConfigAndProjectContext()
+	soloCtx := loadContext()
 
 	rootCmd := NewRootCommand(soloCtx)
 	rootCmd.AddGroup(&cobra.Group{ID: "lifecycle", Title: "Life Cycle Commands:"})
@@ -79,50 +79,23 @@ func Execute() {
 	}
 }
 
-func buildLogHandler(soloCtx *context.SoloContext) (slog.Handler, error) {
-	stateDirectory := path.Join(soloCtx.Project.GetStateDirectoryRoot(), "logs")
+func buildLogHandler(soloCtx *context.CliContext) (slog.Handler, error) {
+	stateDirectory := path.Join(soloCtx.Project.GetStateDirectoryRoot(), "cli", "logs")
 	if err := os.MkdirAll(stateDirectory, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %v", err)
 	}
 
-	logFileName := path.Join(stateDirectory, time.Now().Format("cli-2006-01-02.log"))
+	logFileName := path.Join(stateDirectory, time.Now().Format("2006-01-02.log"))
 
-	logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open log file: %v", err)
-	}
-
-	switch soloCtx.Config.Logging.Handler {
-	case "json":
-		return slog.NewJSONHandler(logFile, &slog.HandlerOptions{
-			Level: buildLogLevel(soloCtx),
-		}), nil
-
-	case "text":
-		fallthrough
-	default:
-		return slog.NewTextHandler(logFile, &slog.HandlerOptions{
-			Level: buildLogLevel(soloCtx),
-		}), nil
-	}
+	builder := logging.NewLogHandlerBuilder()
+	return builder.
+		WithLogFilePath(logFileName).
+		WithLogLevel(soloCtx.Config.Logging.Level).
+		WithLogHandlerName(soloCtx.Config.Logging.Handler).
+		Build()
 }
 
-func buildLogLevel(soloCtx *context.SoloContext) slog.Level {
-	switch soloCtx.Config.Logging.Level {
-	case "debug":
-		return slog.LevelDebug
-	case "info":
-		return slog.LevelInfo
-	case "error":
-		return slog.LevelError
-	case "warning":
-		fallthrough
-	default:
-		return slog.LevelWarn
-	}
-}
-
-func loadConfigAndProjectContext() *context.SoloContext {
+func loadContext() *context.CliContext {
 	var loadedProject *project.Project
 	var projectLoadErr error
 
@@ -136,7 +109,7 @@ func loadConfigAndProjectContext() *context.SoloContext {
 		}
 	}
 
-	return &context.SoloContext{
+	return &context.CliContext{
 		Config:         loadedConfig,
 		ConfigLoadErr:  configLoadErr,
 		Project:        loadedProject,

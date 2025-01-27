@@ -96,8 +96,20 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 
 		service.Entrypoint = []string{"/usr/local/sbin/solo", "entrypoint"}
 
+		serviceLogPath := project.GetServiceLogDirectory(service.Name)
+		_, err := os.Stat(serviceLogPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				if err := os.MkdirAll(serviceLogPath, 0750); err != nil {
+					return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+				}
+			} else {
+				return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+			}
+		}
+
 		serviceDataPath := project.GetServiceMountDirectory(service.Name)
-		_, err := os.Stat(serviceDataPath)
+		_, err = os.Stat(serviceDataPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				if err := os.MkdirAll(serviceDataPath, 0750); err != nil {
@@ -116,8 +128,13 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",
+			Source:   serviceLogPath,
+			Target:   "/solo/service/logs",
+			ReadOnly: false,
+		}, types.ServiceVolumeConfig{
+			Type:     "bind",
 			Source:   serviceDataPath,
-			Target:   "/solo/service",
+			Target:   "/solo/service/data",
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",

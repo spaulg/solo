@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewLogsCommand(_ *context.SoloContext) *cobra.Command {
+func NewLogsCommand(_ *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "logs",
 		GroupID: "tooling",

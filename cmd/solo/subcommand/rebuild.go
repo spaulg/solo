@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func NewRebuildCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
 	var rebuildCmdForce bool
 
 	rebuildCmd := &cobra.Command{
