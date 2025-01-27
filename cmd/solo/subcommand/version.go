@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewVersionCommand(_ *context.SoloContext) *cobra.Command {
+func NewVersionCommand(_ *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Displays the solo version",

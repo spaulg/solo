@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCleanSubCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "clean",
 		GroupID: "lifecycle",

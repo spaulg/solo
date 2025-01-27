@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewStopCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewStopCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "stop",
 		GroupID: "lifecycle",

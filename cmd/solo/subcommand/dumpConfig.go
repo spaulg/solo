@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func NewDumpConfigCommand(soloCtx *context.SoloContext) *cobra.Command {
+func NewDumpConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "dump-config",
 		GroupID: "config",

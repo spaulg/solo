@@ -76,6 +76,10 @@ func (t *Project) GetServiceStateDirectory(serviceName string) string {
 	return path.Join(t.GetServiceStateDirectoryRoot(), serviceName)
 }
 
+func (t *Project) GetServiceLogDirectory(serviceName string) string {
+	return path.Join(t.GetServiceStateDirectoryRoot(), serviceName, "logs")
+}
+
 func (t *Project) GetServiceMountDirectory(serviceName string) string {
 	return path.Join(t.GetServiceStateDirectoryRoot(), serviceName, "mount")
 }
