@@ -117,8 +117,8 @@ func (t *GrpcWorkflowRunner) Close() error {
 
 func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.Name) (WorkflowStream, error) {
 	switch workflowName {
-	case commonworkflow.Build:
-		return t.workflowClient.BuildWorkflowStream(context.Background())
+	case commonworkflow.FirstPreStart:
+		return t.workflowClient.FirstPreStartWorkflowStream(context.Background())
 	case commonworkflow.PreStart:
 		return t.workflowClient.PreStartWorkflowStream(context.Background())
 	case commonworkflow.PostStart:

@@ -55,7 +55,7 @@ func (t *ProjectControl) Start() error {
 
 	// Build workflow service map
 	workflowMap, err := t.buildWorkflowServiceMap([]workflowcommon.Name{
-		workflowcommon.Build,
+		workflowcommon.FirstPreStart,
 		workflowcommon.PreStart,
 		workflowcommon.PostStart,
 	})
@@ -82,7 +82,7 @@ func (t *ProjectControl) Start() error {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
-	if err := guard.WaitForCompletion(workflowcommon.Build); err != nil {
+	if err := guard.WaitForCompletion(workflowcommon.FirstPreStart); err != nil {
 		return err
 	}
 
@@ -279,7 +279,7 @@ func (t *ProjectControl) buildWorkflowServiceMap(workflowNames []workflowcommon.
 	workflowMap := make(WorkflowServiceMap)
 
 	for _, workflowName := range workflowNames {
-		if workflowName == workflowcommon.Build {
+		if workflowName == workflowcommon.FirstPreStart {
 			servicesToBuild := t.soloCtx.Project.ServicesPendingBuildWorkflow()
 
 			if len(servicesToBuild) > 0 {
