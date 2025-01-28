@@ -37,7 +37,7 @@ message WorkflowRunResult {
 }
 
 service Workflow {
-  rpc BuildWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
+  rpc FirstPreStartWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
   rpc PreStartWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
   rpc PostStartWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
   rpc PreStopWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);

@@ -8,7 +8,7 @@ type Name int
 
 // nolint:gochecknoglobals
 var WorkflowNames = []Name{
-	Build,
+	FirstPreStart,
 	PreStart,
 	PostStart,
 	PreStop,
@@ -19,8 +19,8 @@ var WorkflowNames = []Name{
 
 func FromString(name string) (Name, error) {
 	switch name {
-	case "build":
-		return Build, nil
+	case "first_pre_start":
+		return FirstPreStart, nil
 	case "pre_start":
 		return PreStart, nil
 	case "post_start":
@@ -40,8 +40,8 @@ func FromString(name string) (Name, error) {
 
 func (c Name) String() string {
 	switch c {
-	case Build:
-		return "build"
+	case FirstPreStart:
+		return "first_pre_start"
 	case PreStart:
 		return "pre_start"
 	case PostStart:
@@ -61,7 +61,7 @@ func (c Name) String() string {
 
 const (
 	Undefined Name = iota
-	Build
+	FirstPreStart
 	PreStart
 	PostStart
 	PreStop

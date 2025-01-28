@@ -27,7 +27,7 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 			defer workflowRunner.Close()
 
 			if !isServiceBuilt() {
-				workflowRunner.Execute(commonworkflow.Build)
+				workflowRunner.Execute(commonworkflow.FirstPreStart)
 			}
 
 			workflowRunner.Execute(commonworkflow.PreStart)

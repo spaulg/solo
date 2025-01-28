@@ -11,7 +11,7 @@ services:
       - "./go.sum:/solo/go.sum"
 
     x-workflows:
-      build:
+      first_pre_start:
         steps:
           - name: 'List files in root'
             command: '/bin/ls -lh'
