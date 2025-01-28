@@ -1,8 +1,8 @@
 package context
 
 import (
-	"errors"
 	"fmt"
+	"github.com/gofrs/flock"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"github.com/spf13/cobra"
@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-const lockFileName = "lock"
+const lockFileName = "locking_file"
 
 type CliContext struct {
 	Project        *project.Project
@@ -18,7 +18,7 @@ type CliContext struct {
 	ProjectLoadErr error
 	ConfigLoadErr  error
 	Logger         *slog.Logger
-	lockFile       *os.File
+	lockFile       *flock.Flock
 }
 
 func (t *CliContext) ProtectWithLock(impl func(*cobra.Command, []string) error) func(cmd *cobra.Command, args []string) error {
@@ -27,35 +27,31 @@ func (t *CliContext) ProtectWithLock(impl func(*cobra.Command, []string) error) 
 			return err
 		}
 
-		commandErr := impl(cmd, args)
-
-		if err := t.Unlock(); err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				return fmt.Errorf("%v: %v", err, commandErr)
-			}
-		}
-
-		return commandErr
+		return impl(cmd, args)
 	}
 }
 
 func (t *CliContext) TryLock() error {
-	var err error
-	lockFile := t.Project.ResolveStateDirectory(lockFileName)
-	t.lockFile, err = os.OpenFile(lockFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if errors.Is(err, os.ErrExist) {
-		return errors.New("lock file exists")
+	// Create the lock file if it does not already exist
+	lockFileName := t.Project.ResolveStateDirectory(lockFileName)
+
+	lockFile, err := os.OpenFile(lockFileName, os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	} else {
+		_ = lockFile.Close()
 	}
 
-	return err
-}
-
-func (t *CliContext) Unlock() error {
-	lockFile := t.lockFile.Name()
-
-	if err := t.lockFile.Close(); err != nil {
+	// Lock the locking file with an optimistic exclusive write lock
+	t.lockFile = flock.New(lockFileName)
+	locked, err := t.lockFile.TryLock()
+	if err != nil {
 		return err
 	}
 
-	return os.Remove(lockFile)
+	if !locked {
+		return fmt.Errorf("could not acquire lock")
+	}
+
+	return nil
 }
