@@ -55,6 +55,12 @@ func (t WorkflowServerImpl) PreStopWorkflowStream(
 	return t.workflowStream(commonworkflow.PreStop, server)
 }
 
+func (t WorkflowServerImpl) PreDestroyWorkflowStream(
+	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
+) error {
+	return t.workflowStream(commonworkflow.PreDestroy, server)
+}
+
 func (t WorkflowServerImpl) workflowStream(
 	workflowName commonworkflow.Name,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],

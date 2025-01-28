@@ -41,4 +41,5 @@ service Workflow {
   rpc PreStartWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
   rpc PostStartWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
   rpc PreStopWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
+  rpc PreDestroyWorkflowStream(stream WorkflowStreamRequest) returns (stream WorkflowStreamResponse);
 }
