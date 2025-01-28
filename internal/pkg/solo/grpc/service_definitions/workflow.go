@@ -31,10 +31,10 @@ func NewWorkflowService(
 	}
 }
 
-func (t WorkflowServerImpl) BuildWorkflowStream(
+func (t WorkflowServerImpl) FirstPreStartWorkflowStream(
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
 ) error {
-	return t.workflowStream(commonworkflow.Build, server)
+	return t.workflowStream(commonworkflow.FirstPreStart, server)
 }
 
 func (t WorkflowServerImpl) PreStartWorkflowStream(

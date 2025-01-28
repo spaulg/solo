@@ -23,7 +23,7 @@ func NewBuildCompleteEventSubscriber(soloCtx *context.CliContext) events.Subscri
 func (t *BuildCompleteEventSubscriber) Publish(event events.Event) {
 	switch e := event.(type) {
 	case *wms.WorkflowCompleteEvent:
-		if e.WorkflowName == commonworkflow.Build && e.Successful {
+		if e.WorkflowName == commonworkflow.FirstPreStart && e.Successful {
 			t.soloCtx.Logger.Info(fmt.Sprintf("Writing build complete marker for %s", e.ServiceName))
 
 			markerFile := path.Join(t.soloCtx.Project.GetServiceMountDirectory(e.ServiceName), "build_complete")
