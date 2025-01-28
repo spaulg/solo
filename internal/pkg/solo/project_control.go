@@ -110,8 +110,51 @@ func (t *ProjectControl) Stop() error {
 		return err
 	}
 
-	// todo: Exec pre stop commands
 	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+
+	grpcServer, err := t.grpcServerFactory.Build(
+		orchestrator.GetHostGatewayHostname(),
+		t.soloCtx.Config.GrpcServerPort,
+		t.soloCtx.Project,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// Start GRPC services
+	if err := grpcServer.Start(); err != nil {
+		return err
+	}
+
+	defer grpcServer.Stop()
+
+	// Build workflow service map
+	workflowMap, err := t.buildWorkflowServiceMap([]workflowcommon.Name{
+		workflowcommon.PreStop,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	// Register workflow guard
+	guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
+	t.workflowManager.Subscribe(guard)
+	defer t.workflowManager.Unsubscribe(guard)
+
+	// Exec post start commands
+	preStopCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_stop"}
+	serviceNames := t.soloCtx.Project.ServiceNames()
+
+	if err := orchestrator.Execute(serviceNames, preStopCommand); err != nil {
+		return fmt.Errorf("error running compose: %v", err)
+	}
+
+	if err := guard.WaitForCompletion(workflowcommon.PreStop); err != nil {
+		return err
+	}
+
 	if err := orchestrator.Down(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}

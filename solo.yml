@@ -12,8 +12,6 @@ services:
 
     x-workflows:
       build:
-        timeout: 10m
-
         steps:
           - name: 'List files in root'
             command: '/bin/ls -lh'
@@ -23,8 +21,20 @@ services:
             command: '/bin/ps aux'
             working_directory: '/'
 
+      pre_start:
+        steps:
+          - name: 'List running processes'
+            command: '/bin/ps aux'
+            working_directory: '/'
+
       post_start:
         steps:
           - name: 'List running processes'
-            command: 'ps aux > /root/post_start'
+            command: '/bin/ps aux'
+            working_directory: '/'
+
+      pre_stop:
+        steps:
+          - name: 'List running processes'
+            command: '/bin/ps aux'
             working_directory: '/'
