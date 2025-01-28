@@ -123,6 +123,8 @@ func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.Name) (Work
 		return t.workflowClient.PreStartWorkflowStream(context.Background())
 	case commonworkflow.PostStart:
 		return t.workflowClient.PostStartWorkflowStream(context.Background())
+	case commonworkflow.PreStop:
+		return t.workflowClient.PreStopWorkflowStream(context.Background())
 	default:
 		return nil, errors.New("invalid wms name")
 	}
