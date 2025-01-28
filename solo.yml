@@ -38,3 +38,9 @@ services:
           - name: 'List running processes'
             command: '/bin/ps aux'
             working_directory: '/'
+
+      pre_destroy:
+        steps:
+          - name: 'List running processes'
+            command: '/bin/ps aux'
+            working_directory: '/'

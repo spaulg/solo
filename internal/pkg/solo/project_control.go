@@ -167,8 +167,51 @@ func (t *ProjectControl) Destroy() error {
 		return nil
 	}
 
-	// todo: Exec pre stop commands
 	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+
+	grpcServer, err := t.grpcServerFactory.Build(
+		orchestrator.GetHostGatewayHostname(),
+		t.soloCtx.Config.GrpcServerPort,
+		t.soloCtx.Project,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// Start GRPC services
+	if err := grpcServer.Start(); err != nil {
+		return err
+	}
+
+	defer grpcServer.Stop()
+
+	// Build workflow service map
+	workflowMap, err := t.buildWorkflowServiceMap([]workflowcommon.Name{
+		workflowcommon.PreDestroy,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	// Register workflow guard
+	guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
+	t.workflowManager.Subscribe(guard)
+	defer t.workflowManager.Unsubscribe(guard)
+
+	// Exec post start commands
+	preDestroyCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_destroy"}
+	serviceNames := t.soloCtx.Project.ServiceNames()
+
+	if err := orchestrator.Execute(serviceNames, preDestroyCommand); err != nil {
+		return fmt.Errorf("error running compose: %v", err)
+	}
+
+	if err := guard.WaitForCompletion(workflowcommon.PreDestroy); err != nil {
+		return err
+	}
+
 	if err := orchestrator.Destroy(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
