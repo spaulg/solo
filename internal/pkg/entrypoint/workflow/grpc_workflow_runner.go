@@ -63,7 +63,12 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.Name) {
 		panic(err)
 	}
 
-	defer stream.CloseSend()
+	defer func(stream WorkflowStream) {
+		err := stream.CloseSend()
+		if err != nil {
+			t.entrypointCtx.Logger.Error("Failed to close GRPC stream")
+		}
+	}(stream)
 
 	for {
 		instruction, err := stream.Recv()
