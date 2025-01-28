@@ -280,7 +280,7 @@ func (t *ProjectControl) buildWorkflowServiceMap(workflowNames []workflowcommon.
 
 	for _, workflowName := range workflowNames {
 		if workflowName == workflowcommon.FirstPreStart {
-			servicesToBuild := t.soloCtx.Project.ServicesPendingBuildWorkflow()
+			servicesToBuild := t.soloCtx.Project.ServicesPendingFirstPreStartWorkflow()
 
 			if len(servicesToBuild) > 0 {
 				workflowMap[workflowName] = servicesToBuild
