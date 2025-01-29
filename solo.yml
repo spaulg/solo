@@ -44,3 +44,12 @@ services:
           - name: 'List running processes'
             command: '/bin/ps aux'
             working_directory: '/'
+
+  test2:
+    build: .
+    command: ['/usr/sbin/nginx', '-g', 'daemon off;']
+    volumes:
+      - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
+      - "./internal:/solo/internal"
+      - "./go.mod:/solo/go.mod"
+      - "./go.sum:/solo/go.sum"

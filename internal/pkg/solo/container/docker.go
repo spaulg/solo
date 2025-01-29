@@ -1,10 +1,14 @@
 package container
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
+	"io"
 	"os"
 	"os/exec"
 )
@@ -12,6 +16,10 @@ import (
 type DockerOrchestrator struct {
 	projectDirectory string
 	composeFile      string
+}
+
+type RunningService struct {
+	Service string `json:"service"`
 }
 
 func (t *DockerOrchestrator) Up() error {
@@ -67,6 +75,52 @@ func (t *DockerOrchestrator) Execute(serviceNames []string, command []string) er
 	}
 
 	return nil
+}
+
+func (t *DockerOrchestrator) RunningServices() ([]string, error) {
+	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+		"-f", t.composeFile,
+		"--project-directory", t.projectDirectory,
+		"ps",
+		"--format", "json",
+		"--filter", "status=running",
+	)
+
+	var stdoutBuf bytes.Buffer
+	composeCmd.Stdout = &stdoutBuf
+
+	if err := composeCmd.Run(); err != nil {
+		return nil, err
+	}
+
+	var serviceNames []string
+	serviceNameMap := make(map[string]bool)
+
+	buffer := stdoutBuf.Bytes()
+	reader := bufio.NewReader(bytes.NewReader(buffer))
+
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, err
+		}
+
+		runningService := RunningService{}
+		if err := json.Unmarshal(line, &runningService); err != nil {
+			return nil, err
+		}
+
+		if !serviceNameMap[runningService.Service] {
+			serviceNameMap[runningService.Service] = true
+			serviceNames = append(serviceNames, runningService.Service)
+		}
+	}
+
+	return serviceNames, nil
 }
 
 func (t *DockerOrchestrator) GetHostGatewayHostname() string {
