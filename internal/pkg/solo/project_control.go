@@ -54,7 +54,8 @@ func (t *ProjectControl) Start() error {
 	defer grpcServer.Stop()
 
 	// Build workflow service map
-	workflowMap, err := t.buildWorkflowServiceMap([]workflowcommon.Name{
+	serviceNames := t.soloCtx.Project.ServiceNames()
+	workflowMap, err := t.buildWorkflowServiceMap(serviceNames, []workflowcommon.Name{
 		workflowcommon.FirstPreStart,
 		workflowcommon.PreStart,
 		workflowcommon.PostStart,
@@ -92,7 +93,6 @@ func (t *ProjectControl) Start() error {
 
 	// Exec post start commands
 	postStartCommand := []string{"/usr/local/sbin/solo", "trigger-event", "post_start"}
-	serviceNames := t.soloCtx.Project.ServiceNames()
 
 	if err := orchestrator.Execute(serviceNames, postStartCommand); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
@@ -112,47 +112,53 @@ func (t *ProjectControl) Stop() error {
 
 	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
 
-	grpcServer, err := t.grpcServerFactory.Build(
-		orchestrator.GetHostGatewayHostname(),
-		t.soloCtx.Config.GrpcServerPort,
-		t.soloCtx.Project,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	// Start GRPC services
-	if err := grpcServer.Start(); err != nil {
-		return err
-	}
-
-	defer grpcServer.Stop()
-
 	// Build workflow service map
-	workflowMap, err := t.buildWorkflowServiceMap([]workflowcommon.Name{
-		workflowcommon.PreStop,
-	})
-
+	serviceNames, err := orchestrator.RunningServices()
 	if err != nil {
 		return err
 	}
 
-	// Register workflow guard
-	guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
-	t.workflowManager.Subscribe(guard)
-	defer t.workflowManager.Unsubscribe(guard)
+	if len(serviceNames) > 0 {
+		grpcServer, err := t.grpcServerFactory.Build(
+			orchestrator.GetHostGatewayHostname(),
+			t.soloCtx.Config.GrpcServerPort,
+			t.soloCtx.Project,
+		)
 
-	// Exec post start commands
-	preStopCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_stop"}
-	serviceNames := t.soloCtx.Project.ServiceNames()
+		if err != nil {
+			return err
+		}
 
-	if err := orchestrator.Execute(serviceNames, preStopCommand); err != nil {
-		return fmt.Errorf("error running compose: %v", err)
-	}
+		// Start GRPC services
+		if err := grpcServer.Start(); err != nil {
+			return err
+		}
 
-	if err := guard.WaitForCompletion(workflowcommon.PreStop); err != nil {
-		return err
+		defer grpcServer.Stop()
+
+		workflowMap, err := t.buildWorkflowServiceMap(serviceNames, []workflowcommon.Name{
+			workflowcommon.PreStop,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Register workflow guard
+		guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
+		t.workflowManager.Subscribe(guard)
+		defer t.workflowManager.Unsubscribe(guard)
+
+		// Exec pre stop commands
+		preStopCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_stop"}
+
+		if err := orchestrator.Execute(serviceNames, preStopCommand); err != nil {
+			return fmt.Errorf("error running compose: %v", err)
+		}
+
+		if err := guard.WaitForCompletion(workflowcommon.PreStop); err != nil {
+			return err
+		}
 	}
 
 	if err := orchestrator.Down(); err != nil {
@@ -169,47 +175,53 @@ func (t *ProjectControl) Destroy() error {
 
 	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
 
-	grpcServer, err := t.grpcServerFactory.Build(
-		orchestrator.GetHostGatewayHostname(),
-		t.soloCtx.Config.GrpcServerPort,
-		t.soloCtx.Project,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	// Start GRPC services
-	if err := grpcServer.Start(); err != nil {
-		return err
-	}
-
-	defer grpcServer.Stop()
-
 	// Build workflow service map
-	workflowMap, err := t.buildWorkflowServiceMap([]workflowcommon.Name{
-		workflowcommon.PreDestroy,
-	})
-
+	serviceNames, err := orchestrator.RunningServices()
 	if err != nil {
 		return err
 	}
 
-	// Register workflow guard
-	guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
-	t.workflowManager.Subscribe(guard)
-	defer t.workflowManager.Unsubscribe(guard)
+	if len(serviceNames) > 0 {
+		grpcServer, err := t.grpcServerFactory.Build(
+			orchestrator.GetHostGatewayHostname(),
+			t.soloCtx.Config.GrpcServerPort,
+			t.soloCtx.Project,
+		)
 
-	// Exec post start commands
-	preDestroyCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_destroy"}
-	serviceNames := t.soloCtx.Project.ServiceNames()
+		if err != nil {
+			return err
+		}
 
-	if err := orchestrator.Execute(serviceNames, preDestroyCommand); err != nil {
-		return fmt.Errorf("error running compose: %v", err)
-	}
+		// Start GRPC services
+		if err := grpcServer.Start(); err != nil {
+			return err
+		}
 
-	if err := guard.WaitForCompletion(workflowcommon.PreDestroy); err != nil {
-		return err
+		defer grpcServer.Stop()
+
+		workflowMap, err := t.buildWorkflowServiceMap(serviceNames, []workflowcommon.Name{
+			workflowcommon.PreDestroy,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Register workflow guard
+		guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
+		t.workflowManager.Subscribe(guard)
+		defer t.workflowManager.Unsubscribe(guard)
+
+		// Exec pre destroy commands
+		preDestroyCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_destroy"}
+
+		if err := orchestrator.Execute(serviceNames, preDestroyCommand); err != nil {
+			return fmt.Errorf("error running compose: %v", err)
+		}
+
+		if err := guard.WaitForCompletion(workflowcommon.PreDestroy); err != nil {
+			return err
+		}
 	}
 
 	if err := orchestrator.Destroy(); err != nil {
@@ -274,8 +286,7 @@ func (t *ProjectControl) composeFileExists() (bool, error) {
 	return true, nil
 }
 
-func (t *ProjectControl) buildWorkflowServiceMap(workflowNames []workflowcommon.Name) (WorkflowServiceMap, error) {
-	serviceNames := t.soloCtx.Project.ServiceNames()
+func (t *ProjectControl) buildWorkflowServiceMap(serviceNames []string, workflowNames []workflowcommon.Name) (WorkflowServiceMap, error) {
 	workflowMap := make(WorkflowServiceMap)
 
 	for _, workflowName := range workflowNames {
