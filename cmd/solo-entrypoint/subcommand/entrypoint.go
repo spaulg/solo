@@ -6,7 +6,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/entrypoint/workflow"
 	"github.com/spf13/cobra"
 	"os"
-	"path"
 	"strings"
 	"syscall"
 )
@@ -52,7 +51,8 @@ func forkAndExecute(args []string) error {
 }
 
 func isServiceBuilt() bool {
-	markerFile := path.Join("solo", "service", "build_complete")
+	markerFile := "/solo/service/data/first_pre_start_complete"
+
 	if _, err := os.Stat(markerFile); err != nil {
 		return false
 	}
