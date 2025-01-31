@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"log/slog"
 	"os"
+	"path/filepath"
 )
 
 const lockFileName = "locking_file"
@@ -34,6 +35,10 @@ func (t *CliContext) ProtectWithLock(impl func(*cobra.Command, []string) error) 
 func (t *CliContext) TryLock() error {
 	// Create the lock file if it does not already exist
 	lockFileName := t.Project.ResolveStateDirectory(lockFileName)
+
+	if err := os.MkdirAll(filepath.Dir(lockFileName), 0700); err != nil {
+		return err
+	}
 
 	lockFile, err := os.OpenFile(lockFileName, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
