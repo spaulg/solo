@@ -8,6 +8,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc"
+	"io"
 	"os"
 	"path"
 )
@@ -70,6 +71,10 @@ func (t *ProjectControl) Start() error {
 	t.workflowManager.Subscribe(guard)
 	defer t.workflowManager.Unsubscribe(guard)
 
+	if err := t.copyEntrypointToState(); err != nil {
+		return err
+	}
+
 	// Write compose file
 	if exists, _ := t.composeFileExists(); !exists {
 		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
@@ -92,7 +97,7 @@ func (t *ProjectControl) Start() error {
 	}
 
 	// Exec post start commands
-	postStartCommand := []string{"/usr/local/sbin/solo", "trigger-event", "post_start"}
+	postStartCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "post_start"}
 
 	if err := orchestrator.Execute(serviceNames, postStartCommand); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
@@ -150,7 +155,7 @@ func (t *ProjectControl) Stop() error {
 		defer t.workflowManager.Unsubscribe(guard)
 
 		// Exec pre stop commands
-		preStopCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_stop"}
+		preStopCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_stop"}
 
 		if err := orchestrator.Execute(serviceNames, preStopCommand); err != nil {
 			return fmt.Errorf("error running compose: %v", err)
@@ -213,7 +218,7 @@ func (t *ProjectControl) Destroy() error {
 		defer t.workflowManager.Unsubscribe(guard)
 
 		// Exec pre destroy commands
-		preDestroyCommand := []string{"/usr/local/sbin/solo", "trigger-event", "pre_destroy"}
+		preDestroyCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_destroy"}
 
 		if err := orchestrator.Execute(serviceNames, preDestroyCommand); err != nil {
 			return fmt.Errorf("error running compose: %v", err)
@@ -302,4 +307,32 @@ func (t *ProjectControl) buildWorkflowServiceMap(serviceNames []string, workflow
 	}
 
 	return workflowMap, nil
+}
+
+func (t *ProjectControl) copyEntrypointToState() error {
+	src := t.soloCtx.Config.Entrypoint.HostEntrypointPath
+	dst := path.Join(t.soloCtx.Project.GetStateDirectoryRoot(), "solo-entrypoint")
+
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(destFile, sourceFile); err != nil {
+		return err
+	}
+
+	sourceFile.Close()
+	destFile.Close()
+
+	if err := os.Chmod(dst, 0755); err != nil {
+		return err
+	}
+
+	return nil
 }
