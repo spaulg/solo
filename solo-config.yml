@@ -1,3 +1,12 @@
-Entrypoint: './cmd/solo-entrypoint/solo-entrypoint-wrapper.sh'
-Logging:
-  Level: debug
+#state_directory_name: ".solo"
+#orchestrator: "docker"
+#grpc_server_port: 0
+
+entrypoint:
+  host_entrypoint_path: "./cmd/solo-entrypoint/solo-entrypoint-wrapper.sh"
+  #container_entrypoint_path: "/usr/local/sbin/solo"
+
+logging:
+  #enabled: true
+  level: "debug"
+  #handler: text

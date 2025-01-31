@@ -1,2 +1,4 @@
-Entrypoint: '/opt/bin/solo-custom-entrypoint.sh'
-StateDirectoryName: '/opt/solo'
+state_directory_name: '/opt/solo'
+
+entrypoint:
+  host_entrypoint_path: "/opt/bin/solo-custom-entrypoint.sh"
