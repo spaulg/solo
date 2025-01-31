@@ -1,6 +1,7 @@
 package subcommand
 
 import (
+	"errors"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/workflow"
@@ -38,6 +39,10 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 }
 
 func forkAndExecute(args []string) error {
+	if len(args) == 0 || strings.TrimSpace(args[0]) == "" {
+		return errors.New("no command specified")
+	}
+
 	if []rune(args[0])[0] == '/' {
 		// Full path of executable given
 		return syscall.Exec(args[0], args, nil)
