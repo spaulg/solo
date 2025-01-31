@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 )
 
 type DockerOrchestrator struct {
@@ -128,7 +129,7 @@ func (t *DockerOrchestrator) GetHostGatewayHostname() string {
 }
 
 func (t *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error) {
-	soloEntrypoint := config.Entrypoint
+	soloEntrypoint := path.Join(project.GetStateDirectoryRoot(), "solo-entrypoint")
 
 	allServicesDataPath := project.GetAllServicesStateDirectory()
 	_, err := os.Stat(allServicesDataPath)
@@ -148,7 +149,7 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 			service.Command = append(service.Entrypoint, service.Command...)
 		}
 
-		service.Entrypoint = []string{"/usr/local/sbin/solo", "entrypoint"}
+		service.Entrypoint = []string{config.Entrypoint.ContainerEntrypointPath, "entrypoint"}
 
 		serviceLogPath := project.GetServiceLogDirectory(service.Name)
 		_, err := os.Stat(serviceLogPath)
@@ -178,7 +179,7 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 		service.Volumes = append(service.Volumes, types.ServiceVolumeConfig{
 			Type:     "bind",
 			Source:   soloEntrypoint,
-			Target:   "/usr/local/sbin/solo",
+			Target:   config.Entrypoint.ContainerEntrypointPath,
 			ReadOnly: true,
 		}, types.ServiceVolumeConfig{
 			Type:     "bind",

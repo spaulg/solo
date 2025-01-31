@@ -6,37 +6,47 @@ import (
 )
 
 type LoggingConfig struct {
-	Enabled bool
-	Level   string
-	Handler string
+	Enabled bool   `mapstructure:"enabled"`
+	Level   string `mapstructure:"level"`
+	Handler string `mapstructure:"handler"`
+}
+
+type Entrypoint struct {
+	HostEntrypointPath      string `mapstructure:"host_entrypoint_path"`
+	ContainerEntrypointPath string `mapstructure:"container_entrypoint_path"`
 }
 
 type Config struct {
 	reader *viper.Viper
 
-	Entrypoint         string
-	StateDirectoryName string
-	Orchestrator       string
-	GrpcServerPort     uint16
-	Logging            LoggingConfig
+	Entrypoint         Entrypoint    `mapstructure:"entrypoint"`
+	Logging            LoggingConfig `mapstructure:"logging"`
+	StateDirectoryName string        `mapstructure:"state_directory_name"`
+	Orchestrator       string        `mapstructure:"orchestrator"`
+	GrpcServerPort     uint16        `mapstructure:"grpc_server_port"`
 }
 
 const (
-	DefaultEntrypoint         = "/usr/local/bin/solo-entrypoint"
-	DefaultStateDirectoryName = "./.solo"
-	DefaultOrchestrator       = "docker"
-	DefaultGrpcServerPort     = 0
-	DefaultLoggingEnabled     = true
-	DefaultLoggingLevel       = "warning"
-	DefaultLoggingHandler     = "text"
+	DefaultHostEntrypoint      = "/usr/local/bin/solo-entrypoint"
+	DefaultContainerEntrypoint = "/usr/local/sbin/solo"
+	DefaultStateDirectoryName  = "./.solo"
+	DefaultOrchestrator        = "docker"
+	DefaultGrpcServerPort      = 0
+	DefaultLoggingEnabled      = true
+	DefaultLoggingLevel        = "warning"
+	DefaultLoggingHandler      = "text"
 )
 
 func NewConfig() (*Config, error) {
 	config := Config{
-		Entrypoint:         DefaultEntrypoint,
 		StateDirectoryName: DefaultStateDirectoryName,
 		Orchestrator:       DefaultOrchestrator,
 		GrpcServerPort:     DefaultGrpcServerPort,
+
+		Entrypoint: Entrypoint{
+			HostEntrypointPath:      DefaultHostEntrypoint,
+			ContainerEntrypointPath: DefaultContainerEntrypoint,
+		},
 
 		Logging: LoggingConfig{
 			Enabled: DefaultLoggingEnabled,
