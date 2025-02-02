@@ -16,7 +16,6 @@ type Config struct {
 
 	Entrypoint         string
 	StateDirectoryName string
-	ComposeFileName    string
 	Orchestrator       string
 	GrpcServerPort     uint16
 	Logging            LoggingConfig
@@ -27,10 +26,9 @@ const (
 	DefaultStateDirectoryName = "./.solo"
 	DefaultOrchestrator       = "docker"
 	DefaultGrpcServerPort     = 0
-	DefaultLoggingEnabled     = false
+	DefaultLoggingEnabled     = true
 	DefaultLoggingLevel       = "warning"
 	DefaultLoggingHandler     = "text"
-	DefaultComposeFileName    = "docker-compose.yml"
 )
 
 func NewConfig() (*Config, error) {
@@ -39,7 +37,6 @@ func NewConfig() (*Config, error) {
 		StateDirectoryName: DefaultStateDirectoryName,
 		Orchestrator:       DefaultOrchestrator,
 		GrpcServerPort:     DefaultGrpcServerPort,
-		ComposeFileName:    DefaultComposeFileName,
 
 		Logging: LoggingConfig{
 			Enabled: DefaultLoggingEnabled,
