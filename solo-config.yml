@@ -1,4 +1,3 @@
 Entrypoint: './cmd/solo-entrypoint/solo-entrypoint-wrapper.sh'
 Logging:
-  Enabled: true
   Level: debug

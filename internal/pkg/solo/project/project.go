@@ -16,15 +16,16 @@ import (
 	"time"
 )
 
+const generatedComposeFileName = "docker-compose.yml"
+
 type compose = types.Project
 
 type Project struct {
 	*compose
 
-	projectStateDirectory    string
-	generatedComposeFilepath string
-	directory                string
-	filePath                 string
+	projectStateDirectory string
+	directory             string
+	filePath              string
 }
 
 func NewProject(projectFilePath string, config *config.Config) (*Project, error) {
@@ -47,11 +48,10 @@ func NewProject(projectFilePath string, config *config.Config) (*Project, error)
 
 	projectDirectory := filepath.Dir(projectFilePath)
 	project := &Project{
-		projectStateDirectory:    path.Join(projectDirectory, config.StateDirectoryName),
-		generatedComposeFilepath: config.ComposeFileName,
-		directory:                projectDirectory,
-		filePath:                 projectFilePath,
-		compose:                  compose,
+		projectStateDirectory: path.Join(projectDirectory, config.StateDirectoryName),
+		directory:             projectDirectory,
+		filePath:              projectFilePath,
+		compose:               compose,
 	}
 
 	// Set default values in extensions
@@ -116,7 +116,7 @@ func (t *Project) GetServiceWorkflow(serviceName string, eventName string) Servi
 }
 
 func (t *Project) GetGeneratedComposeFilePath() string {
-	return path.Join(t.projectStateDirectory, t.generatedComposeFilepath)
+	return path.Join(t.projectStateDirectory, generatedComposeFileName)
 }
 
 func (t *Project) GetMaxWorkflowTimeout(eventName string) time.Duration {
