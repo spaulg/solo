@@ -10,7 +10,7 @@ import (
 )
 
 func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
-	var rebuildCmdForce bool
+	var rebuildCmdYes bool
 
 	rebuildCmd := &cobra.Command{
 		Use:     "rebuild",
@@ -18,17 +18,17 @@ func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
 		Short:   "Rebuilds your app from scratch, preserving data",
 		Long:    "Rebuilds your app from scratch, preserving data",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !rebuildCmdForce {
-				var rebuildCmdForceString string
+			if !rebuildCmdYes {
+				var cmdConfirmationString string
 				for {
 					fmt.Print("Are you sure you want to rebuild (y/n)? ")
-					_, err := fmt.Scanln(&rebuildCmdForceString)
+					_, err := fmt.Scanln(&cmdConfirmationString)
 
 					if err != nil {
 						continue
-					} else if strings.ToLower(rebuildCmdForceString) == "n" {
+					} else if strings.ToLower(cmdConfirmationString) == "n" {
 						os.Exit(0)
-					} else if strings.ToLower(rebuildCmdForceString) == "y" {
+					} else if strings.ToLower(cmdConfirmationString) == "y" {
 						break
 					}
 				}
@@ -54,7 +54,7 @@ func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
 		}),
 	}
 
-	rebuildCmd.Flags().BoolVarP(&rebuildCmdForce, "force", "f", false, "Force execution")
+	rebuildCmd.Flags().BoolVarP(&rebuildCmdYes, "yes", "y", false, "Answer yes non-interactively to confirmation questions")
 
 	return rebuildCmd
 }

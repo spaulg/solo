@@ -10,7 +10,7 @@ import (
 )
 
 func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
-	var destroyCmdForce bool
+	var destroyCmdYes bool
 
 	destroyCmd := &cobra.Command{
 		Use:     "destroy",
@@ -18,17 +18,17 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 		Short:   "Destroys your app",
 		Long:    "Destroys your app",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !destroyCmdForce {
-				var destroyCmdForceString string
+			if !destroyCmdYes {
+				var cmdConfirmationString string
 				for {
 					fmt.Print("Are you sure you want to destroy (y/n)? ")
-					_, err := fmt.Scanln(&destroyCmdForceString)
+					_, err := fmt.Scanln(&cmdConfirmationString)
 
 					if err != nil {
 						continue
-					} else if strings.ToLower(destroyCmdForceString) == "n" {
+					} else if strings.ToLower(cmdConfirmationString) == "n" {
 						os.Exit(0)
-					} else if strings.ToLower(destroyCmdForceString) == "y" {
+					} else if strings.ToLower(cmdConfirmationString) == "y" {
 						break
 					}
 				}
@@ -50,7 +50,7 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 		}),
 	}
 
-	destroyCmd.Flags().BoolVarP(&destroyCmdForce, "force", "f", false, "Force execution")
+	destroyCmd.Flags().BoolVarP(&destroyCmdYes, "yes", "y", false, "Answer yes non-interactively to confirmation questions")
 
 	return destroyCmd
 }
