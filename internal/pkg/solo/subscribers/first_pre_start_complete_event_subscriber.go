@@ -11,13 +11,24 @@ import (
 )
 
 type FirstPreStartCompleteEventSubscriber struct {
-	soloCtx *context.CliContext
+	receiver chan events.Event
+	soloCtx  *context.CliContext
 }
 
 func NewFirstPreStartCompleteEventSubscriber(soloCtx *context.CliContext) events.Subscriber {
 	return &FirstPreStartCompleteEventSubscriber{
 		soloCtx: soloCtx,
 	}
+}
+
+func (t *FirstPreStartCompleteEventSubscriber) Subscribe(eventManager events.Manager) {
+	t.receiver = eventManager.Subscribe(t)
+
+	go func() {
+		for val := range t.receiver {
+			t.Publish(val)
+		}
+	}()
 }
 
 func (t *FirstPreStartCompleteEventSubscriber) Publish(event events.Event) {
