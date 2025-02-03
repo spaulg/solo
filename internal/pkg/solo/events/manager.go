@@ -1,15 +1,18 @@
 package events
 
-import "sync"
+import (
+	"sync"
+)
 
 type Manager interface {
-	Subscribe(eventSubscriber Subscriber)
+	Subscribe(eventSubscriber Subscriber) chan Event
 	Unsubscribe(eventSubscriber Subscriber)
 	Publish(data Event)
 }
 
 type DefaultManager struct {
-	subscribers []Subscriber
+	subscribers map[Subscriber]chan Event
+	mu          sync.RWMutex
 }
 
 // nolint:gochecknoglobals
@@ -28,32 +31,36 @@ func GetEventManagerInstance() Manager {
 
 func NewDefaultEventManager() Manager {
 	return &DefaultManager{
-		subscribers: []Subscriber{},
+		subscribers: make(map[Subscriber]chan Event),
 	}
 }
 
-func (t *DefaultManager) Subscribe(eventSubscriber Subscriber) {
-	t.subscribers = append(t.subscribers, eventSubscriber)
+func (t *DefaultManager) Subscribe(eventSubscriber Subscriber) chan Event {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	subscriberChannel := make(chan Event, 30)
+	t.subscribers[eventSubscriber] = subscriberChannel
+	return subscriberChannel
 }
 
 func (t *DefaultManager) Unsubscribe(eventSubscriber Subscriber) {
-	for index, targetSubscriber := range t.subscribers {
-		if targetSubscriber == eventSubscriber {
-			subscriberCount := len(t.subscribers)
-			if subscriberCount > 1 {
-				t.subscribers[index] = t.subscribers[subscriberCount-1]
-				t.subscribers = t.subscribers[:subscriberCount-1]
-			} else {
-				t.subscribers = []Subscriber{}
-			}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
-			return
-		}
+	if ch, exists := t.subscribers[eventSubscriber]; exists {
+		delete(t.subscribers, eventSubscriber)
+		close(ch)
 	}
 }
 
 func (t *DefaultManager) Publish(event Event) {
-	for _, subscriber := range t.subscribers {
-		subscriber.Publish(event)
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	for _, ch := range t.subscribers {
+		go func(ch chan Event) {
+			ch <- event
+		}(ch)
 	}
 }
