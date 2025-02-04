@@ -15,12 +15,8 @@ import (
 func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error) {
 	// Provisioning grpc service
 	eventManager := events.GetEventManagerInstance()
-
-	logWriter := subscribers.NewLogWriterEventSubscriber(soloCtx)
-	logWriter.Subscribe(eventManager)
-
-	preStartComplete := subscribers.NewFirstPreStartCompleteEventSubscriber(soloCtx)
-	preStartComplete.Subscribe(eventManager)
+	eventManager.Subscribe(subscribers.NewLogWriterEventSubscriber(soloCtx))
+	eventManager.Subscribe(subscribers.NewFirstPreStartCompleteEventSubscriber(soloCtx))
 
 	workflowFactory := wms.NewWorkflowFactory()
 	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, workflowFactory)

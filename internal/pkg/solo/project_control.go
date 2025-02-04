@@ -68,7 +68,7 @@ func (t *ProjectControl) Start() error {
 
 	// Register workflow guard
 	guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
-	guard.Subscribe(t.workflowManager)
+	t.workflowManager.Subscribe(guard)
 	defer t.workflowManager.Unsubscribe(guard)
 
 	if err := t.copyEntrypointToState(); err != nil {
@@ -151,7 +151,7 @@ func (t *ProjectControl) Stop() error {
 
 		// Register workflow guard
 		guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
-		guard.Subscribe(t.workflowManager)
+		t.workflowManager.Subscribe(guard)
 		defer t.workflowManager.Unsubscribe(guard)
 
 		// Exec pre stop commands
@@ -214,7 +214,7 @@ func (t *ProjectControl) Destroy() error {
 
 		// Register workflow guard
 		guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
-		guard.Subscribe(t.workflowManager)
+		t.workflowManager.Subscribe(guard)
 		defer t.workflowManager.Unsubscribe(guard)
 
 		// Exec pre destroy commands

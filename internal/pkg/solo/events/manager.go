@@ -5,7 +5,7 @@ import (
 )
 
 type Manager interface {
-	Subscribe(eventSubscriber Subscriber) chan Event
+	Subscribe(eventSubscriber Subscriber)
 	Unsubscribe(eventSubscriber Subscriber)
 	Publish(data Event)
 }
@@ -35,13 +35,18 @@ func NewDefaultEventManager() Manager {
 	}
 }
 
-func (t *DefaultManager) Subscribe(eventSubscriber Subscriber) chan Event {
+func (t *DefaultManager) Subscribe(eventSubscriber Subscriber) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	subscriberChannel := make(chan Event, 30)
 	t.subscribers[eventSubscriber] = subscriberChannel
-	return subscriberChannel
+
+	go func(subscriber Subscriber) {
+		for val := range subscriberChannel {
+			subscriber.Publish(val)
+		}
+	}(eventSubscriber)
 }
 
 func (t *DefaultManager) Unsubscribe(eventSubscriber Subscriber) {
