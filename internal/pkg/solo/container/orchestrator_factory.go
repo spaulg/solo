@@ -14,6 +14,7 @@ func NewOrchestratorFactory() OrchestratorFactory {
 
 func (t *DefaultOrchestratorFactory) Build(soloCtx *context.CliContext) Orchestrator {
 	return &DockerOrchestrator{
+		soloCtx:          soloCtx,
 		projectDirectory: soloCtx.Project.GetDirectory(),
 		composeFile:      soloCtx.Project.GetGeneratedComposeFilePath(),
 	}

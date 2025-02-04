@@ -37,6 +37,28 @@ func NewProjectControl(
 func (t *ProjectControl) Start() error {
 	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
 
+	// Write compose file
+	if exists, _ := t.composeFileExists(); !exists {
+		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
+		if err := t.exportComposeFile(composeYml); err != nil {
+			return err
+		}
+	}
+
+	serviceNames := t.soloCtx.Project.ServiceNames()
+	firstPreStartServices := t.soloCtx.Project.ServicesPendingFirstPreStartWorkflow()
+
+	_, stoppedServices, err := orchestrator.ServicesStatus()
+	if err != nil {
+		return err
+	}
+
+	if len(stoppedServices) == 0 {
+		t.soloCtx.Logger.Info("All required services already running")
+		return nil
+	}
+
+	// Start GRPC services
 	grpcServer, err := t.grpcServerFactory.Build(
 		orchestrator.GetHostGatewayHostname(),
 		t.soloCtx.Config.GrpcServerPort,
@@ -47,41 +69,27 @@ func (t *ProjectControl) Start() error {
 		return err
 	}
 
-	// Start GRPC services
 	if err := grpcServer.Start(); err != nil {
 		return err
 	}
 
 	defer grpcServer.Stop()
 
-	// Build workflow service map
-	serviceNames := t.soloCtx.Project.ServiceNames()
-	workflowMap, err := t.buildWorkflowServiceMap(serviceNames, []workflowcommon.Name{
-		workflowcommon.FirstPreStart,
-		workflowcommon.PreStart,
-		workflowcommon.PostStart,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	// Register workflow guard
-	guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
-	t.workflowManager.Subscribe(guard)
-	defer t.workflowManager.Unsubscribe(guard)
-
 	if err := t.copyEntrypointToState(); err != nil {
 		return err
 	}
 
-	// Write compose file
-	if exists, _ := t.composeFileExists(); !exists {
-		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
-		if err := t.exportComposeFile(composeYml); err != nil {
-			return err
-		}
+	// Register workflow guard
+	guard := NewProjectWorkflowGuard(t.soloCtx)
+	if len(firstPreStartServices) > 0 {
+		guard.AddWorkflow(workflowcommon.FirstPreStart, firstPreStartServices)
 	}
+
+	guard.AddWorkflow(workflowcommon.PreStart, stoppedServices)
+	guard.AddWorkflow(workflowcommon.PostStart, serviceNames)
+
+	t.workflowManager.Subscribe(guard)
+	defer t.workflowManager.Unsubscribe(guard)
 
 	// Start compose services
 	if err := orchestrator.Up(); err != nil {
@@ -118,12 +126,12 @@ func (t *ProjectControl) Stop() error {
 	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
 
 	// Build workflow service map
-	serviceNames, err := orchestrator.RunningServices()
+	runningServices, _, err := orchestrator.ServicesStatus()
 	if err != nil {
 		return err
 	}
 
-	if len(serviceNames) > 0 {
+	if len(runningServices) > 0 {
 		grpcServer, err := t.grpcServerFactory.Build(
 			orchestrator.GetHostGatewayHostname(),
 			t.soloCtx.Config.GrpcServerPort,
@@ -141,23 +149,17 @@ func (t *ProjectControl) Stop() error {
 
 		defer grpcServer.Stop()
 
-		workflowMap, err := t.buildWorkflowServiceMap(serviceNames, []workflowcommon.Name{
-			workflowcommon.PreStop,
-		})
-
-		if err != nil {
-			return err
-		}
-
 		// Register workflow guard
-		guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
+		guard := NewProjectWorkflowGuard(t.soloCtx)
+		guard.AddWorkflow(workflowcommon.PreStop, runningServices)
+
 		t.workflowManager.Subscribe(guard)
 		defer t.workflowManager.Unsubscribe(guard)
 
 		// Exec pre stop commands
 		preStopCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_stop"}
 
-		if err := orchestrator.Execute(serviceNames, preStopCommand); err != nil {
+		if err := orchestrator.Execute(runningServices, preStopCommand); err != nil {
 			return fmt.Errorf("error running compose: %v", err)
 		}
 
@@ -181,12 +183,12 @@ func (t *ProjectControl) Destroy() error {
 	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
 
 	// Build workflow service map
-	serviceNames, err := orchestrator.RunningServices()
+	runningServices, _, err := orchestrator.ServicesStatus()
 	if err != nil {
 		return err
 	}
 
-	if len(serviceNames) > 0 {
+	if len(runningServices) > 0 {
 		grpcServer, err := t.grpcServerFactory.Build(
 			orchestrator.GetHostGatewayHostname(),
 			t.soloCtx.Config.GrpcServerPort,
@@ -204,23 +206,17 @@ func (t *ProjectControl) Destroy() error {
 
 		defer grpcServer.Stop()
 
-		workflowMap, err := t.buildWorkflowServiceMap(serviceNames, []workflowcommon.Name{
-			workflowcommon.PreDestroy,
-		})
-
-		if err != nil {
-			return err
-		}
-
 		// Register workflow guard
-		guard := NewProjectWorkflowGuard(t.soloCtx, workflowMap)
+		guard := NewProjectWorkflowGuard(t.soloCtx)
+		guard.AddWorkflow(workflowcommon.PreDestroy, runningServices)
+
 		t.workflowManager.Subscribe(guard)
 		defer t.workflowManager.Unsubscribe(guard)
 
 		// Exec pre destroy commands
 		preDestroyCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_destroy"}
 
-		if err := orchestrator.Execute(serviceNames, preDestroyCommand); err != nil {
+		if err := orchestrator.Execute(runningServices, preDestroyCommand); err != nil {
 			return fmt.Errorf("error running compose: %v", err)
 		}
 
@@ -291,24 +287,6 @@ func (t *ProjectControl) composeFileExists() (bool, error) {
 	return true, nil
 }
 
-func (t *ProjectControl) buildWorkflowServiceMap(serviceNames []string, workflowNames []workflowcommon.Name) (WorkflowServiceMap, error) {
-	workflowMap := make(WorkflowServiceMap)
-
-	for _, workflowName := range workflowNames {
-		if workflowName == workflowcommon.FirstPreStart {
-			servicesToBuild := t.soloCtx.Project.ServicesPendingFirstPreStartWorkflow()
-
-			if len(servicesToBuild) > 0 {
-				workflowMap[workflowName] = servicesToBuild
-			}
-		} else {
-			workflowMap[workflowName] = serviceNames
-		}
-	}
-
-	return workflowMap, nil
-}
-
 func (t *ProjectControl) copyEntrypointToState() error {
 	src := t.soloCtx.Config.Entrypoint.HostEntrypointPath
 	dst := path.Join(t.soloCtx.Project.GetStateDirectoryRoot(), "solo-entrypoint")
@@ -318,17 +296,18 @@ func (t *ProjectControl) copyEntrypointToState() error {
 		return err
 	}
 
+	defer sourceFile.Close()
+
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 
+	defer destFile.Close()
+
 	if _, err := io.Copy(destFile, sourceFile); err != nil {
 		return err
 	}
-
-	sourceFile.Close()
-	destFile.Close()
 
 	if err := os.Chmod(dst, 0755); err != nil {
 		return err

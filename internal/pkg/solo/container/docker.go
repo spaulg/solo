@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"io"
 	"os"
@@ -15,12 +16,14 @@ import (
 )
 
 type DockerOrchestrator struct {
+	soloCtx          *context.CliContext
 	projectDirectory string
 	composeFile      string
 }
 
-type RunningService struct {
-	Service string `json:"service"`
+type ServiceStatus struct {
+	Service string `json:"Service"`
+	State   string `json:"State"`
 }
 
 func (t *DockerOrchestrator) Up() error {
@@ -78,24 +81,26 @@ func (t *DockerOrchestrator) Execute(serviceNames []string, command []string) er
 	return nil
 }
 
-func (t *DockerOrchestrator) RunningServices() ([]string, error) {
+func (t *DockerOrchestrator) ServicesStatus() ([]string, []string, error) {
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"ps",
 		"--format", "json",
-		"--filter", "status=running",
 	)
 
 	var stdoutBuf bytes.Buffer
 	composeCmd.Stdout = &stdoutBuf
 
 	if err := composeCmd.Run(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	var serviceNames []string
-	serviceNameMap := make(map[string]bool)
+	var runningServiceNames []string
+	runningServiceNameMap := make(map[string]bool)
+
+	var stoppedServiceNames []string
+	stoppedServiceNameMap := make(map[string]bool)
 
 	buffer := stdoutBuf.Bytes()
 	reader := bufio.NewReader(bytes.NewReader(buffer))
@@ -107,21 +112,33 @@ func (t *DockerOrchestrator) RunningServices() ([]string, error) {
 				break
 			}
 
-			return nil, err
+			return nil, nil, err
 		}
 
-		runningService := RunningService{}
-		if err := json.Unmarshal(line, &runningService); err != nil {
-			return nil, err
+		serviceStatus := ServiceStatus{}
+		if err := json.Unmarshal(line, &serviceStatus); err != nil {
+			return nil, nil, err
 		}
 
-		if !serviceNameMap[runningService.Service] {
-			serviceNameMap[runningService.Service] = true
-			serviceNames = append(serviceNames, runningService.Service)
+		// Filter for running/stopped services
+		if serviceStatus.State == "running" && !runningServiceNameMap[serviceStatus.Service] {
+			runningServiceNameMap[serviceStatus.Service] = true
+			runningServiceNames = append(runningServiceNames, serviceStatus.Service)
+		} else if serviceStatus.State == "stopped" && !stoppedServiceNameMap[serviceStatus.Service] {
+			stoppedServiceNameMap[serviceStatus.Service] = true
+			stoppedServiceNames = append(stoppedServiceNames, serviceStatus.Service)
 		}
 	}
 
-	return serviceNames, nil
+	// Add services with no container
+	for _, service := range t.soloCtx.Project.ServiceNames() {
+		if !runningServiceNameMap[service] && !stoppedServiceNameMap[service] {
+			// Service is neither running nor stopped
+			stoppedServiceNames = append(stoppedServiceNames, service)
+		}
+	}
+
+	return runningServiceNames, stoppedServiceNames, nil
 }
 
 func (t *DockerOrchestrator) GetHostGatewayHostname() string {
