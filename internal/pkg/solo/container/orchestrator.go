@@ -11,6 +11,6 @@ type Orchestrator interface {
 	Destroy() error
 	Execute(serviceNames []string, command []string) error
 	GetHostGatewayHostname() string
-	RunningServices() ([]string, error)
+	ServicesStatus() ([]string, []string, error)
 	ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error)
 }

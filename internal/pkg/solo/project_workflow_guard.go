@@ -21,18 +21,18 @@ type ProjectWorkflowGuard struct {
 	workflowComplete WorkflowChannelMap
 }
 
-func NewProjectWorkflowGuard(soloCtx *context.CliContext, workflowServices WorkflowServiceMap) *ProjectWorkflowGuard {
-	channels := make(WorkflowChannelMap)
-	for workflow := range workflowServices {
-		channels[workflow] = make(chan interface{})
-	}
-
+func NewProjectWorkflowGuard(soloCtx *context.CliContext) *ProjectWorkflowGuard {
 	return &ProjectWorkflowGuard{
 		soloCtx:          soloCtx,
-		workflowServices: workflowServices,
+		workflowServices: make(WorkflowServiceMap),
 		workflowStatus:   make(WorkflowServiceMap),
-		workflowComplete: channels,
+		workflowComplete: make(WorkflowChannelMap),
 	}
+}
+
+func (t *ProjectWorkflowGuard) AddWorkflow(workflow workflowcommon.Name, services []string) {
+	t.workflowServices[workflow] = services
+	t.workflowComplete[workflow] = make(chan interface{})
 }
 
 func (t *ProjectWorkflowGuard) Publish(event events.Event) {
