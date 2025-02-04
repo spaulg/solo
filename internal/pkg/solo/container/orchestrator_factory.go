@@ -1,9 +1,12 @@
 package container
 
-import "github.com/spaulg/solo/internal/pkg/solo/context"
+import (
+	"fmt"
+	"github.com/spaulg/solo/internal/pkg/solo/context"
+)
 
 type OrchestratorFactory interface {
-	Build(soloCtx *context.CliContext) Orchestrator
+	Build(soloCtx *context.CliContext) (Orchestrator, error)
 }
 
 type DefaultOrchestratorFactory struct{}
@@ -12,10 +15,12 @@ func NewOrchestratorFactory() OrchestratorFactory {
 	return &DefaultOrchestratorFactory{}
 }
 
-func (t *DefaultOrchestratorFactory) Build(soloCtx *context.CliContext) Orchestrator {
-	return &DockerOrchestrator{
-		soloCtx:          soloCtx,
-		projectDirectory: soloCtx.Project.GetDirectory(),
-		composeFile:      soloCtx.Project.GetGeneratedComposeFilePath(),
+func (t *DefaultOrchestratorFactory) Build(soloCtx *context.CliContext) (Orchestrator, error) {
+	switch soloCtx.Config.Orchestrator {
+	case "docker":
+		return NewDockerOrchestrator(soloCtx), nil
+
+	default:
+		return nil, fmt.Errorf("unsupported orchestrator %s", soloCtx.Config.Orchestrator)
 	}
 }

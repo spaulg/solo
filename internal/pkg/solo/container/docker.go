@@ -26,6 +26,14 @@ type ServiceStatus struct {
 	State   string `json:"State"`
 }
 
+func NewDockerOrchestrator(soloCtx *context.CliContext) Orchestrator {
+	return &DockerOrchestrator{
+		soloCtx:          soloCtx,
+		projectDirectory: soloCtx.Project.GetDirectory(),
+		composeFile:      soloCtx.Project.GetGeneratedComposeFilePath(),
+	}
+}
+
 func (t *DockerOrchestrator) Up() error {
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", t.composeFile,

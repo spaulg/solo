@@ -35,7 +35,10 @@ func NewProjectControl(
 }
 
 func (t *ProjectControl) Start() error {
-	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+	orchestrator, err := t.orchestratorFactory.Build(t.soloCtx)
+	if err != nil {
+		return err
+	}
 
 	// Write compose file
 	if exists, _ := t.composeFileExists(); !exists {
@@ -123,7 +126,11 @@ func (t *ProjectControl) Stop() error {
 		return err
 	}
 
-	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build(t.soloCtx)
+	if err != nil {
+		return err
+	}
 
 	// Build workflow service map
 	runningServices, _, err := orchestrator.ServicesStatus()
@@ -180,7 +187,11 @@ func (t *ProjectControl) Destroy() error {
 		return nil
 	}
 
-	orchestrator := t.orchestratorFactory.Build(t.soloCtx)
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build(t.soloCtx)
+	if err != nil {
+		return err
+	}
 
 	// Build workflow service map
 	runningServices, _, err := orchestrator.ServicesStatus()
