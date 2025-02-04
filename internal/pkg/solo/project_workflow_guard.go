@@ -16,7 +16,6 @@ type WorkflowChannelMap map[workflowcommon.Name]chan interface{}
 
 type ProjectWorkflowGuard struct {
 	soloCtx          *context.CliContext
-	receiver         chan events.Event
 	workflowServices WorkflowServiceMap
 	workflowStatus   WorkflowServiceMap
 	workflowComplete WorkflowChannelMap
@@ -34,16 +33,6 @@ func NewProjectWorkflowGuard(soloCtx *context.CliContext, workflowServices Workf
 		workflowStatus:   make(WorkflowServiceMap),
 		workflowComplete: channels,
 	}
-}
-
-func (t *ProjectWorkflowGuard) Subscribe(eventManager events.Manager) {
-	t.receiver = eventManager.Subscribe(t)
-
-	go func() {
-		for val := range t.receiver {
-			t.Publish(val)
-		}
-	}()
 }
 
 func (t *ProjectWorkflowGuard) Publish(event events.Event) {

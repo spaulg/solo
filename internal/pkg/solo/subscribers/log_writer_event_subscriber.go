@@ -7,24 +7,13 @@ import (
 )
 
 type LogWriterEventSubscriber struct {
-	receiver chan events.Event
-	soloCtx  *context.CliContext
+	soloCtx *context.CliContext
 }
 
 func NewLogWriterEventSubscriber(soloCtx *context.CliContext) events.Subscriber {
 	return &LogWriterEventSubscriber{
 		soloCtx: soloCtx,
 	}
-}
-
-func (t *LogWriterEventSubscriber) Subscribe(eventManager events.Manager) {
-	t.receiver = eventManager.Subscribe(t)
-
-	go func() {
-		for val := range t.receiver {
-			t.Publish(val)
-		}
-	}()
 }
 
 func (t *LogWriterEventSubscriber) Publish(event events.Event) {
