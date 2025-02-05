@@ -1,210 +1,195 @@
 package wms
 
-import "testing"
-import asserter "github.com/stretchr/testify/assert"
+import (
+	"github.com/stretchr/testify/suite"
+	"testing"
+)
 
 const expectedStepName = "step name"
 const expectedStepCommand = "/path/to/file"
 const expectedWorkingDirectory = "/path/to/working/directory"
 
-func TestStepAccessors(t *testing.T) {
-	assert := asserter.New(t)
-	step := NewStep(expectedStepName, expectedStepCommand, expectedWorkingDirectory)
-
-	assert.Equal(expectedStepName, step.GetName())
-	assert.Equal(expectedWorkingDirectory, *step.GetWorkingDirectory())
+type StepTestSuite struct {
+	suite.Suite
 }
 
-func TestExecWithoutArg(t *testing.T) {
-	assert := asserter.New(t)
-	step := NewStep(expectedStepName, expectedStepCommand, expectedWorkingDirectory)
-
-	assert.Equal(expectedStepName, step.GetName())
-	assert.Equal(expectedStepCommand, step.GetCommand())
-	assert.Equal([]string{}, step.GetArguments())
-	assert.Equal(expectedWorkingDirectory, *step.GetWorkingDirectory())
+func TestStepTestSuite(t *testing.T) {
+	suite.Run(t, new(StepTestSuite))
 }
 
-func TestExecWithArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestStepAccessors() {
+	step := NewStep(expectedStepName, expectedStepCommand, expectedWorkingDirectory)
+
+	suite.Equal(expectedStepName, step.GetName())
+	suite.Equal(expectedWorkingDirectory, *step.GetWorkingDirectory())
+}
+
+func (suite *StepTestSuite) TestExecWithoutArg() {
+	step := NewStep(expectedStepName, expectedStepCommand, expectedWorkingDirectory)
+
+	suite.Equal(expectedStepName, step.GetName())
+	suite.Equal(expectedStepCommand, step.GetCommand())
+	suite.Equal([]string{}, step.GetArguments())
+	suite.Equal(expectedWorkingDirectory, *step.GetWorkingDirectory())
+}
+
+func (suite *StepTestSuite) TestExecWithArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh"}, step.GetArguments())
 }
 
-func TestExecWithDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh \"/path with space\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path with space"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path with space"}, step.GetArguments())
 }
 
-func TestExecWithSingleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithSingleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh '/path with space'", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path with space"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path with space"}, step.GetArguments())
 }
 
-func TestExecWithEscapedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEscapedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh /path\\ with\\ escaped\\ spaces", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path with escaped spaces"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path with escaped spaces"}, step.GetArguments())
 }
 
-func TestExecWithEscapedAndDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEscapedAndDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh /path\\ with\\ escaped\\ spaces \"/path with space\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path with escaped spaces", "/path with space"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path with escaped spaces", "/path with space"}, step.GetArguments())
 }
 
-func TestExecWithEscapedAndSingleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEscapedAndSingleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh /path\\ with\\ escaped\\ spaces '/path with space'", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path with escaped spaces", "/path with space"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path with escaped spaces", "/path with space"}, step.GetArguments())
 }
 
-func TestExecWithEmptyDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEmptyDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh \"\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", ""}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", ""}, step.GetArguments())
 }
 
-func TestExecWithEmptySingleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEmptySingleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh ''", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", ""}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", ""}, step.GetArguments())
 }
 
-func TestExecWithDoubleEscapedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithDoubleEscapedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh /path\\\\ with\\\\ escaped\\\\ spaces", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path\\", "with\\", "escaped\\", "spaces"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path\\", "with\\", "escaped\\", "spaces"}, step.GetArguments())
 }
 
-func TestExecWithNestedEscapedDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithNestedEscapedDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh \"/path\\ with\\ space\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path\\ with\\ space"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path\\ with\\ space"}, step.GetArguments())
 }
 
-func TestExecWithNestedEscapedSingleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithNestedEscapedSingleQuotedArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh '/path\\ with\\ space'", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "/path\\ with\\ space"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "/path\\ with\\ space"}, step.GetArguments())
 }
 
-func TestExecWithEscapedDoubleQuoteArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEscapedDoubleQuoteArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh \\\"\\\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "\"\""}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "\"\""}, step.GetArguments())
 }
 
-func TestExecWithEscapedSingleQuoteArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEscapedSingleQuoteArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh \\'\\'", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "''"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "''"}, step.GetArguments())
 }
 
-func TestExecWithEscapedBackslashArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithEscapedBackslashArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh \\\\", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "\\"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "\\"}, step.GetArguments())
 }
 
-func TestExecWithQuotedEscapedSingleQuoteArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestExecWithQuotedEscapedSingleQuoteArg() {
 	step := NewStep(expectedStepName, "/bin/ls -lh \"\\'\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/ls", step.GetCommand())
-	assert.Equal([]string{"-lh", "\\'"}, step.GetArguments())
+	suite.Equal("/bin/ls", step.GetCommand())
+	suite.Equal([]string{"-lh", "\\'"}, step.GetArguments())
 }
 
-func TestShellWithoutArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithoutArg() {
 	step := NewStep(expectedStepName, "ls", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls"}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls"}, step.GetArguments())
 }
 
-func TestShellWithArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithArg() {
 	step := NewStep(expectedStepName, "ls -lh", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls -lh"}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls -lh"}, step.GetArguments())
 }
 
-func TestShellWithDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "ls -lh \"/path with space\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls -lh \"/path with space\""}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls -lh \"/path with space\""}, step.GetArguments())
 }
 
-func TestShellWithEscapedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithEscapedArg() {
 	step := NewStep(expectedStepName, "ls -lh /path\\ with\\ escaped\\ spaces", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls -lh /path\\ with\\ escaped\\ spaces"}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls -lh /path\\ with\\ escaped\\ spaces"}, step.GetArguments())
 }
 
-func TestShellWithEscapedAndDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithEscapedAndDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "ls -lh /path\\ with\\ escaped\\ spaces \"/path with space\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls -lh /path\\ with\\ escaped\\ spaces \"/path with space\""}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls -lh /path\\ with\\ escaped\\ spaces \"/path with space\""}, step.GetArguments())
 }
 
-func TestShellWithEmptyDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithEmptyDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "ls -lh \"\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls -lh \"\""}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls -lh \"\""}, step.GetArguments())
 }
 
-func TestShellWithDoubleEscapedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithDoubleEscapedArg() {
 	step := NewStep(expectedStepName, "ls -lh /path\\\\ with\\\\ escaped\\\\ spaces", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls -lh /path\\\\ with\\\\ escaped\\\\ spaces"}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls -lh /path\\\\ with\\\\ escaped\\\\ spaces"}, step.GetArguments())
 }
 
-func TestShellWithNestedEscapedDoubleQuotedArg(t *testing.T) {
-	assert := asserter.New(t)
+func (suite *StepTestSuite) TestShellWithNestedEscapedDoubleQuotedArg() {
 	step := NewStep(expectedStepName, "ls -lh \"/path\\ with\\ space\"", expectedWorkingDirectory)
 
-	assert.Equal("/bin/sh", step.GetCommand())
-	assert.Equal([]string{"-c", "ls -lh \"/path\\ with\\ space\""}, step.GetArguments())
+	suite.Equal("/bin/sh", step.GetCommand())
+	suite.Equal([]string{"-c", "ls -lh \"/path\\ with\\ space\""}, step.GetArguments())
 }
