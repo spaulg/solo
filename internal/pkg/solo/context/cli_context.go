@@ -3,6 +3,7 @@ package context
 import (
 	"fmt"
 	"github.com/gofrs/flock"
+	"github.com/spaulg/solo/internal/pkg/common/logging"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"github.com/spf13/cobra"
@@ -20,6 +21,33 @@ type CliContext struct {
 	ConfigLoadErr  error
 	Logger         *slog.Logger
 	lockFile       *flock.Flock
+}
+
+func LoadCliContext() *CliContext {
+	loadedConfig, configLoadErr := config.NewConfig()
+
+	context := &CliContext{
+		Config:        loadedConfig,
+		ConfigLoadErr: configLoadErr,
+		Logger:        slog.New(logging.NewBlackHoleHandler()),
+	}
+
+	if configLoadErr == nil {
+		context.ReloadProject()
+	}
+
+	return context
+}
+
+func (t *CliContext) ReloadProject() {
+	loadedProject, projectLoadErr := project.FindProject("./", t.Config)
+	if projectLoadErr == nil {
+		configLoadErr := t.Config.AddConfigPath(loadedProject.GetDirectory())
+		t.ConfigLoadErr = configLoadErr
+	}
+
+	t.Project = loadedProject
+	t.ProjectLoadErr = projectLoadErr
 }
 
 func (t *CliContext) ProtectWithLock(impl func(*cobra.Command, []string) error) func(cmd *cobra.Command, args []string) error {
