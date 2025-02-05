@@ -3,9 +3,7 @@ package subcommand
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/common/logging"
-	"github.com/spaulg/solo/internal/pkg/solo/config"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
-	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"log/slog"
 	"os"
 	"path"
@@ -47,7 +45,7 @@ func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
 func Execute() {
 	cobra.EnableCommandSorting = false
 
-	soloCtx := loadContext()
+	soloCtx := context.LoadCliContext()
 
 	rootCmd := NewRootCommand(soloCtx)
 	rootCmd.AddGroup(&cobra.Group{ID: "lifecycle", Title: "Life Cycle Commands:"})
@@ -93,27 +91,4 @@ func buildLogHandler(soloCtx *context.CliContext) (slog.Handler, error) {
 		WithLogLevel(soloCtx.Config.Logging.Level).
 		WithLogHandlerName(soloCtx.Config.Logging.Handler).
 		Build()
-}
-
-func loadContext() *context.CliContext {
-	var loadedProject *project.Project
-	var projectLoadErr error
-
-	loadedConfig, configLoadErr := config.NewConfig()
-
-	if configLoadErr == nil {
-		loadedProject, projectLoadErr = project.FindProject("./", loadedConfig)
-
-		if projectLoadErr == nil {
-			configLoadErr = loadedConfig.AddConfigPath(loadedProject.GetDirectory())
-		}
-	}
-
-	return &context.CliContext{
-		Config:         loadedConfig,
-		ConfigLoadErr:  configLoadErr,
-		Project:        loadedProject,
-		ProjectLoadErr: projectLoadErr,
-		Logger:         slog.New(logging.NewBlackHoleHandler()),
-	}
 }

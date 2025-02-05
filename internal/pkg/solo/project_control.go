@@ -42,6 +42,7 @@ func (t *ProjectControl) Start() error {
 
 	// Write compose file
 	if exists, _ := t.composeFileExists(); !exists {
+		t.soloCtx.Logger.Info("Generating compose file")
 		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
 		if err := t.exportComposeFile(composeYml); err != nil {
 			return err

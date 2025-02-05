@@ -50,6 +50,8 @@ func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
 				return err
 			}
 
+			soloCtx.ReloadProject()
+
 			return projectControl.Start()
 		}),
 	}
