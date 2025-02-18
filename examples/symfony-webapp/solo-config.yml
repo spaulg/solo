@@ -1,0 +1,4 @@
+logging:
+  #enabled: true
+  level: "debug"
+  #handler: text

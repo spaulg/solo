@@ -1,54 +1,62 @@
 services:
-  test:
-    build: .
-    command: ['/usr/sbin/nginx', '-g', 'daemon off;']
+  nginx:
+    build:
+        context: .
+        dockerfile: ./examples/symfony-webapp/Dockerfile.nginx
+    command: ["/usr/sbin/nginx", "-g", "daemon off;"]
     ports:
       - "80:80"
     volumes:
+      - "./examples/symfony-webapp/public:/var/www/project/public"
+      - "./examples/symfony-webapp/vhost.conf:/etc/nginx/sites-available/default"
       - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
       - "./internal:/solo/internal"
       - "./go.mod:/solo/go.mod"
       - "./go.sum:/solo/go.sum"
 
-    x-workflows:
-      first_pre_start:
-        steps:
-          - name: 'List files in root'
-            command: '/bin/ls -lh'
-            working_directory: '/'
+#    x-workflows:
+#      first_pre_start:
+#        steps:
+#          - name: 'List files in root'
+#            command: '/bin/ls -lh'
+#            working_directory: '/'
+#
+#          - name: 'List running processes'
+#            command: '/bin/ps aux'
+#            working_directory: '/'
+#
+#      pre_start:
+#        steps:
+#          - name: 'List running processes'
+#            command: '/bin/ps aux'
+#            working_directory: '/'
+#
+#      post_start:
+#        steps:
+#          - name: 'List running processes'
+#            command: '/bin/ps aux'
+#            working_directory: '/'
+#
+#      pre_stop:
+#        steps:
+#          - name: 'List running processes'
+#            command: '/bin/ps aux'
+#            working_directory: '/'
+#
+#      pre_destroy:
+#        steps:
+#          - name: 'List running processes'
+#            command: '/bin/ps aux'
+#            working_directory: '/'
 
-          - name: 'List running processes'
-            command: '/bin/ps aux'
-            working_directory: '/'
-
-      pre_start:
-        steps:
-          - name: 'List running processes'
-            command: '/bin/ps aux'
-            working_directory: '/'
-
-      post_start:
-        steps:
-          - name: 'List running processes'
-            command: '/bin/ps aux'
-            working_directory: '/'
-
-      pre_stop:
-        steps:
-          - name: 'List running processes'
-            command: '/bin/ps aux'
-            working_directory: '/'
-
-      pre_destroy:
-        steps:
-          - name: 'List running processes'
-            command: '/bin/ps aux'
-            working_directory: '/'
-
-  test2:
-    build: .
-    command: ['/usr/sbin/nginx', '-g', 'daemon off;']
+  php:
+    build:
+      context: .
+      dockerfile: ./examples/symfony-webapp/Dockerfile.php
+    command: /usr/sbin/php-fpm8.4 -FO
     volumes:
+      - "./examples/symfony-webapp:/var/www/project"
+      - "./examples/symfony-webapp/pool.conf:/etc/php/8.4/fpm/pool.d/www.conf"
       - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
       - "./internal:/solo/internal"
       - "./go.mod:/solo/go.mod"
