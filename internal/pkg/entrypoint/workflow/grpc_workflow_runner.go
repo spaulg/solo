@@ -207,7 +207,7 @@ func (t *GrpcWorkflowRunner) execute(
 
 	var exitErr *exec.ExitError
 	if err != nil && !errors.As(err, &exitErr) || exitCode == -1 {
-		t.entrypointCtx.Logger.Error(fmt.Sprintf("Command finished with error: %v\n", err))
+		t.entrypointCtx.Logger.Error(fmt.Sprintf("Run finished with error: %v\n", err))
 		return 0, nil
 	}
 
