@@ -27,7 +27,7 @@ func (t *DefaultOrchestrator) StepIterator() iter.Seq[Step] {
 
 	return func(yield func(Step) bool) {
 		for stepNumber < stepCount {
-			if !yield(NewStep(t.steps[stepNumber].Name, t.steps[stepNumber].Command, t.steps[stepNumber].Cwd)) {
+			if !yield(NewStep(t.steps[stepNumber].Name, t.steps[stepNumber].Run, t.steps[stepNumber].Cwd)) {
 				return
 			}
 
