@@ -8,11 +8,13 @@ type Manager interface {
 	Subscribe(eventSubscriber Subscriber)
 	Unsubscribe(eventSubscriber Subscriber)
 	Publish(data Event)
+	Wait()
 }
 
 type DefaultManager struct {
 	subscribers map[Subscriber]chan Event
 	mu          sync.RWMutex
+	wg          sync.WaitGroup
 }
 
 // nolint:gochecknoglobals
@@ -45,6 +47,7 @@ func (t *DefaultManager) Subscribe(eventSubscriber Subscriber) {
 	go func(subscriber Subscriber) {
 		for val := range subscriberChannel {
 			subscriber.Publish(val)
+			t.wg.Done()
 		}
 	}(eventSubscriber)
 }
@@ -64,8 +67,14 @@ func (t *DefaultManager) Publish(event Event) {
 	defer t.mu.RUnlock()
 
 	for _, ch := range t.subscribers {
+		t.wg.Add(1)
+
 		go func(ch chan Event) {
 			ch <- event
 		}(ch)
 	}
+}
+
+func (t *DefaultManager) Wait() {
+	t.wg.Wait()
 }

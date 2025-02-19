@@ -20,3 +20,22 @@ services:
     volumes:
       - "./:/var/www/project"
       - "./pool.conf:/etc/php/8.4/fpm/pool.d/www.conf"
+
+    x-workflows:
+      first_pre_start:
+        steps:
+          - name: Download composer setup
+            run: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+
+          - name: Setup composer
+            run: php composer-setup.php
+
+          - name: Remove setup script
+            run: php -r "unlink('composer-setup.php');"
+
+          - name: Move composer.phar
+            run: mv composer.phar /usr/local/bin/composer
+
+          - name: composer install
+            run: composer install
+            cwd: /var/www/project

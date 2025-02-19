@@ -8,28 +8,40 @@ type StepCompleteLambda func(exitCode uint8) error
 
 type Step interface {
 	Trigger(trigger StepTriggerLambda, progress StepProgressLambda, complete StepCompleteLambda) error
+	GetId() string
 	GetName() string
 	GetCommand() string
 	GetArguments() []string
-	GetWorkingDirectory() *string
+	GetWorkingDirectory() string
 }
 
 type DefaultStep struct {
+	id               string
 	name             string
 	command          string
 	arguments        []string
-	workingDirectory *string
+	workingDirectory string
 }
 
-func NewStep(name string, command string, workingDirectory string) Step {
+func NewStep(id string, name string, command string, workingDirectory *string) Step {
 	command, arguments := extractCommandArgs(command)
 
+	cwd := "/"
+	if workingDirectory != nil {
+		cwd = *workingDirectory
+	}
+
 	return &DefaultStep{
+		id:               id,
 		name:             name,
 		command:          command,
 		arguments:        arguments,
-		workingDirectory: &workingDirectory,
+		workingDirectory: cwd,
 	}
+}
+
+func (t *DefaultStep) GetId() string {
+	return t.id
 }
 
 func (t *DefaultStep) GetName() string {
@@ -44,7 +56,7 @@ func (t *DefaultStep) GetArguments() []string {
 	return t.arguments
 }
 
-func (t *DefaultStep) GetWorkingDirectory() *string {
+func (t *DefaultStep) GetWorkingDirectory() string {
 	return t.workingDirectory
 }
 
