@@ -124,6 +124,7 @@ func (t WorkflowServerImpl) workflowStream(
 							ServiceName:  serviceName,
 							WorkflowName: workflowName,
 						},
+						StepId: step.GetId(),
 						Stdout: result.RunCommandResult.Stdout,
 						Stderr: result.RunCommandResult.Stderr,
 					})
@@ -139,7 +140,11 @@ func (t WorkflowServerImpl) workflowStream(
 						ServiceName:  serviceName,
 						WorkflowName: workflowName,
 					},
-					ExitCode: exitCode,
+					StepId:    step.GetId(),
+					ExitCode:  exitCode,
+					Command:   step.GetCommand(),
+					Arguments: step.GetArguments(),
+					Cwd:       step.GetWorkingDirectory(),
 				})
 
 				if exitCode != 0 {

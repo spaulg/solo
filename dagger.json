@@ -1,6 +1,0 @@
-{
-  "name": "solo",
-  "sdk": "go",
-  "source": "build/dagger",
-  "engineVersion": "v0.12.6"
-}

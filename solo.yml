@@ -14,41 +14,6 @@ services:
       - "./go.mod:/solo/go.mod"
       - "./go.sum:/solo/go.sum"
 
-#    x-workflows:
-#      first_pre_start:
-#        steps:
-#          - name: 'List files in root'
-#            command: '/bin/ls -lh'
-#            working_directory: '/'
-#
-#          - name: 'List running processes'
-#            command: '/bin/ps aux'
-#            working_directory: '/'
-#
-#      pre_start:
-#        steps:
-#          - name: 'List running processes'
-#            command: '/bin/ps aux'
-#            working_directory: '/'
-#
-#      post_start:
-#        steps:
-#          - name: 'List running processes'
-#            command: '/bin/ps aux'
-#            working_directory: '/'
-#
-#      pre_stop:
-#        steps:
-#          - name: 'List running processes'
-#            command: '/bin/ps aux'
-#            working_directory: '/'
-#
-#      pre_destroy:
-#        steps:
-#          - name: 'List running processes'
-#            command: '/bin/ps aux'
-#            working_directory: '/'
-
   php:
     build:
       context: .
@@ -61,3 +26,22 @@ services:
       - "./internal:/solo/internal"
       - "./go.mod:/solo/go.mod"
       - "./go.sum:/solo/go.sum"
+
+    x-workflows:
+      first_pre_start:
+        steps:
+          - name: Download composer setup
+            run: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+
+          - name: Setup composer
+            run: php composer-setup.php
+
+          - name: Remove setup script
+            run: php -r "unlink('composer-setup.php');"
+
+          - name: Move composer.phar
+            run: mv composer.phar /usr/local/bin/composer
+            
+          - name: composer install
+            run: composer install
+            cwd: /var/www/project

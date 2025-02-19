@@ -10,26 +10,29 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const lockFileName = "locking_file"
 
 type CliContext struct {
-	Project        *project.Project
-	Config         *config.Config
-	ProjectLoadErr error
-	ConfigLoadErr  error
-	Logger         *slog.Logger
-	lockFile       *flock.Flock
+	Project         *project.Project
+	Config          *config.Config
+	ProjectLoadErr  error
+	ConfigLoadErr   error
+	Logger          *slog.Logger
+	lockFile        *flock.Flock
+	TriggerDateTime time.Time
 }
 
 func LoadCliContext() *CliContext {
 	loadedConfig, configLoadErr := config.NewConfig()
 
 	context := &CliContext{
-		Config:        loadedConfig,
-		ConfigLoadErr: configLoadErr,
-		Logger:        slog.New(logging.NewBlackHoleHandler()),
+		Config:          loadedConfig,
+		ConfigLoadErr:   configLoadErr,
+		Logger:          slog.New(logging.NewBlackHoleHandler()),
+		TriggerDateTime: time.Now(),
 	}
 
 	if configLoadErr == nil {

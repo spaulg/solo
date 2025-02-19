@@ -5,9 +5,9 @@ import "github.com/compose-spec/compose-go/v2/types"
 const ServiceWorkflowExtensionName = "x-workflows"
 
 type WorkflowStep struct {
-	Name string `yaml:"name"`
-	Run  string `yaml:"run"`
-	Cwd  string `yaml:"cwd"`
+	Name string  `yaml:"name"`
+	Run  string  `yaml:"run"`
+	Cwd  *string `yaml:"cwd"`
 }
 
 type ServiceWorkflowConfig struct {

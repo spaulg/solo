@@ -5,6 +5,7 @@ go 1.23.4
 require (
 	github.com/compose-spec/compose-go/v2 v2.4.1
 	github.com/gofrs/flock v0.12.1
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0

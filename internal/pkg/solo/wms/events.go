@@ -13,13 +13,18 @@ type WorkflowStepStartedEvent struct {
 
 type WorkflowStepOutputEvent struct {
 	events.BaseEvent
+	StepId string
 	Stdout string
 	Stderr string
 }
 
 type WorkflowStepCompleteEvent struct {
 	events.BaseEvent
-	ExitCode uint8
+	StepId    string
+	Command   string
+	Arguments []string
+	Cwd       string
+	ExitCode  uint8
 }
 
 type WorkflowCompleteEvent struct {

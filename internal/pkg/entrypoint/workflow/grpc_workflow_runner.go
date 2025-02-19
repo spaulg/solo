@@ -90,6 +90,16 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.Name) {
 					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stdout))
 					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stderr))
 
+					if err := stream.Send(&services.WorkflowStreamRequest{
+						Result: services.WorkflowResult_RUN_COMMAND_RESULT,
+						RunCommandResult: &services.WorkflowRunResult{
+							Stdout: stdout,
+							Stderr: stderr,
+						},
+					}); err != nil {
+						panic(err)
+					}
+
 					return nil
 				},
 			)
@@ -140,16 +150,11 @@ func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.Name) (Work
 func (t *GrpcWorkflowRunner) execute(
 	command string,
 	arguments []string,
-	workingDirectory *string,
+	workingDirectory string,
 	streamOutput func(stdout string, stderr string) error,
 ) (uint32, error) {
 	cmd := exec.Command(command, arguments...)
-
-	if workingDirectory == nil {
-		cmd.Dir = "/"
-	} else {
-		cmd.Dir = *workingDirectory
-	}
+	cmd.Dir = workingDirectory
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -182,8 +187,13 @@ func (t *GrpcWorkflowRunner) execute(
 			stderrBytesRead, stderrErr := stderr.Read(stderrBuffer)
 
 			// If either err returned not null and not EOF, break
-			if (stdoutErr != nil && stdoutErr != io.EOF) || (stderrErr != nil && stderrErr != io.EOF) {
-				t.entrypointCtx.Logger.Error(fmt.Sprintf("Error reading from output stream: %v\n", stdoutErr))
+			if stdoutErr != nil && stdoutErr != io.EOF {
+				t.entrypointCtx.Logger.Error(fmt.Sprintf("Error reading from stdout stream: %v\n", stdoutErr))
+				break
+			}
+
+			if stderrErr != nil && stderrErr != io.EOF {
+				t.entrypointCtx.Logger.Error(fmt.Sprintf("Error reading from stderr stream: %v\n", stdoutErr))
 				break
 			}
 
