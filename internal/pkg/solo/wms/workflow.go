@@ -1,8 +1,11 @@
 package wms
 
 import (
+	"github.com/oklog/ulid/v2"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"iter"
+	"math/rand"
+	"time"
 )
 
 type Orchestrator interface {
@@ -26,8 +29,13 @@ func (t *DefaultOrchestrator) StepIterator() iter.Seq[Step] {
 	stepCount := len(t.steps)
 
 	return func(yield func(Step) bool) {
+		entropy := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 		for stepNumber < stepCount {
-			if !yield(NewStep(t.steps[stepNumber].Name, t.steps[stepNumber].Run, t.steps[stepNumber].Cwd)) {
+			id := ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
+
+			step := NewStep(id.String(), t.steps[stepNumber].Name, t.steps[stepNumber].Run, t.steps[stepNumber].Cwd)
+			if !yield(step) {
 				return
 			}
 

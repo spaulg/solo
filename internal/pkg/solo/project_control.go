@@ -119,6 +119,9 @@ func (t *ProjectControl) Start() error {
 		return err
 	}
 
+	// Wait for all events to be delivered
+	t.workflowManager.Wait()
+
 	return nil
 }
 
@@ -180,6 +183,9 @@ func (t *ProjectControl) Stop() error {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
+	// Wait for all events to be delivered
+	t.workflowManager.Wait()
+
 	return nil
 }
 
@@ -240,6 +246,9 @@ func (t *ProjectControl) Destroy() error {
 	if err := orchestrator.Destroy(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
+
+	// Wait for all events to be delivered
+	t.workflowManager.Wait()
 
 	return nil
 }

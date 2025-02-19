@@ -22,7 +22,7 @@ enum WorkflowAction {
 message WorkflowRunCommand {
   string command = 2;
   repeated string arguments = 3;
-  optional string working_directory = 4;
+  string working_directory = 4;
 }
 
 enum WorkflowResult {
