@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo/container"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +15,8 @@ func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 		Short:   "Dumps the compose config to stdout",
 		Long:    "Dumps the compose config to stdout",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestrator, err := container.NewOrchestratorFactory().Build(soloCtx)
+			eventManager := events.GetEventManagerInstance()
+			orchestrator, err := container.NewOrchestratorFactory(soloCtx, eventManager).Build()
 
 			if err != nil {
 				return err

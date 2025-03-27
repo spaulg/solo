@@ -35,7 +35,7 @@ func NewProjectControl(
 }
 
 func (t *ProjectControl) Start() error {
-	orchestrator, err := t.orchestratorFactory.Build(t.soloCtx)
+	orchestrator, err := t.orchestratorFactory.Build()
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (t *ProjectControl) Stop() error {
 	}
 
 	// Build orchestrator
-	orchestrator, err := t.orchestratorFactory.Build(t.soloCtx)
+	orchestrator, err := t.orchestratorFactory.Build()
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (t *ProjectControl) Destroy() error {
 	}
 
 	// Build orchestrator
-	orchestrator, err := t.orchestratorFactory.Build(t.soloCtx)
+	orchestrator, err := t.orchestratorFactory.Build()
 	if err != nil {
 		return err
 	}

@@ -1,25 +1,32 @@
 package wms
 
-import "github.com/spaulg/solo/internal/pkg/solo/events"
+import (
+	workflowcommon "github.com/spaulg/solo/internal/pkg/common/wms"
+)
+
+type BaseWorkflowEvent struct {
+	ServiceName  string
+	WorkflowName workflowcommon.Name
+}
 
 type WorkflowStartedEvent struct {
-	events.BaseEvent
+	BaseWorkflowEvent
 }
 
 type WorkflowStepStartedEvent struct {
-	events.BaseEvent
+	BaseWorkflowEvent
 	Name string
 }
 
 type WorkflowStepOutputEvent struct {
-	events.BaseEvent
+	BaseWorkflowEvent
 	StepId string
 	Stdout string
 	Stderr string
 }
 
 type WorkflowStepCompleteEvent struct {
-	events.BaseEvent
+	BaseWorkflowEvent
 	StepId    string
 	Command   string
 	Arguments []string
@@ -28,11 +35,11 @@ type WorkflowStepCompleteEvent struct {
 }
 
 type WorkflowCompleteEvent struct {
-	events.BaseEvent
+	BaseWorkflowEvent
 	Successful bool
 }
 
 type WorkflowErrorEvent struct {
-	events.BaseEvent
+	BaseWorkflowEvent
 	Err error
 }
