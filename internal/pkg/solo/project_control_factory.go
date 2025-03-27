@@ -22,7 +22,7 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, workflowFactory)
 
 	// Container orchestrator factory
-	orchestratorFactory := container.NewOrchestratorFactory()
+	orchestratorFactory := container.NewOrchestratorFactory(soloCtx, eventManager)
 
 	// GRPC server factory
 	certificateAuthority, err := certificate.NewCertificateAuthority()
