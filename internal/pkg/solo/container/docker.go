@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spaulg/solo/internal/pkg/solo/config"
+	"github.com/spaulg/solo/internal/pkg/solo/container/progress"
 	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"io"
 	"os"
@@ -15,62 +17,82 @@ import (
 	"path"
 )
 
-type DockerOrchestrator struct {
-	soloCtx          *context.CliContext
-	projectDirectory string
-	composeFile      string
-}
-
 type ServiceStatus struct {
 	Service string `json:"Service"`
 	State   string `json:"State"`
 }
 
-func NewDockerOrchestrator(soloCtx *context.CliContext) Orchestrator {
+type DockerOrchestrator struct {
+	soloCtx          *context.CliContext
+	eventManager     events.Manager
+	projectDirectory string
+	composeFile      string
+}
+
+func NewDockerOrchestrator(
+	soloCtx *context.CliContext,
+	eventManager events.Manager,
+) Orchestrator {
 	return &DockerOrchestrator{
 		soloCtx:          soloCtx,
+		eventManager:     eventManager,
 		projectDirectory: soloCtx.Project.GetDirectory(),
 		composeFile:      soloCtx.Project.GetGeneratedComposeFilePath(),
 	}
 }
 
-func (t *DockerOrchestrator) Up() error {
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
-		"-f", t.composeFile,
-		"--project-directory", t.projectDirectory,
-		"up", "-d")
+func (t *DockerOrchestrator) runComposeCommandWithProgress(arguments ...string) error {
+	composeCmd := exec.Command("/usr/local/bin/docker", append([]string{"compose"}, arguments...)...)
 
-	if err := composeCmd.Run(); err != nil {
+	stderr, err := composeCmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	defer stderr.Close()
+
+	if err := composeCmd.Start(); err != nil {
+		return err
+	}
+
+	// Stream the progress events
+	eventStreamReader := progress.NewProgressEventPublisher(t.soloCtx, t.eventManager, t.soloCtx.Project.Name, stderr)
+	go func(eventStreamReader *progress.ProgressEventStreamer) {
+		eventStreamReader.PublishStreamedProgressEvents()
+	}(eventStreamReader)
+
+	if err := composeCmd.Wait(); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (t *DockerOrchestrator) Up() error {
+	return t.runComposeCommandWithProgress(
+		"--progress", "json",
+		"-f", t.composeFile,
+		"--project-directory", t.projectDirectory,
+		"up", "-d",
+	)
 }
 
 func (t *DockerOrchestrator) Down() error {
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+	return t.runComposeCommandWithProgress(
+		"--progress", "json",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
-		"stop")
-
-	if err := composeCmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+		"stop",
+	)
 }
 
 func (t *DockerOrchestrator) Destroy() error {
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+	return t.runComposeCommandWithProgress(
+		"--progress", "json",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
-		"down", "-v")
-
-	if err := composeCmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+		"down", "-v",
+	)
 }
 
 func (t *DockerOrchestrator) Execute(serviceNames []string, command []string) error {

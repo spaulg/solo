@@ -74,7 +74,7 @@ func (t WorkflowServerImpl) workflowStream(
 	}
 
 	t.eventManager.Publish(&wms.WorkflowStartedEvent{
-		BaseEvent: events.BaseEvent{
+		BaseWorkflowEvent: wms.BaseWorkflowEvent{
 			ServiceName:  serviceName,
 			WorkflowName: workflowName,
 		},
@@ -88,7 +88,7 @@ func (t WorkflowServerImpl) workflowStream(
 			err := step.Trigger(func() error {
 				// Trigger callback
 				t.eventManager.Publish(&wms.WorkflowStepStartedEvent{
-					BaseEvent: events.BaseEvent{
+					BaseWorkflowEvent: wms.BaseWorkflowEvent{
 						ServiceName:  serviceName,
 						WorkflowName: workflowName,
 					},
@@ -120,7 +120,7 @@ func (t WorkflowServerImpl) workflowStream(
 					}
 
 					t.eventManager.Publish(&wms.WorkflowStepOutputEvent{
-						BaseEvent: events.BaseEvent{
+						BaseWorkflowEvent: wms.BaseWorkflowEvent{
 							ServiceName:  serviceName,
 							WorkflowName: workflowName,
 						},
@@ -136,7 +136,7 @@ func (t WorkflowServerImpl) workflowStream(
 			}, func(exitCode uint8) error {
 				// Completion callback
 				t.eventManager.Publish(&wms.WorkflowStepCompleteEvent{
-					BaseEvent: events.BaseEvent{
+					BaseWorkflowEvent: wms.BaseWorkflowEvent{
 						ServiceName:  serviceName,
 						WorkflowName: workflowName,
 					},
@@ -156,7 +156,7 @@ func (t WorkflowServerImpl) workflowStream(
 
 			if err != nil {
 				t.eventManager.Publish(&wms.WorkflowErrorEvent{
-					BaseEvent: events.BaseEvent{
+					BaseWorkflowEvent: wms.BaseWorkflowEvent{
 						ServiceName:  serviceName,
 						WorkflowName: workflowName,
 					},
@@ -169,7 +169,7 @@ func (t WorkflowServerImpl) workflowStream(
 	}
 
 	t.eventManager.Publish(&wms.WorkflowCompleteEvent{
-		BaseEvent: events.BaseEvent{
+		BaseWorkflowEvent: wms.BaseWorkflowEvent{
 			ServiceName:  serviceName,
 			WorkflowName: workflowName,
 		},
