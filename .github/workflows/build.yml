@@ -3,11 +3,11 @@ name: 'Rebuild project'
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [ opened, reopened, labeled, synchronize ]
     branches:
-      - master
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
