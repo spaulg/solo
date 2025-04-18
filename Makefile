@@ -14,12 +14,6 @@ NATIVE_SERVICES := solo
 LINUX_SERVICES := solo-entrypoint
 SERVICES := $(NATIVE_SERVICES) $(LINUX_SERVICES)
 
-ifeq ($(HOMEBREW_BUILD),1)
-INSTALL_OWNER =
-else
-INSTALL_OWNER = -o root
-endif
-
 GOOS_solo :=
 GOOS_solo-entrypoint := linux
 
@@ -49,8 +43,9 @@ cover:
 	cd $(SRC_DIR) && $(GOCOVER) -html=coverage.out
 
 install:
-	$(foreach srv, $(NATIVE_SERVICES), install -m 0755 $(INSTALL_OWNER) $(BUILD_DIR)/$(srv) $(BINDIR) || exit;)
-	$(foreach srv, $(LINUX_SERVICES), install -m 0755 $(INSTALL_OWNER) $(BUILD_DIR)/$(srv) $(BINDIR) || exit;)
+	mkdir -p $(BINDIR)
+	$(foreach srv, $(NATIVE_SERVICES), install -m 0755 $(BUILD_DIR)/$(srv) $(BINDIR)/$(srv) || exit;)
+	$(foreach srv, $(LINUX_SERVICES), install -m 0755 $(BUILD_DIR)/$(srv) $(BINDIR)/$(srv) || exit;)
 
 clean:
 	rm -rf $(BUILD_DIR)
