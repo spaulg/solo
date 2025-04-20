@@ -1,12 +1,16 @@
 # Development Setup
 
-### Install the Protobuf compiler
+### Macos
 
-Linux with apt: `apt install -y protobuf-compiler`
+`brew install go protobuf protoc-gen-go protoc-gen-go-grpc`
 
-MacOS with brew: `brew install protobuf`
+### Linux
 
-### Install GRPC/protobuf compiler plugins
+_todo_
+
+### Manually
+
+_todo_
 
 `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`
 
@@ -16,7 +20,7 @@ MacOS with brew: `brew install protobuf`
 
 ### Building
 
-`make`
+`make` or `make build`
 
 ### Testing/Linting/Code Coverage
 
