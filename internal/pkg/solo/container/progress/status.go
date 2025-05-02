@@ -1,6 +1,11 @@
 package progress
 
-import "strings"
+import (
+	"crypto/md5"
+	"encoding/hex"
+	progresscommon "github.com/spaulg/solo/internal/pkg/common/container/progress"
+	"strings"
+)
 
 type ComposeProgress struct {
 	ID     string `json:"id"`
@@ -13,32 +18,71 @@ func (t *ComposeProgress) ToEvent(projectName string) *ComposeProgressEvent {
 	}
 
 	idParts := strings.SplitN(t.ID, " ", 2)
-	var idType string
-	var entity string
+	var entityType string
+	var fullEntityName string
+	var projectEntityName string
 
 	partsLen := len(idParts)
 	if partsLen == 2 {
-		idType = idParts[0]
-		entity = idParts[1]
+		entityType = idParts[0]
+		fullEntityName = idParts[1]
 	} else if partsLen == 1 && t.Status == "Built" {
-		idType = "Image"
-		entity = idParts[0]
+		entityType = "Image"
+		fullEntityName = idParts[0]
 	} else {
 		return nil
 	}
 
-	entity = strings.TrimSpace(entity)
-	entity = strings.Trim(entity, "\"")
-	entity = strings.TrimPrefix(entity, projectName)
-	entity = strings.Trim(entity, "_-")
+	fullEntityName = strings.TrimSpace(fullEntityName)
+	fullEntityName = strings.Trim(fullEntityName, "\"")
 
-	if len(entity) == 0 {
+	projectEntityName = strings.TrimPrefix(fullEntityName, projectName)
+	projectEntityName = strings.Trim(projectEntityName, "_-")
+
+	if len(projectEntityName) == 0 {
 		return nil
 	}
 
+	// Convert the status to an action and status
+	action, status := t.convertActionStatus(t.Status)
+	entityTypeEnum := progresscommon.EntityTypeNameFromString(entityType)
+
+	// Context id to represent the target across multiple event
+	hash := md5.Sum([]byte(action.String() + ":" + entityType + ":" + projectEntityName))
+	contextId := hex.EncodeToString(hash[:])
+
 	return &ComposeProgressEvent{
-		Action: t.Status,
-		Type:   idType,
-		Entity: entity,
+		ContextId:         contextId,         // MD5 of the status, type and entity name triple
+		Action:            action,            // Start, Stop, Create, Remove, Build
+		EntityType:        entityTypeEnum,    // Volume, Network, Container, Image
+		FullEntityName:    fullEntityName,    // Full projectEntityName name in docker being actioned
+		ProjectEntityName: projectEntityName, // Project projectEntityName name in compose being actioned
+		Status:            status,            // InProgress or Complete
+	}
+}
+
+func (t *ComposeProgress) convertActionStatus(status string) (progresscommon.ComposeProgressAction, progresscommon.ComposeProgressStatus) {
+	switch status {
+	case "Built":
+		return progresscommon.Build, progresscommon.Complete
+	case "Creating":
+		return progresscommon.Create, progresscommon.InProgress
+	case "Created":
+		return progresscommon.Create, progresscommon.Complete
+	case "Starting":
+		return progresscommon.Start, progresscommon.InProgress
+	case "Started":
+		return progresscommon.Start, progresscommon.Complete
+	case "Stopping":
+		return progresscommon.Stop, progresscommon.InProgress
+	case "Stopped":
+		return progresscommon.Stop, progresscommon.Complete
+	case "Removing":
+		return progresscommon.Remove, progresscommon.InProgress
+	case "Removed":
+		return progresscommon.Remove, progresscommon.Complete
+
+	default:
+		return progresscommon.Unknown, progresscommon.UnknownProgress
 	}
 }

@@ -6,7 +6,7 @@ import (
 
 type BaseWorkflowEvent struct {
 	ServiceName  string
-	WorkflowName workflowcommon.Name
+	WorkflowName workflowcommon.WorkflowName
 }
 
 type WorkflowStartedEvent struct {

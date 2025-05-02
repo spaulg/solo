@@ -6,7 +6,7 @@ import (
 )
 
 type Factory interface {
-	Make(project *project.Project, service string, workflowName workflowcommon.Name) Orchestrator
+	Make(project *project.Project, service string, workflowName workflowcommon.WorkflowName) Orchestrator
 }
 
 type DefaultFactory struct{}
@@ -18,7 +18,7 @@ func NewWorkflowFactory() Factory {
 func (t *DefaultFactory) Make(
 	project *project.Project,
 	serviceName string,
-	workflowName workflowcommon.Name,
+	workflowName workflowcommon.WorkflowName,
 ) Orchestrator {
 	return NewOrchestrator(project.GetServiceWorkflow(serviceName, workflowName.String()))
 }
