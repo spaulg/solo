@@ -7,5 +7,5 @@ import (
 
 type WorkflowRunner interface {
 	io.Closer
-	Execute(workflowName commonworkflow.Name)
+	Execute(workflowName commonworkflow.WorkflowName)
 }

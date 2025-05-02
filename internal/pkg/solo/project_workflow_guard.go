@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-type WorkflowServiceMap map[workflowcommon.Name][]string
-type WorkflowChannelMap map[workflowcommon.Name]chan interface{}
+type WorkflowServiceMap map[workflowcommon.WorkflowName][]string
+type WorkflowChannelMap map[workflowcommon.WorkflowName]chan interface{}
 
 type ProjectWorkflowGuard struct {
 	soloCtx          *context.CliContext
@@ -30,13 +30,13 @@ func NewProjectWorkflowGuard(soloCtx *context.CliContext) *ProjectWorkflowGuard 
 	}
 }
 
-func (t *ProjectWorkflowGuard) AddWorkflow(workflow workflowcommon.Name, services []string) {
+func (t *ProjectWorkflowGuard) AddWorkflow(workflow workflowcommon.WorkflowName, services []string) {
 	t.workflowServices[workflow] = services
 	t.workflowComplete[workflow] = make(chan interface{})
 }
 
 func (t *ProjectWorkflowGuard) Publish(event events.Event) {
-	var workflowName workflowcommon.Name
+	var workflowName workflowcommon.WorkflowName
 
 	switch e := event.(type) {
 	case *wms.WorkflowCompleteEvent:
@@ -53,7 +53,7 @@ func (t *ProjectWorkflowGuard) Publish(event events.Event) {
 	}
 }
 
-func (t *ProjectWorkflowGuard) WaitForCompletion(workflowName workflowcommon.Name) error {
+func (t *ProjectWorkflowGuard) WaitForCompletion(workflowName workflowcommon.WorkflowName) error {
 	duration := t.soloCtx.Project.GetMaxWorkflowTimeout(workflowName.String())
 	timer := time.NewTimer(duration)
 	startTime := time.Now()

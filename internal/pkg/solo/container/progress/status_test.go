@@ -1,6 +1,7 @@
 package progress
 
 import (
+	progresscommon "github.com/spaulg/solo/internal/pkg/common/container/progress"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -18,9 +19,10 @@ func (suite *StatusTestSuite) TestEmptyIDAndStatus() {
 		ID:     "",
 		Status: "",
 	}
-	var expected *ComposeProgressEvent = nil
 
 	event := progress.ToEvent("test_project")
+	var expected *ComposeProgressEvent = nil
+
 	suite.Equal(expected, event)
 }
 
@@ -29,9 +31,10 @@ func (suite *StatusTestSuite) TestIDWithLessThan2Parts() {
 		ID:     "singlepart",
 		Status: "Running",
 	}
-	var expected *ComposeProgressEvent = nil
 
 	event := progress.ToEvent("test_project")
+	var expected *ComposeProgressEvent = nil
+
 	suite.Equal(expected, event)
 }
 
@@ -40,72 +43,97 @@ func (suite *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
 		ID:     "singlepart",
 		Status: "Built",
 	}
-	expected := &ComposeProgressEvent{
-		Action: "Built",
-		Type:   "Image",
-		Entity: "singlepart",
-	}
 
 	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Build,
+		EntityType:        progresscommon.Image,
+		FullEntityName:    "singlepart",
+		ProjectEntityName: "singlepart",
+		Status:            progresscommon.Complete,
+	}
+
 	suite.Equal(expected, event)
 }
 
 func (suite *StatusTestSuite) TestIDWithMoreThan2Parts() {
 	progress := ComposeProgress{
 		ID:     "Container entity extra",
-		Status: "Running",
-	}
-	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity extra",
+		Status: "Creating",
 	}
 
 	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "entity extra",
+		ProjectEntityName: "entity extra",
+		Status:            progresscommon.InProgress,
+	}
+
 	suite.Equal(expected, event)
 }
 
 func (suite *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
 	progress := ComposeProgress{
 		ID:     "Container test_project-entity",
-		Status: "Running",
-	}
-	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity",
+		Status: "Creating",
 	}
 
 	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "test_project-entity",
+		ProjectEntityName: "entity",
+		Status:            progresscommon.InProgress,
+	}
+
 	suite.Equal(expected, event)
 }
 
 func (suite *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
 	progress := ComposeProgress{
 		ID:     "Container test_project_entity",
-		Status: "Running",
-	}
-	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity",
+		Status: "Creating",
 	}
 
 	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "test_project_entity",
+		ProjectEntityName: "entity",
+		Status:            progresscommon.InProgress,
+	}
+
 	suite.Equal(expected, event)
 }
 
 func (suite *StatusTestSuite) TestValidIDAndStatusWithQuotes() {
 	progress := ComposeProgress{
 		ID:     "Container \"test_project-entity\"",
-		Status: "Running",
-	}
-	expected := &ComposeProgressEvent{
-		Action: "Running",
-		Type:   "Container",
-		Entity: "entity",
+		Status: "Creating",
 	}
 
 	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "test_project-entity",
+		ProjectEntityName: "entity",
+		Status:            progresscommon.InProgress,
+	}
+
 	suite.Equal(expected, event)
 }

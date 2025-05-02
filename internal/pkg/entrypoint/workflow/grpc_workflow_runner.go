@@ -57,7 +57,7 @@ func NewGrpcWorkflowRunner(
 	}, nil
 }
 
-func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.Name) {
+func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) {
 	stream, err := t.buildStream(workflowName)
 	if err != nil {
 		panic(err)
@@ -130,7 +130,7 @@ func (t *GrpcWorkflowRunner) Close() error {
 	return t.conn.Close()
 }
 
-func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.Name) (WorkflowStream, error) {
+func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.WorkflowName) (WorkflowStream, error) {
 	switch workflowName {
 	case commonworkflow.FirstPreStart:
 		return t.workflowClient.FirstPreStartWorkflowStream(context.Background())

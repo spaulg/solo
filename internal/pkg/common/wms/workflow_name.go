@@ -4,10 +4,10 @@ import (
 	"fmt"
 )
 
-type Name int
+type WorkflowName int
 
 // nolint:gochecknoglobals
-var WorkflowNames = []Name{
+var WorkflowNames = []WorkflowName{
 	FirstPreStart,
 	PreStart,
 	PostStart,
@@ -17,7 +17,7 @@ var WorkflowNames = []Name{
 	PostDestroy,
 }
 
-func FromString(name string) (Name, error) {
+func WorkflowNameFromString(name string) (WorkflowName, error) {
 	switch name {
 	case "first_pre_start":
 		return FirstPreStart, nil
@@ -38,7 +38,7 @@ func FromString(name string) (Name, error) {
 	}
 }
 
-func (c Name) String() string {
+func (c WorkflowName) String() string {
 	switch c {
 	case FirstPreStart:
 		return "first_pre_start"
@@ -60,7 +60,7 @@ func (c Name) String() string {
 }
 
 const (
-	Undefined Name = iota
+	Undefined WorkflowName = iota
 	FirstPreStart
 	PreStart
 	PostStart
