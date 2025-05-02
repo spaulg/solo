@@ -62,7 +62,7 @@ func (t WorkflowServerImpl) PreDestroyWorkflowStream(
 }
 
 func (t WorkflowServerImpl) workflowStream(
-	workflowName commonworkflow.Name,
+	workflowName commonworkflow.WorkflowName,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
 ) error {
 	// Extract service name
