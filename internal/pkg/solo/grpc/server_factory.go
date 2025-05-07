@@ -1,7 +1,10 @@
 package grpc
 
-import "github.com/spaulg/solo/internal/pkg/solo/project"
+import (
+	"github.com/spaulg/solo/internal/pkg/solo/container"
+	"github.com/spaulg/solo/internal/pkg/solo/project"
+)
 
 type ServerFactory interface {
-	Build(hostname string, port uint16, project *project.Project) (Server, error)
+	Build(orchestrator container.Orchestrator, project *project.Project, port uint16) (Server, error)
 }

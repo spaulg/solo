@@ -64,9 +64,9 @@ func (t *ProjectControl) Start() error {
 
 	// Start GRPC services
 	grpcServer, err := t.grpcServerFactory.Build(
-		orchestrator.GetHostGatewayHostname(),
-		t.soloCtx.Config.GrpcServerPort,
+		orchestrator,
 		t.soloCtx.Project,
+		t.soloCtx.Config.GrpcServerPort,
 	)
 
 	if err != nil {
@@ -144,9 +144,9 @@ func (t *ProjectControl) Stop() error {
 
 	if len(runningServices) > 0 {
 		grpcServer, err := t.grpcServerFactory.Build(
-			orchestrator.GetHostGatewayHostname(),
-			t.soloCtx.Config.GrpcServerPort,
+			orchestrator,
 			t.soloCtx.Project,
+			t.soloCtx.Config.GrpcServerPort,
 		)
 
 		if err != nil {
@@ -208,9 +208,9 @@ func (t *ProjectControl) Destroy() error {
 
 	if len(runningServices) > 0 {
 		grpcServer, err := t.grpcServerFactory.Build(
-			orchestrator.GetHostGatewayHostname(),
-			t.soloCtx.Config.GrpcServerPort,
+			orchestrator,
 			t.soloCtx.Project,
+			t.soloCtx.Config.GrpcServerPort,
 		)
 
 		if err != nil {
