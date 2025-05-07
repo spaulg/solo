@@ -9,12 +9,15 @@ import (
 	entrypointcontext "github.com/spaulg/solo/internal/pkg/entrypoint/context"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/grpc/credentials"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 )
+
+const metadataStateFile = "/solo/container/data/metadata_state.yml"
 
 type GrpcWorkflowRunner struct {
 	entrypointCtx  *entrypointcontext.EntrypointContext
@@ -131,20 +134,36 @@ func (t *GrpcWorkflowRunner) Close() error {
 }
 
 func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.WorkflowName) (WorkflowStream, error) {
+	md, err := t.loadMetadata()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
 	switch workflowName {
 	case commonworkflow.FirstPreStart:
-		return t.workflowClient.FirstPreStartWorkflowStream(context.Background())
+		return t.workflowClient.FirstPreStartWorkflowStream(ctx)
 	case commonworkflow.PreStart:
-		return t.workflowClient.PreStartWorkflowStream(context.Background())
+		return t.workflowClient.PreStartWorkflowStream(ctx)
 	case commonworkflow.PostStart:
-		return t.workflowClient.PostStartWorkflowStream(context.Background())
+		return t.workflowClient.PostStartWorkflowStream(ctx)
 	case commonworkflow.PreStop:
-		return t.workflowClient.PreStopWorkflowStream(context.Background())
+		return t.workflowClient.PreStopWorkflowStream(ctx)
 	case commonworkflow.PreDestroy:
-		return t.workflowClient.PreDestroyWorkflowStream(context.Background())
+		return t.workflowClient.PreDestroyWorkflowStream(ctx)
 	default:
 		return nil, errors.New("invalid wms name")
 	}
+}
+
+func (t *GrpcWorkflowRunner) loadMetadata() (metadata.MD, error) {
+	metadataState, err := LoadMetadataState(metadataStateFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return metadataState.ExportToGrpcMetadata(), nil
 }
 
 func (t *GrpcWorkflowRunner) execute(
