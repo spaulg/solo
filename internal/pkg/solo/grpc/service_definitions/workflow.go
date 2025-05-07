@@ -66,17 +66,25 @@ func (t WorkflowServerImpl) workflowStream(
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
 ) error {
 	// Extract service name
-	contextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	serviceName, ok := server.Context().Value(contextValueName).(string)
+	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
+	serviceName, ok := server.Context().Value(serviceNameContextValueName).(string)
 	if !ok {
-		t.soloCtx.Logger.Info("Service name not found")
+		t.soloCtx.Logger.Error("Service name not found")
+		return fmt.Errorf("unauthorized")
+	}
+
+	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	containerName, ok := server.Context().Value(containerNameContextValueName).(string)
+	if !ok {
+		t.soloCtx.Logger.Error("Container name not found")
 		return fmt.Errorf("unauthorized")
 	}
 
 	t.eventManager.Publish(&wms.WorkflowStartedEvent{
 		BaseWorkflowEvent: wms.BaseWorkflowEvent{
-			ServiceName:  serviceName,
-			WorkflowName: workflowName,
+			ServiceName:   serviceName,
+			ContainerName: containerName,
+			WorkflowName:  workflowName,
 		},
 	})
 
@@ -89,10 +97,15 @@ func (t WorkflowServerImpl) workflowStream(
 				// Trigger callback
 				t.eventManager.Publish(&wms.WorkflowStepStartedEvent{
 					BaseWorkflowEvent: wms.BaseWorkflowEvent{
-						ServiceName:  serviceName,
-						WorkflowName: workflowName,
+						ServiceName:   serviceName,
+						ContainerName: containerName,
+						WorkflowName:  workflowName,
 					},
-					Name: step.GetName(),
+					StepId:    step.GetId(),
+					Name:      step.GetName(),
+					Command:   step.GetCommand(),
+					Arguments: step.GetArguments(),
+					Cwd:       step.GetWorkingDirectory(),
 				})
 
 				return server.Send(&services.WorkflowStreamResponse{
@@ -121,8 +134,9 @@ func (t WorkflowServerImpl) workflowStream(
 
 					t.eventManager.Publish(&wms.WorkflowStepOutputEvent{
 						BaseWorkflowEvent: wms.BaseWorkflowEvent{
-							ServiceName:  serviceName,
-							WorkflowName: workflowName,
+							ServiceName:   serviceName,
+							ContainerName: containerName,
+							WorkflowName:  workflowName,
 						},
 						StepId: step.GetId(),
 						Stdout: result.RunCommandResult.Stdout,
@@ -137,8 +151,9 @@ func (t WorkflowServerImpl) workflowStream(
 				// Completion callback
 				t.eventManager.Publish(&wms.WorkflowStepCompleteEvent{
 					BaseWorkflowEvent: wms.BaseWorkflowEvent{
-						ServiceName:  serviceName,
-						WorkflowName: workflowName,
+						ServiceName:   serviceName,
+						ContainerName: containerName,
+						WorkflowName:  workflowName,
 					},
 					StepId:    step.GetId(),
 					ExitCode:  exitCode,
@@ -157,8 +172,9 @@ func (t WorkflowServerImpl) workflowStream(
 			if err != nil {
 				t.eventManager.Publish(&wms.WorkflowErrorEvent{
 					BaseWorkflowEvent: wms.BaseWorkflowEvent{
-						ServiceName:  serviceName,
-						WorkflowName: workflowName,
+						ServiceName:   serviceName,
+						ContainerName: containerName,
+						WorkflowName:  workflowName,
 					},
 					Err: err,
 				})
@@ -170,8 +186,9 @@ func (t WorkflowServerImpl) workflowStream(
 
 	t.eventManager.Publish(&wms.WorkflowCompleteEvent{
 		BaseWorkflowEvent: wms.BaseWorkflowEvent{
-			ServiceName:  serviceName,
-			WorkflowName: workflowName,
+			ServiceName:   serviceName,
+			ContainerName: containerName,
+			WorkflowName:  workflowName,
 		},
 		Successful: workflowSuccess,
 	})

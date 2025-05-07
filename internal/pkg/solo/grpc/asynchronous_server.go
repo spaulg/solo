@@ -3,6 +3,7 @@ package grpc
 import (
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/common/grpc/services"
+	"github.com/spaulg/solo/internal/pkg/solo/container"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/interceptors"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"google.golang.org/grpc"
@@ -18,7 +19,7 @@ import (
 const hostFileName = "provisioner_host"
 
 type AsynchronousServer struct {
-	hostname             string
+	orchestrator         container.Orchestrator
 	port                 uint32
 	stateDirectory       string
 	transportCredentials credentials.TransportCredentials
@@ -28,14 +29,14 @@ type AsynchronousServer struct {
 }
 
 func NewAsynchronousServer(
-	hostname string,
+	orchestrator container.Orchestrator,
 	port uint16,
 	stateDirectory string,
 	transportCredentials credentials.TransportCredentials,
 	workflowService *service_definitions.WorkflowServerImpl,
 ) Server {
 	return &AsynchronousServer{
-		hostname:             hostname,
+		orchestrator:         orchestrator,
 		port:                 uint32(port),
 		stateDirectory:       stateDirectory,
 		transportCredentials: transportCredentials,
@@ -71,10 +72,12 @@ func (t *AsynchronousServer) Start() error {
 			return
 		}
 
+		containerNameInterceptor := interceptors.NewContainerNameInterceptor(t.orchestrator)
+
 		t.server = grpc.NewServer(
 			grpc.Creds(t.transportCredentials),
-			grpc.UnaryInterceptor(interceptors.ServiceNameInterceptor),
-			grpc.StreamInterceptor(interceptors.ServiceNameStreamInterceptor),
+			grpc.ChainUnaryInterceptor(interceptors.ServiceNameInterceptor, containerNameInterceptor.ContainerNameUnaryInterceptor),
+			grpc.ChainStreamInterceptor(interceptors.ServiceNameStreamInterceptor, containerNameInterceptor.ContainerNameStreamInterceptor),
 		)
 
 		services.RegisterWorkflowServer(t.server, t.workflowService)
@@ -105,13 +108,14 @@ func (t *AsynchronousServer) Stop() {
 }
 
 func (t *AsynchronousServer) writeHostFile() error {
+	hostname := t.orchestrator.GetHostGatewayHostname()
 	hostFilePath := path.Join(t.stateDirectory, hostFileName)
 	hostFile, err := os.OpenFile(hostFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open host file: %v", err)
 	}
 
-	if _, err := hostFile.WriteString(t.hostname + ":" + strconv.Itoa(int(t.port))); err != nil {
+	if _, err := hostFile.WriteString(hostname + ":" + strconv.Itoa(int(t.port))); err != nil {
 		return fmt.Errorf("failed to write to host file: %v", err)
 	}
 

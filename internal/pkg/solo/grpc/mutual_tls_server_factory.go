@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/spaulg/solo/internal/pkg/solo/certificate"
+	"github.com/spaulg/solo/internal/pkg/solo/container"
 	"github.com/spaulg/solo/internal/pkg/solo/grpc/service_definitions"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
 	"google.golang.org/grpc/credentials"
@@ -30,17 +31,19 @@ func NewMutualTLSServerFactory(
 }
 
 func (t *MutualTLSServerFactory) Build(
-	hostname string,
-	port uint16,
+	orchestrator container.Orchestrator,
 	project *project.Project,
+	port uint16,
 ) (Server, error) {
+	hostname := orchestrator.GetHostGatewayHostname()
+
 	transportCredentials, err := t.buildTransportCredentials(hostname, project)
 	if err != nil {
 		return nil, err
 	}
 
 	return NewAsynchronousServer(
-		hostname,
+		orchestrator,
 		port,
 		project.GetAllServicesStateDirectory(),
 		transportCredentials,

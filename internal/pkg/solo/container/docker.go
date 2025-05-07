@@ -11,15 +11,21 @@ import (
 	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"github.com/spaulg/solo/internal/pkg/solo/events"
 	"github.com/spaulg/solo/internal/pkg/solo/project"
+	"google.golang.org/grpc/metadata"
 	"io"
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 )
 
 type ServiceStatus struct {
 	Service string `json:"Service"`
 	State   string `json:"State"`
+}
+
+type DockerInspect struct {
+	Name string `json:"Name"`
 }
 
 type DockerOrchestrator struct {
@@ -252,4 +258,42 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config.Config, p
 	}
 
 	return project.MarshalYAML()
+}
+
+func (t *DockerOrchestrator) ResolveServiceNameFromContainerName(containerName string) (*string, error) {
+	serviceName := "example"
+	return &serviceName, nil
+}
+
+func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (*string, error) {
+	containerNames := md.Get("hostname")
+
+	if len(containerNames) == 0 {
+		return nil, fmt.Errorf("unable to resolve container name")
+	}
+
+	composeCmd := exec.Command("/usr/local/bin/docker", "inspect",
+		"--format", "{{ json . }}",
+		"--type", "container",
+		containerNames[0],
+	)
+
+	var stdoutBuf bytes.Buffer
+	composeCmd.Stdout = &stdoutBuf
+
+	if err := composeCmd.Run(); err != nil {
+		t.soloCtx.Logger.Error("Failed to run")
+		return nil, err
+	}
+
+	inspect := DockerInspect{}
+	if err := json.Unmarshal(stdoutBuf.Bytes(), &inspect); err != nil {
+		t.soloCtx.Logger.Error("Failed to unmarshall")
+		return nil, err
+	}
+
+	containerName := inspect.Name
+	containerName = strings.TrimLeft(containerName, "/")
+
+	return &containerName, nil
 }
