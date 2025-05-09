@@ -179,7 +179,7 @@ func (t *ProjectControl) Stop() error {
 		}
 	}
 
-	if err := orchestrator.Down(); err != nil {
+	if err := orchestrator.Stop(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
@@ -243,7 +243,7 @@ func (t *ProjectControl) Destroy() error {
 		}
 	}
 
-	if err := orchestrator.Destroy(); err != nil {
+	if err := orchestrator.Down(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 

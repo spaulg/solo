@@ -83,7 +83,7 @@ func (t *DockerOrchestrator) Up() error {
 	)
 }
 
-func (t *DockerOrchestrator) Down() error {
+func (t *DockerOrchestrator) Stop() error {
 	return t.runComposeCommandWithProgress(
 		"--progress", "json",
 		"-f", t.composeFile,
@@ -92,7 +92,7 @@ func (t *DockerOrchestrator) Down() error {
 	)
 }
 
-func (t *DockerOrchestrator) Destroy() error {
+func (t *DockerOrchestrator) Down() error {
 	return t.runComposeCommandWithProgress(
 		"--progress", "json",
 		"-f", t.composeFile,
