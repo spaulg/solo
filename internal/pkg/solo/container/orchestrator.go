@@ -8,8 +8,8 @@ import (
 
 type Orchestrator interface {
 	Up() error
+	Stop() error
 	Down() error
-	Destroy() error
 	Execute(serviceNames []string, command []string) error
 	GetHostGatewayHostname() string
 	ServicesStatus() ([]string, []string, error)
