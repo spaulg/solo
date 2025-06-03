@@ -3,8 +3,8 @@ package subcommand
 import (
 	"errors"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
+	"github.com/spaulg/solo/internal/pkg/entrypoint"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
-	"github.com/spaulg/solo/internal/pkg/entrypoint/workflow"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
@@ -19,7 +19,7 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 		DisableFlagParsing: true,
 		Args:               cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			workflowRunner, err := workflow.WorkflowRunnerFactory(entrypointCtx)
+			workflowRunner, err := entrypoint.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)
 			}
@@ -27,10 +27,14 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 			defer workflowRunner.Close()
 
 			if !isServiceBuilt() {
-				workflowRunner.Execute(commonworkflow.FirstPreStart)
+				if err := workflowRunner.Execute(commonworkflow.FirstPreStart); err != nil {
+					panic(err)
+				}
 			}
 
-			workflowRunner.Execute(commonworkflow.PreStart)
+			if err := workflowRunner.Execute(commonworkflow.PreStart); err != nil {
+				panic(err)
+			}
 
 			err = forkAndExecute(os.Args[2:])
 			panic(err)

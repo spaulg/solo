@@ -73,11 +73,20 @@ func (t *AsynchronousServer) Start() error {
 		}
 
 		containerNameInterceptor := interceptors.NewContainerNameInterceptor(t.orchestrator)
+		firstPreStartCompleteInterceptor := interceptors.NewFirstPreStartCompleteInterceptor(t.orchestrator)
 
 		t.server = grpc.NewServer(
 			grpc.Creds(t.transportCredentials),
-			grpc.ChainUnaryInterceptor(interceptors.ServiceNameInterceptor, containerNameInterceptor.ContainerNameUnaryInterceptor),
-			grpc.ChainStreamInterceptor(interceptors.ServiceNameStreamInterceptor, containerNameInterceptor.ContainerNameStreamInterceptor),
+			grpc.ChainUnaryInterceptor(
+				interceptors.ServiceNameInterceptor,
+				firstPreStartCompleteInterceptor.FirstPreStartCompleteUnaryInterceptor,
+				containerNameInterceptor.ContainerNameUnaryInterceptor,
+			),
+			grpc.ChainStreamInterceptor(
+				interceptors.ServiceNameStreamInterceptor,
+				firstPreStartCompleteInterceptor.FirstPreStartCompleteStreamInterceptor,
+				containerNameInterceptor.ContainerNameStreamInterceptor,
+			),
 		)
 
 		services.RegisterWorkflowServer(t.server, t.workflowService)

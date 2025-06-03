@@ -84,20 +84,6 @@ func (t *Project) GetServiceMountDirectory(serviceName string) string {
 	return path.Join(t.GetServiceStateDirectoryRoot(), serviceName, "mount")
 }
 
-func (t *Project) ServicesPendingFirstPreStartWorkflow() []string {
-	var servicesPendingFirstPreStart []string
-	serviceNames := t.ServiceNames()
-
-	for _, serviceName := range serviceNames {
-		markerFile := path.Join(t.GetServiceMountDirectory(serviceName), "first_pre_start_complete")
-		if _, err := os.Stat(markerFile); os.IsNotExist(err) {
-			servicesPendingFirstPreStart = append(servicesPendingFirstPreStart, serviceName)
-		}
-	}
-
-	return servicesPendingFirstPreStart
-}
-
 func (t *Project) GetStateDirectoryRoot() string {
 	return t.projectStateDirectory
 }

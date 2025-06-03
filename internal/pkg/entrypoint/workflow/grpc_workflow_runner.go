@@ -11,18 +11,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"io"
-	"os"
 	"os/exec"
-	"strings"
 	"sync"
 )
 
-const metadataStateFile = "/solo/container/data/metadata_state.yml"
+const FirstPreStartCompleteMetadataKey = "first_pre_start_complete"
 
 type GrpcWorkflowRunner struct {
 	entrypointCtx  *entrypointcontext.EntrypointContext
 	conn           *grpc.ClientConn
 	workflowClient services.WorkflowClient
+	metadataState  *MetadataState
 }
 
 type WorkflowStream grpc.BidiStreamingClient[services.WorkflowStreamRequest, services.WorkflowStreamResponse]
@@ -30,6 +29,8 @@ type WorkflowStream grpc.BidiStreamingClient[services.WorkflowStreamRequest, ser
 func NewGrpcWorkflowRunner(
 	entrypointCtx *entrypointcontext.EntrypointContext,
 	credentialsBuilder credentials.Builder,
+	workflowServerHost string,
+	metadataState *MetadataState,
 ) (WorkflowRunner, error) {
 	entrypointCtx.Logger.Info("Connect to grpc server")
 
@@ -38,13 +39,7 @@ func NewGrpcWorkflowRunner(
 		return nil, err
 	}
 
-	targetBytes, err := os.ReadFile("/solo/services_all/provisioner_host")
-	if err != nil {
-		return nil, err
-	}
-
-	target := strings.TrimSpace(string(targetBytes))
-	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient(workflowServerHost, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -57,13 +52,14 @@ func NewGrpcWorkflowRunner(
 		entrypointCtx:  entrypointCtx,
 		conn:           conn,
 		workflowClient: client,
+		metadataState:  metadataState,
 	}, nil
 }
 
-func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) {
+func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) error {
 	stream, err := t.buildStream(workflowName)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer func(stream WorkflowStream) {
@@ -78,7 +74,7 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			panic(err)
+			return err
 		}
 
 		switch instruction.Action {
@@ -100,7 +96,7 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) {
 							Stderr: stderr,
 						},
 					}); err != nil {
-						panic(err)
+						return err
 					}
 
 					return nil
@@ -108,7 +104,7 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) {
 			)
 
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			if err := stream.Send(&services.WorkflowStreamRequest{
@@ -117,16 +113,24 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) {
 					ExitCode: &exitCode,
 				},
 			}); err != nil {
-				panic(err)
+				return err
 			}
 
 		case services.WorkflowAction_COMPLETE_ACTION:
-			break
+			if workflowName == commonworkflow.FirstPreStart {
+				t.metadataState.Set(FirstPreStartCompleteMetadataKey, "true")
+			}
 
 		default:
-			panic(err)
+			return errors.New("unknown action received from workflow stream")
 		}
 	}
+
+	if err := t.metadataState.SaveToFile(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (t *GrpcWorkflowRunner) Close() error {
@@ -134,12 +138,7 @@ func (t *GrpcWorkflowRunner) Close() error {
 }
 
 func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.WorkflowName) (WorkflowStream, error) {
-	md, err := t.loadMetadata()
-	if err != nil {
-		return nil, err
-	}
-
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	ctx := metadata.NewOutgoingContext(context.Background(), t.metadataState.ExportToGrpcMetadata())
 
 	switch workflowName {
 	case commonworkflow.FirstPreStart:
@@ -155,15 +154,6 @@ func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.WorkflowNam
 	default:
 		return nil, errors.New("invalid wms name")
 	}
-}
-
-func (t *GrpcWorkflowRunner) loadMetadata() (metadata.MD, error) {
-	metadataState, err := LoadMetadataState(metadataStateFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return metadataState.ExportToGrpcMetadata(), nil
 }
 
 func (t *GrpcWorkflowRunner) execute(

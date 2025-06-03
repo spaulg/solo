@@ -8,7 +8,9 @@ import (
 )
 
 type MetadataState struct {
+	filePath string
 	metadata map[string]string
+	dirty    bool
 }
 
 func LoadMetadataState(filePath string) (*MetadataState, error) {
@@ -16,16 +18,16 @@ func LoadMetadataState(filePath string) (*MetadataState, error) {
 
 	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
-			metadataState, err = NewMetadataState()
-			if err != nil {
-				return nil, err
-			}
-
 			if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
 				return nil, err
 			}
 
-			if err := metadataState.SaveToFile(filePath); err != nil {
+			metadataState, err = NewMetadataState(filePath)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := metadataState.SaveToFile(); err != nil {
 				return nil, err
 			}
 		} else {
@@ -47,7 +49,11 @@ func LoadMetadataStateFromFile(filePath string) (*MetadataState, error) {
 		return nil, err
 	}
 
-	metadataState := MetadataState{}
+	metadataState := MetadataState{
+		filePath: filePath,
+		dirty:    false,
+	}
+
 	if err := yaml.Unmarshal(data, &metadataState.metadata); err != nil {
 		return nil, err
 	}
@@ -55,28 +61,37 @@ func LoadMetadataStateFromFile(filePath string) (*MetadataState, error) {
 	return &metadataState, nil
 }
 
-func NewMetadataState() (*MetadataState, error) {
+func NewMetadataState(filePath string) (*MetadataState, error) {
 	state := &MetadataState{
+		filePath: filePath,
 		metadata: make(map[string]string),
+		dirty:    false,
 	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	state.metadata["hostname"] = hostname
 
 	return state, nil
 }
 
-func (t *MetadataState) SaveToFile(filePath string) error {
+func (t *MetadataState) Set(key string, value string) {
+	t.metadata[key] = value
+	t.dirty = true
+}
+
+func (t *MetadataState) SaveToFile() error {
+	if !t.dirty {
+		return nil
+	}
+
 	data, err := yaml.Marshal(t.metadata)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(filePath, data, 0644)
+	if err := os.WriteFile(t.filePath, data, 0644); err != nil {
+		return err
+	}
+
+	t.dirty = false
+	return nil
 }
 
 func (t *MetadataState) ExportToGrpcMetadata() metadata.MD {

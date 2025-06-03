@@ -80,6 +80,49 @@ func (t WorkflowServerImpl) workflowStream(
 		return fmt.Errorf("unauthorized")
 	}
 
+	// First pre start complete
+	firstPreStartCompleteContextValueName := interceptors.FirstPreStartComplete(interceptors.FirstPreStartCompleteContextValueName)
+	firstPreStartComplete, ok := server.Context().Value(firstPreStartCompleteContextValueName).(string)
+
+	if workflowName == commonworkflow.FirstPreStart && (ok || firstPreStartComplete == "true") {
+		t.eventManager.Publish(&wms.WorkflowSkippedEvent{
+			BaseWorkflowEvent: wms.BaseWorkflowEvent{
+				ServiceName:   serviceName,
+				ContainerName: containerName,
+				WorkflowName:  workflowName,
+			},
+			Successful: true,
+		})
+	} else {
+		workflowSuccess, err := t.applyWorkflowStream(workflowName, server, serviceName, containerName)
+
+		if err != nil {
+			return err
+		}
+
+		t.eventManager.Publish(&wms.WorkflowCompleteEvent{
+			BaseWorkflowEvent: wms.BaseWorkflowEvent{
+				ServiceName:   serviceName,
+				ContainerName: containerName,
+				WorkflowName:  workflowName,
+			},
+			Successful: workflowSuccess,
+		})
+	}
+
+	return server.Send(&services.WorkflowStreamResponse{
+		Action: services.WorkflowAction_COMPLETE_ACTION,
+	})
+}
+
+func (t WorkflowServerImpl) applyWorkflowStream(
+	workflowName commonworkflow.WorkflowName,
+	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
+	serviceName string,
+	containerName string,
+) (bool, error) {
+	workflowSuccess := true
+
 	t.eventManager.Publish(&wms.WorkflowStartedEvent{
 		BaseWorkflowEvent: wms.BaseWorkflowEvent{
 			ServiceName:   serviceName,
@@ -89,7 +132,6 @@ func (t WorkflowServerImpl) workflowStream(
 	})
 
 	workflow := t.workflowFactory.Make(t.soloCtx.Project, serviceName, workflowName)
-	workflowSuccess := true
 
 	if workflow != nil {
 		for step := range workflow.StepIterator() {
@@ -179,21 +221,10 @@ func (t WorkflowServerImpl) workflowStream(
 					Err: err,
 				})
 
-				return err
+				return workflowSuccess, err
 			}
 		}
 	}
 
-	t.eventManager.Publish(&wms.WorkflowCompleteEvent{
-		BaseWorkflowEvent: wms.BaseWorkflowEvent{
-			ServiceName:   serviceName,
-			ContainerName: containerName,
-			WorkflowName:  workflowName,
-		},
-		Successful: workflowSuccess,
-	})
-
-	return server.Send(&services.WorkflowStreamResponse{
-		Action: services.WorkflowAction_COMPLETE_ACTION,
-	})
+	return workflowSuccess, nil
 }

@@ -39,10 +39,16 @@ func (t *ProjectWorkflowGuard) Publish(event events.Event) {
 	var workflowName workflowcommon.WorkflowName
 
 	switch e := event.(type) {
+	case *wms.WorkflowSkippedEvent:
+		workflowName = e.WorkflowName
+		t.workflowStatus[workflowName] = append(t.workflowStatus[workflowName], e.ServiceName)
+		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event skipped for workflow %s for service %s", workflowName, e.ServiceName))
+
 	case *wms.WorkflowCompleteEvent:
 		workflowName = e.WorkflowName
 		t.workflowStatus[workflowName] = append(t.workflowStatus[workflowName], e.ServiceName)
-		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event %s for service %s", workflowName, e.ServiceName))
+		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event completed for workflow %s for service %s", workflowName, e.ServiceName))
+
 	default:
 		return
 	}
