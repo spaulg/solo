@@ -3,8 +3,8 @@ package subcommand
 import (
 	"errors"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
+	"github.com/spaulg/solo/internal/pkg/entrypoint"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
-	"github.com/spaulg/solo/internal/pkg/entrypoint/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -25,13 +25,15 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			workflowRunner, err := workflow.WorkflowRunnerFactory(entrypointCtx)
+			workflowRunner, err := entrypoint.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)
 			}
 
 			name, _ := commonworkflow.WorkflowNameFromString(args[0])
-			workflowRunner.Execute(name)
+			if err := workflowRunner.Execute(name); err != nil {
+				panic(err)
+			}
 		},
 	}
 }
