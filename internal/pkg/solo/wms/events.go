@@ -44,6 +44,11 @@ type WorkflowCompleteEvent struct {
 	Successful bool
 }
 
+type WorkflowSkippedEvent struct {
+	BaseWorkflowEvent
+	Successful bool
+}
+
 type WorkflowErrorEvent struct {
 	BaseWorkflowEvent
 	Err error

@@ -50,7 +50,6 @@ func (t *ProjectControl) Start() error {
 	}
 
 	serviceNames := t.soloCtx.Project.ServiceNames()
-	firstPreStartServices := t.soloCtx.Project.ServicesPendingFirstPreStartWorkflow()
 
 	_, stoppedServices, err := orchestrator.ServicesStatus()
 	if err != nil {
@@ -85,10 +84,7 @@ func (t *ProjectControl) Start() error {
 
 	// Register workflow guard
 	guard := NewProjectWorkflowGuard(t.soloCtx)
-	if len(firstPreStartServices) > 0 {
-		guard.AddWorkflow(workflowcommon.FirstPreStart, firstPreStartServices)
-	}
-
+	guard.AddWorkflow(workflowcommon.FirstPreStart, stoppedServices)
 	guard.AddWorkflow(workflowcommon.PreStart, stoppedServices)
 	guard.AddWorkflow(workflowcommon.PostStart, serviceNames)
 
