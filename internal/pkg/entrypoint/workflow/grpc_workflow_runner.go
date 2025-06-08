@@ -221,16 +221,16 @@ func (t *GrpcWorkflowRunner) execute(
 		}
 	}()
 
-	err = cmd.Wait()
-	exitCode := cmd.ProcessState.ExitCode()
-
-	var exitErr *exec.ExitError
-	if err != nil && !errors.As(err, &exitErr) || exitCode == -1 {
-		t.entrypointCtx.Logger.Error(fmt.Sprintf("Run finished with error: %v\n", err))
-		return 0, nil
-	}
-
 	wg.Wait()
 
+	err = cmd.Wait()
+
+	var exitErr *exec.ExitError
+	if err != nil && !errors.As(err, &exitErr) {
+		t.entrypointCtx.Logger.Error(fmt.Sprintf("Run finished with error: %v\n", err))
+		return 0, err
+	}
+
+	exitCode := cmd.ProcessState.ExitCode()
 	return uint32(exitCode), nil
 }
