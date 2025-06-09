@@ -1,8 +1,8 @@
 module github.com/spaulg/solo
 
+// Must be lowest of Go versions used between the host cli and
+// the entrypoint used in images during development.
 go 1.23.4
-
-toolchain go1.24.1
 
 require (
 	github.com/compose-spec/compose-go/v2 v2.4.1
@@ -13,6 +13,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.69.4
+	google.golang.org/protobuf v1.35.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -49,6 +50,5 @@ require (
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241021214115-324edc3d5d38 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
