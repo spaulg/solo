@@ -7,12 +7,12 @@ import (
 )
 
 type Orchestrator interface {
-	Up() error
-	Stop() error
-	Down() error
-	Execute(serviceNames []string, command []string) error
+	ComposeUp() error
+	ComposeStop() error
+	ComposeDown() error
+	Execute(containerName string, command []string) error
 	GetHostGatewayHostname() string
-	ServicesStatus() ([]string, []string, error)
+	ServicesStatus() (*ServiceStatus, error)
 	ExportComposeConfiguration(config *config.Config, project *project.Project) ([]byte, error)
 	ResolveServiceNameFromContainerName(containerName string) (*string, error)
 	ResolveContainerNameFromMetadata(md metadata.MD) (*string, error)

@@ -49,14 +49,12 @@ func (t *ProjectControl) Start() error {
 		}
 	}
 
-	serviceNames := t.soloCtx.Project.ServiceNames()
-
-	_, stoppedServices, err := orchestrator.ServicesStatus()
+	serviceStatus, err := orchestrator.ServicesStatus()
 	if err != nil {
 		return err
 	}
 
-	if len(stoppedServices) == 0 {
+	if len(serviceStatus.NotRunningServices) == 0 {
 		t.soloCtx.Logger.Info("All required services already running")
 		return nil
 	}
@@ -82,42 +80,58 @@ func (t *ProjectControl) Start() error {
 		return err
 	}
 
-	// Register workflow guard
-	guard := NewProjectWorkflowGuard(t.soloCtx)
-	guard.AddWorkflow(workflowcommon.FirstPreStart, stoppedServices)
-	guard.AddWorkflow(workflowcommon.PreStart, stoppedServices)
-	guard.AddWorkflow(workflowcommon.PostStart, serviceNames)
+	// Populate a list of container names that will be started
+	servicesToStart := append(serviceStatus.AbsentServices, append(serviceStatus.StoppedServices, serviceStatus.ExitedServices...)...)
+	containerNames, err := t.soloCtx.Project.ContainerNames(servicesToStart)
+	if err != nil {
+		return err
+	}
 
+	workflowNames := []workflowcommon.WorkflowName{
+		workflowcommon.FirstPreStart,
+		workflowcommon.PreStart,
+		workflowcommon.PostStart,
+	}
+
+	guard := NewProjectWorkflowGuard(t.soloCtx, workflowNames, containerNames)
 	t.workflowManager.Subscribe(guard)
 	defer t.workflowManager.Unsubscribe(guard)
 
 	// Start compose services
-	if err := orchestrator.Up(); err != nil {
+	if err := orchestrator.ComposeUp(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
-	if err := guard.WaitForCompletion(workflowcommon.FirstPreStart); err != nil {
-		return err
-	}
+	if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+		if err := guardCallback(workflowcommon.FirstPreStart); err != nil {
+			return err
+		}
 
-	if err := guard.WaitForCompletion(workflowcommon.PreStart); err != nil {
-		return err
-	}
+		if err := guardCallback(workflowcommon.PreStart); err != nil {
+			return err
+		}
 
-	// Exec post start commands
-	postStartCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "post_start"}
+		// Exec post start commands
+		postStartCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "post_start"}
 
-	if err := orchestrator.Execute(serviceNames, postStartCommand); err != nil {
-		return fmt.Errorf("error running compose: %v", err)
-	}
+		if err := orchestrator.Execute(container, postStartCommand); err != nil {
+			return fmt.Errorf("error running compose: %v", err)
+		}
 
-	if err := guard.WaitForCompletion(workflowcommon.PostStart); err != nil {
+		if err := guardCallback(workflowcommon.PostStart); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
 
 	// Wait for all events to be delivered
+	t.soloCtx.Logger.Debug("Waiting for all remaining events to be delivered")
 	t.workflowManager.Wait()
 
+	t.soloCtx.Logger.Debug("Finished starting all services successfully")
 	return nil
 }
 
@@ -133,12 +147,12 @@ func (t *ProjectControl) Stop() error {
 	}
 
 	// Build workflow service map
-	runningServices, _, err := orchestrator.ServicesStatus()
+	serviceStatus, err := orchestrator.ServicesStatus()
 	if err != nil {
 		return err
 	}
 
-	if len(runningServices) > 0 {
+	if len(serviceStatus.RunningServices) > 0 {
 		grpcServer, err := t.grpcServerFactory.Build(
 			orchestrator,
 			t.soloCtx.Project,
@@ -149,33 +163,43 @@ func (t *ProjectControl) Stop() error {
 			return err
 		}
 
+		defer grpcServer.Stop()
+
 		// Start GRPC services
 		if err := grpcServer.Start(); err != nil {
 			return err
 		}
 
-		defer grpcServer.Stop()
+		// Populate a list of container names that will be started
+		servicesToStart := serviceStatus.RunningServices
+		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToStart)
+		if err != nil {
+			return err
+		}
 
-		// Register workflow guard
-		guard := NewProjectWorkflowGuard(t.soloCtx)
-		guard.AddWorkflow(workflowcommon.PreStop, runningServices)
+		workflowNames := []workflowcommon.WorkflowName{
+			workflowcommon.PreStop,
+		}
 
+		guard := NewProjectWorkflowGuard(t.soloCtx, workflowNames, containerNames)
 		t.workflowManager.Subscribe(guard)
 		defer t.workflowManager.Unsubscribe(guard)
 
-		// Exec pre stop commands
-		preStopCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_stop"}
+		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+			// Exec pre stop commands
+			preStopCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_stop"}
 
-		if err := orchestrator.Execute(runningServices, preStopCommand); err != nil {
-			return fmt.Errorf("error running compose: %v", err)
-		}
+			if err := orchestrator.Execute(container, preStopCommand); err != nil {
+				return fmt.Errorf("error running compose: %v", err)
+			}
 
-		if err := guard.WaitForCompletion(workflowcommon.PreStop); err != nil {
+			return nil
+		}); err != nil {
 			return err
 		}
 	}
 
-	if err := orchestrator.Stop(); err != nil {
+	if err := orchestrator.ComposeStop(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 
@@ -197,12 +221,12 @@ func (t *ProjectControl) Destroy() error {
 	}
 
 	// Build workflow service map
-	runningServices, _, err := orchestrator.ServicesStatus()
+	serviceStatus, err := orchestrator.ServicesStatus()
 	if err != nil {
 		return err
 	}
 
-	if len(runningServices) > 0 {
+	if len(serviceStatus.RunningServices) > 0 {
 		grpcServer, err := t.grpcServerFactory.Build(
 			orchestrator,
 			t.soloCtx.Project,
@@ -220,26 +244,36 @@ func (t *ProjectControl) Destroy() error {
 
 		defer grpcServer.Stop()
 
-		// Register workflow guard
-		guard := NewProjectWorkflowGuard(t.soloCtx)
-		guard.AddWorkflow(workflowcommon.PreDestroy, runningServices)
+		// Populate a list of container names that will be started
+		servicesToStart := append(serviceStatus.RunningServices, append(serviceStatus.StoppedServices, serviceStatus.ExitedServices...)...)
+		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToStart)
+		if err != nil {
+			return err
+		}
 
+		workflowNames := []workflowcommon.WorkflowName{
+			workflowcommon.PreDestroy,
+		}
+
+		guard := NewProjectWorkflowGuard(t.soloCtx, workflowNames, containerNames)
 		t.workflowManager.Subscribe(guard)
 		defer t.workflowManager.Unsubscribe(guard)
 
-		// Exec pre destroy commands
-		preDestroyCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_destroy"}
+		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+			// Exec pre destroy commands
+			preDestroyCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_destroy"}
 
-		if err := orchestrator.Execute(runningServices, preDestroyCommand); err != nil {
-			return fmt.Errorf("error running compose: %v", err)
-		}
+			if err := orchestrator.Execute(container, preDestroyCommand); err != nil {
+				return fmt.Errorf("error running compose: %v", err)
+			}
 
-		if err := guard.WaitForCompletion(workflowcommon.PreDestroy); err != nil {
+			return nil
+		}); err != nil {
 			return err
 		}
 	}
 
-	if err := orchestrator.Down(); err != nil {
+	if err := orchestrator.ComposeDown(); err != nil {
 		return fmt.Errorf("error running compose: %v", err)
 	}
 

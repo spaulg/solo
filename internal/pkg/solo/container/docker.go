@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-type ServiceStatus struct {
+type ComposeServiceStatus struct {
 	Service string `json:"Service"`
 	State   string `json:"State"`
 }
@@ -74,7 +74,7 @@ func (t *DockerOrchestrator) runComposeCommandWithProgress(arguments ...string) 
 	return nil
 }
 
-func (t *DockerOrchestrator) Up() error {
+func (t *DockerOrchestrator) ComposeUp() error {
 	return t.runComposeCommandWithProgress(
 		"--progress", "json",
 		"-f", t.composeFile,
@@ -83,7 +83,7 @@ func (t *DockerOrchestrator) Up() error {
 	)
 }
 
-func (t *DockerOrchestrator) Stop() error {
+func (t *DockerOrchestrator) ComposeStop() error {
 	return t.runComposeCommandWithProgress(
 		"--progress", "json",
 		"-f", t.composeFile,
@@ -92,7 +92,7 @@ func (t *DockerOrchestrator) Stop() error {
 	)
 }
 
-func (t *DockerOrchestrator) Down() error {
+func (t *DockerOrchestrator) ComposeDown() error {
 	return t.runComposeCommandWithProgress(
 		"--progress", "json",
 		"-f", t.composeFile,
@@ -101,35 +101,32 @@ func (t *DockerOrchestrator) Down() error {
 	)
 }
 
-func (t *DockerOrchestrator) Execute(serviceNames []string, command []string) error {
-	for _, serviceName := range serviceNames {
-		composeCmd := exec.Command("/usr/local/bin/docker", append([]string{"compose",
-			"-f", t.composeFile,
-			"--project-directory", t.projectDirectory,
-			"exec", "-d", serviceName,
-		}, command...)...)
+func (t *DockerOrchestrator) Execute(containerName string, command []string) error {
+	containerCmd := exec.Command("/usr/local/bin/docker", append([]string{
+		"exec", "-d", containerName,
+	}, command...)...)
 
-		if err := composeCmd.Run(); err != nil {
-			return err
-		}
+	if err := containerCmd.Run(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (t *DockerOrchestrator) ServicesStatus() ([]string, []string, error) {
+func (t *DockerOrchestrator) ServicesStatus() (*ServiceStatus, error) {
 	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"ps",
 		"--format", "json",
+		"--all",
 	)
 
 	var stdoutBuf bytes.Buffer
 	composeCmd.Stdout = &stdoutBuf
 
 	if err := composeCmd.Run(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var runningServiceNames []string
@@ -137,6 +134,12 @@ func (t *DockerOrchestrator) ServicesStatus() ([]string, []string, error) {
 
 	var stoppedServiceNames []string
 	stoppedServiceNameMap := make(map[string]bool)
+
+	var exitedServiceNames []string
+	exitedServiceNameMap := make(map[string]bool)
+
+	var absentServiceNames []string
+	var notRunningServiceNames []string
 
 	buffer := stdoutBuf.Bytes()
 	reader := bufio.NewReader(bytes.NewReader(buffer))
@@ -148,12 +151,12 @@ func (t *DockerOrchestrator) ServicesStatus() ([]string, []string, error) {
 				break
 			}
 
-			return nil, nil, err
+			return nil, err
 		}
 
-		serviceStatus := ServiceStatus{}
+		serviceStatus := ComposeServiceStatus{}
 		if err := json.Unmarshal(line, &serviceStatus); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		// Filter for running/stopped services
@@ -163,6 +166,11 @@ func (t *DockerOrchestrator) ServicesStatus() ([]string, []string, error) {
 		} else if serviceStatus.State == "stopped" && !stoppedServiceNameMap[serviceStatus.Service] {
 			stoppedServiceNameMap[serviceStatus.Service] = true
 			stoppedServiceNames = append(stoppedServiceNames, serviceStatus.Service)
+			notRunningServiceNames = append(notRunningServiceNames, serviceStatus.Service)
+		} else if serviceStatus.State == "exited" && !exitedServiceNameMap[serviceStatus.Service] {
+			exitedServiceNameMap[serviceStatus.Service] = true
+			exitedServiceNames = append(exitedServiceNames, serviceStatus.Service)
+			notRunningServiceNames = append(notRunningServiceNames, serviceStatus.Service)
 		}
 	}
 
@@ -170,11 +178,18 @@ func (t *DockerOrchestrator) ServicesStatus() ([]string, []string, error) {
 	for _, service := range t.soloCtx.Project.ServiceNames() {
 		if !runningServiceNameMap[service] && !stoppedServiceNameMap[service] {
 			// Service is neither running nor stopped
-			stoppedServiceNames = append(stoppedServiceNames, service)
+			absentServiceNames = append(absentServiceNames, service)
+			notRunningServiceNames = append(notRunningServiceNames, service)
 		}
 	}
 
-	return runningServiceNames, stoppedServiceNames, nil
+	return &ServiceStatus{
+		RunningServices:    runningServiceNames,
+		StoppedServices:    stoppedServiceNames,
+		ExitedServices:     exitedServiceNames,
+		AbsentServices:     absentServiceNames,
+		NotRunningServices: notRunningServiceNames,
+	}, nil
 }
 
 func (t *DockerOrchestrator) GetHostGatewayHostname() string {
