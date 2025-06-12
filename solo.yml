@@ -3,9 +3,11 @@ services:
     build:
         context: .
         dockerfile: ./examples/symfony-webapp/Dockerfile.nginx
+    depends_on:
+      - php
     command: ["/usr/sbin/nginx", "-g", "daemon off;"]
     ports:
-      - "80:80"
+      - "81:80"
     volumes:
       - "./examples/symfony-webapp/public:/var/www/project/public"
       - "./examples/symfony-webapp/vhost.conf:/etc/nginx/sites-available/default"
@@ -39,6 +41,9 @@ services:
       - "./go.mod:/solo/go.mod"
       - "./go.sum:/solo/go.sum"
 
+    deploy:
+      replicas: 3
+
     x-workflows:
       first_pre_start:
         timeout: 180s
@@ -55,7 +60,7 @@ services:
 
           - name: Move composer.phar
             run: mv composer.phar /usr/local/bin/composer
-            
+
           - name: composer install
             run: composer install
             cwd: /var/www/project

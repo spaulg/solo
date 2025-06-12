@@ -119,6 +119,36 @@ func (t *Project) GetMaxWorkflowTimeout(eventName string) time.Duration {
 	return time.Duration(maxTimeout)
 }
 
+func (t *Project) ContainerNames(serviceNames []string) ([]string, error) {
+	var containerNames []string
+
+	if err := t.ForEachService(serviceNames, func(name string, service *types.ServiceConfig) error {
+		replicas := 1
+
+		if service.Deploy != nil && service.Deploy.Replicas != nil {
+			replicas = *service.Deploy.Replicas
+		}
+
+		if len(service.ContainerName) > 0 && replicas == 1 {
+			// single container with a name defined by the container_name option
+			containerNames = append(containerNames, service.ContainerName)
+		} else {
+			// one or more containers defined by the format {project}-{service}-{number}
+			// consider moving this format to the orchestrator
+			for i := 1; i <= replicas; i++ {
+				containerName := fmt.Sprintf("%s-%s-%d", t.Name, name, i)
+				containerNames = append(containerNames, containerName)
+			}
+		}
+
+		return nil
+	}, types.IncludeDependencies); err != nil {
+		return nil, err
+	}
+
+	return containerNames, nil
+}
+
 func WithComposeFiles(projectFilePath string, config *config.Config) func(o *cli.ProjectOptions) error {
 	return func(o *cli.ProjectOptions) error {
 		projectDirectory := filepath.Dir(projectFilePath)
