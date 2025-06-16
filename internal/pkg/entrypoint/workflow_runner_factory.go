@@ -28,12 +28,7 @@ func WorkflowRunnerFactory(entrypointCtx *context.EntrypointContext) (workflow.W
 		return nil, err
 	}
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	metadataState.Set("hostname", hostname)
+	metadataState.Set("hostname", entrypointCtx.InitialHostname)
 
 	return workflow.NewGrpcWorkflowRunner(entrypointCtx, credentialsBuilder, target, metadataState)
 }
