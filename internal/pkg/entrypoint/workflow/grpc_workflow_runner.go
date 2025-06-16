@@ -41,7 +41,6 @@ func NewGrpcWorkflowRunner(
 
 	conn, err := grpc.NewClient(workflowServerHost, grpc.WithTransportCredentials(creds))
 	if err != nil {
-		conn.Close()
 		return nil, err
 	}
 
