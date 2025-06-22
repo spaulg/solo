@@ -1,8 +1,8 @@
 package subcommand
 
 import (
-	"github.com/spaulg/solo/internal/pkg/solo"
-	"github.com/spaulg/solo/internal/pkg/solo/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host"
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ func NewStartCommand(soloCtx *context.CliContext) *cobra.Command {
 		Short:   "Starts your app",
 		Long:    "Starts your app",
 		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
-			projectControl, err := solo.ProjectControlFactory(soloCtx)
+			projectControl, err := host.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err
 			}

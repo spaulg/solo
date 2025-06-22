@@ -2,9 +2,9 @@ package subcommand
 
 import (
 	"errors"
-	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
-	"github.com/spaulg/solo/internal/pkg/entrypoint"
-	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
+	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"

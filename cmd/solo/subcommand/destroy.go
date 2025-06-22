@@ -2,11 +2,12 @@ package subcommand
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/solo"
-	"github.com/spaulg/solo/internal/pkg/solo/context"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/spaulg/solo/internal/pkg/impl/host"
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	"github.com/spf13/cobra"
 )
 
 func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
@@ -37,7 +38,7 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 			return nil
 		},
 		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
-			projectControl, err := solo.ProjectControlFactory(soloCtx)
+			projectControl, err := host.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err
 			}
