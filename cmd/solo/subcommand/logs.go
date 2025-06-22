@@ -2,7 +2,8 @@ package subcommand
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/solo/context"
+
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spf13/cobra"
 )
 

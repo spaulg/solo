@@ -1,7 +1,7 @@
 package subcommand
 
 import (
-	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
 	"github.com/spf13/cobra"
 	"os"
 )

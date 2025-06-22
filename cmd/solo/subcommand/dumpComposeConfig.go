@@ -2,9 +2,10 @@ package subcommand
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/solo/container"
-	"github.com/spaulg/solo/internal/pkg/solo/context"
-	"github.com/spaulg/solo/internal/pkg/solo/events"
+
+	"github.com/spaulg/solo/internal/pkg/impl/host/container"
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/events"
 	"github.com/spf13/cobra"
 )
 
