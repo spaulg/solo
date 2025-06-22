@@ -1,0 +1,134 @@
+package progress
+
+import (
+	progresscommon "github.com/spaulg/solo/internal/pkg/impl/common/container/progress"
+	"github.com/stretchr/testify/suite"
+)
+
+type StatusTestSuite struct {
+	suite.Suite
+}
+
+func (suite *StatusTestSuite) TestEmptyIDAndStatus() {
+	progress := ComposeProgress{
+		ID:     "",
+		Status: "",
+	}
+
+	event := progress.ToEvent("test_project")
+	var expected *ComposeProgressEvent = nil
+
+	suite.Equal(expected, event)
+}
+
+func (suite *StatusTestSuite) TestIDWithLessThan2Parts() {
+	progress := ComposeProgress{
+		ID:     "singlepart",
+		Status: "Running",
+	}
+
+	event := progress.ToEvent("test_project")
+	var expected *ComposeProgressEvent = nil
+
+	suite.Equal(expected, event)
+}
+
+func (suite *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
+	progress := ComposeProgress{
+		ID:     "singlepart",
+		Status: "Built",
+	}
+
+	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Build,
+		EntityType:        progresscommon.Image,
+		FullEntityName:    "singlepart",
+		ProjectEntityName: "singlepart",
+		Status:            progresscommon.Complete,
+	}
+
+	suite.Equal(expected, event)
+}
+
+func (suite *StatusTestSuite) TestIDWithMoreThan2Parts() {
+	progress := ComposeProgress{
+		ID:     "Container entity extra",
+		Status: "Creating",
+	}
+
+	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "entity extra",
+		ProjectEntityName: "entity extra",
+		Status:            progresscommon.InProgress,
+	}
+
+	suite.Equal(expected, event)
+}
+
+func (suite *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
+	progress := ComposeProgress{
+		ID:     "Container test_project-entity",
+		Status: "Creating",
+	}
+
+	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "test_project-entity",
+		ProjectEntityName: "entity",
+		Status:            progresscommon.InProgress,
+	}
+
+	suite.Equal(expected, event)
+}
+
+func (suite *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
+	progress := ComposeProgress{
+		ID:     "Container test_project_entity",
+		Status: "Creating",
+	}
+
+	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "test_project_entity",
+		ProjectEntityName: "entity",
+		Status:            progresscommon.InProgress,
+	}
+
+	suite.Equal(expected, event)
+}
+
+func (suite *StatusTestSuite) TestValidIDAndStatusWithQuotes() {
+	progress := ComposeProgress{
+		ID:     "Container \"test_project-entity\"",
+		Status: "Creating",
+	}
+
+	event := progress.ToEvent("test_project")
+
+	expected := &ComposeProgressEvent{
+		ContextId:         event.ContextId,
+		Action:            progresscommon.Create,
+		EntityType:        progresscommon.Container,
+		FullEntityName:    "test_project-entity",
+		ProjectEntityName: "entity",
+		Status:            progresscommon.InProgress,
+	}
+
+	suite.Equal(expected, event)
+}

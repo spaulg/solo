@@ -1,0 +1,4 @@
+services:
+  debian:
+    image: debian:bookworm-slim
+    command: echo "Hello, World!"

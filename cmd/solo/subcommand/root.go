@@ -2,45 +2,16 @@ package subcommand
 
 import (
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/common/logging"
-	"github.com/spaulg/solo/internal/pkg/solo/context"
 	"log/slog"
 	"os"
 	"path"
 	"time"
 
+	"github.com/spaulg/solo/internal/pkg/impl/common/logging"
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+
 	"github.com/spf13/cobra"
 )
-
-func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
-	return &cobra.Command{
-		Use:          "solo",
-		SilenceUsage: true,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if soloCtx.ProjectLoadErr != nil {
-				fmt.Println(soloCtx.ProjectLoadErr)
-				os.Exit(1)
-			}
-
-			if soloCtx.ConfigLoadErr != nil {
-				fmt.Println(soloCtx.ConfigLoadErr)
-				os.Exit(1)
-			}
-
-			// If logging is enabled override the default logger
-			if soloCtx.Config.Logging.Enabled {
-				handler, err := buildLogHandler(soloCtx)
-				if err != nil {
-					return err
-				}
-
-				soloCtx.Logger = slog.New(handler)
-			}
-
-			return nil
-		},
-	}
-}
 
 func Execute() {
 	cobra.EnableCommandSorting = false
@@ -77,6 +48,36 @@ func Execute() {
 	}
 }
 
+func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
+	return &cobra.Command{
+		Use:          "solo",
+		SilenceUsage: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if soloCtx.ProjectLoadErr != nil {
+				fmt.Println(soloCtx.ProjectLoadErr)
+				os.Exit(1)
+			}
+
+			if soloCtx.ConfigLoadErr != nil {
+				fmt.Println(soloCtx.ConfigLoadErr)
+				os.Exit(1)
+			}
+
+			// If logging is enabled override the default logger
+			if soloCtx.Config.Logging.Enabled {
+				handler, err := buildLogHandler(soloCtx)
+				if err != nil {
+					return err
+				}
+
+				soloCtx.Logger = slog.New(handler)
+			}
+
+			return nil
+		},
+	}
+}
+
 func buildLogHandler(soloCtx *context.CliContext) (slog.Handler, error) {
 	stateDirectory := path.Join(soloCtx.Project.GetStateDirectoryRoot(), "cli", "logs")
 	if err := os.MkdirAll(stateDirectory, 0755); err != nil {
@@ -85,10 +86,11 @@ func buildLogHandler(soloCtx *context.CliContext) (slog.Handler, error) {
 
 	logFileName := path.Join(stateDirectory, time.Now().Format("2006-01-02.log"))
 
+	config := soloCtx.Config
 	builder := logging.NewLogHandlerBuilder()
 	return builder.
 		WithLogFilePath(logFileName).
-		WithLogLevel(soloCtx.Config.Logging.Level).
-		WithLogHandlerName(soloCtx.Config.Logging.Handler).
+		WithLogLevel(config.Logging.Level).
+		WithLogHandlerName(config.Logging.Handler).
 		Build()
 }

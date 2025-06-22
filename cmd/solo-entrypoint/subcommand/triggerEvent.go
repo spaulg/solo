@@ -2,9 +2,10 @@ package subcommand
 
 import (
 	"errors"
-	commonworkflow "github.com/spaulg/solo/internal/pkg/common/wms"
-	"github.com/spaulg/solo/internal/pkg/entrypoint"
-	"github.com/spaulg/solo/internal/pkg/entrypoint/context"
+
+	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +19,7 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 				return errors.New("requires exactly one argument")
 			}
 
-			if _, err := commonworkflow.WorkflowNameFromString(args[0]); err != nil {
+			if commonworkflow.Undefined == commonworkflow.WorkflowNameFromString(args[0]) {
 				return errors.New("unknown event name")
 			}
 
@@ -30,7 +31,7 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 				panic(err)
 			}
 
-			name, _ := commonworkflow.WorkflowNameFromString(args[0])
+			name := commonworkflow.WorkflowNameFromString(args[0])
 			if err := workflowRunner.Execute(name); err != nil {
 				panic(err)
 			}

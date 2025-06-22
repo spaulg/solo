@@ -1,4 +1,5 @@
 /.solo
 /.build
-coverage.out
+/coverage.out
+/filtered.coverage.out
 **/*.pb.go
