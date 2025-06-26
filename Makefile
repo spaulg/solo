@@ -38,10 +38,10 @@ $(LINUX_SERVICES): protos
 	cd $(SRC_DIR)/cmd/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
 
 test:
-	cd $(SRC_DIR) && $(GOTEST) \
+	@cd $(SRC_DIR) && $(GOTEST) \
 		-coverprofile=coverage.out \
 		-coverpkg=$(shell $(FIND_IMPL_PACKAGES)) \
-		$(IMPLDIR)/... && \
+		$(IMPLDIR)/... | sed -E 's/of statements in .*/of statements/' && \
 			cat coverage.out | \
 			grep -vE ".*\.pb\.go" | \
 			grep -v ".*_testsuite\.go" > filtered.coverage.out && \

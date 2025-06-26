@@ -4,14 +4,14 @@ import (
 	"errors"
 	"fmt"
 
+	"google.golang.org/grpc"
+
 	"github.com/spaulg/solo/internal/pkg/impl/common/grpc/services"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/interceptors"
-	"github.com/spaulg/solo/internal/pkg/impl/host/wms"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
-	"google.golang.org/grpc"
 )
 
 type WorkflowServerImpl struct {
@@ -87,8 +87,8 @@ func (t WorkflowServerImpl) workflowStream(
 	firstPreStartComplete, ok := server.Context().Value(firstPreStartCompleteContextValueName).(string)
 
 	if workflowName == commonworkflow.FirstPreStart && (ok || firstPreStartComplete == "true") {
-		t.eventManager.Publish(&wms.WorkflowSkippedEvent{
-			BaseWorkflowEvent: wms.BaseWorkflowEvent{
+		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
+			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 				ServiceName:   serviceName,
 				ContainerName: containerName,
 				WorkflowName:  workflowName,
@@ -102,8 +102,8 @@ func (t WorkflowServerImpl) workflowStream(
 			return err
 		}
 
-		t.eventManager.Publish(&wms.WorkflowCompleteEvent{
-			BaseWorkflowEvent: wms.BaseWorkflowEvent{
+		t.eventManager.Publish(&wms_types.WorkflowCompleteEvent{
+			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 				ServiceName:   serviceName,
 				ContainerName: containerName,
 				WorkflowName:  workflowName,
@@ -125,8 +125,8 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 ) (bool, error) {
 	workflowSuccess := true
 
-	t.eventManager.Publish(&wms.WorkflowStartedEvent{
-		BaseWorkflowEvent: wms.BaseWorkflowEvent{
+	t.eventManager.Publish(&wms_types.WorkflowStartedEvent{
+		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 			ServiceName:   serviceName,
 			ContainerName: containerName,
 			WorkflowName:  workflowName,
@@ -139,8 +139,8 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 		for step := range workflow.StepIterator() {
 			err := step.Trigger(func() error {
 				// Trigger callback
-				t.eventManager.Publish(&wms.WorkflowStepStartedEvent{
-					BaseWorkflowEvent: wms.BaseWorkflowEvent{
+				t.eventManager.Publish(&wms_types.WorkflowStepStartedEvent{
+					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 						ServiceName:   serviceName,
 						ContainerName: containerName,
 						WorkflowName:  workflowName,
@@ -176,8 +176,8 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 						exitCodePtr = &exitCode
 					}
 
-					t.eventManager.Publish(&wms.WorkflowStepOutputEvent{
-						BaseWorkflowEvent: wms.BaseWorkflowEvent{
+					t.eventManager.Publish(&wms_types.WorkflowStepOutputEvent{
+						BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 							ServiceName:   serviceName,
 							ContainerName: containerName,
 							WorkflowName:  workflowName,
@@ -193,8 +193,8 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 				}
 			}, func(exitCode uint8) error {
 				// Completion callback
-				t.eventManager.Publish(&wms.WorkflowStepCompleteEvent{
-					BaseWorkflowEvent: wms.BaseWorkflowEvent{
+				t.eventManager.Publish(&wms_types.WorkflowStepCompleteEvent{
+					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 						ServiceName:   serviceName,
 						ContainerName: containerName,
 						WorkflowName:  workflowName,
@@ -214,8 +214,8 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 			})
 
 			if err != nil {
-				t.eventManager.Publish(&wms.WorkflowErrorEvent{
-					BaseWorkflowEvent: wms.BaseWorkflowEvent{
+				t.eventManager.Publish(&wms_types.WorkflowErrorEvent{
+					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 						ServiceName:   serviceName,
 						ContainerName: containerName,
 						WorkflowName:  workflowName,

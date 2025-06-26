@@ -41,6 +41,8 @@ func (t *EventManagerTestSuite) TestDefaultManager_SubscribeAndPublish() {
 
 	manager.Publish(event)
 	manager.Wait()
+
+	t.subscriber1.AssertExpectations(t.T())
 }
 
 func (t *EventManagerTestSuite) TestDefaultManager_Unsubscribe() {
@@ -64,4 +66,7 @@ func (t *EventManagerTestSuite) TestDefaultManager_MultipleSubscribers() {
 
 	manager.Publish(event)
 	manager.Wait()
+
+	t.subscriber1.AssertExpectations(t.T())
+	t.subscriber2.AssertExpectations(t.T())
 }
