@@ -1,15 +1,16 @@
 package progress
 
 import (
-	progresscommon "github.com/spaulg/solo/internal/pkg/impl/common/container/progress"
 	"github.com/stretchr/testify/suite"
+
+	progresscommon "github.com/spaulg/solo/internal/pkg/impl/common/container/progress"
 )
 
 type StatusTestSuite struct {
 	suite.Suite
 }
 
-func (suite *StatusTestSuite) TestEmptyIDAndStatus() {
+func (t *StatusTestSuite) TestEmptyIDAndStatus() {
 	progress := ComposeProgress{
 		ID:     "",
 		Status: "",
@@ -18,10 +19,10 @@ func (suite *StatusTestSuite) TestEmptyIDAndStatus() {
 	event := progress.ToEvent("test_project")
 	var expected *ComposeProgressEvent = nil
 
-	suite.Equal(expected, event)
+	t.Equal(expected, event)
 }
 
-func (suite *StatusTestSuite) TestIDWithLessThan2Parts() {
+func (t *StatusTestSuite) TestIDWithLessThan2Parts() {
 	progress := ComposeProgress{
 		ID:     "singlepart",
 		Status: "Running",
@@ -30,10 +31,10 @@ func (suite *StatusTestSuite) TestIDWithLessThan2Parts() {
 	event := progress.ToEvent("test_project")
 	var expected *ComposeProgressEvent = nil
 
-	suite.Equal(expected, event)
+	t.Equal(expected, event)
 }
 
-func (suite *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
+func (t *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
 	progress := ComposeProgress{
 		ID:     "singlepart",
 		Status: "Built",
@@ -50,10 +51,10 @@ func (suite *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
 		Status:            progresscommon.Complete,
 	}
 
-	suite.Equal(expected, event)
+	t.Equal(expected, event)
 }
 
-func (suite *StatusTestSuite) TestIDWithMoreThan2Parts() {
+func (t *StatusTestSuite) TestIDWithMoreThan2Parts() {
 	progress := ComposeProgress{
 		ID:     "Container entity extra",
 		Status: "Creating",
@@ -70,10 +71,10 @@ func (suite *StatusTestSuite) TestIDWithMoreThan2Parts() {
 		Status:            progresscommon.InProgress,
 	}
 
-	suite.Equal(expected, event)
+	t.Equal(expected, event)
 }
 
-func (suite *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
+func (t *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
 	progress := ComposeProgress{
 		ID:     "Container test_project-entity",
 		Status: "Creating",
@@ -90,10 +91,10 @@ func (suite *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
 		Status:            progresscommon.InProgress,
 	}
 
-	suite.Equal(expected, event)
+	t.Equal(expected, event)
 }
 
-func (suite *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
+func (t *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
 	progress := ComposeProgress{
 		ID:     "Container test_project_entity",
 		Status: "Creating",
@@ -110,10 +111,10 @@ func (suite *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
 		Status:            progresscommon.InProgress,
 	}
 
-	suite.Equal(expected, event)
+	t.Equal(expected, event)
 }
 
-func (suite *StatusTestSuite) TestValidIDAndStatusWithQuotes() {
+func (t *StatusTestSuite) TestValidIDAndStatusWithQuotes() {
 	progress := ComposeProgress{
 		ID:     "Container \"test_project-entity\"",
 		Status: "Creating",
@@ -130,5 +131,5 @@ func (suite *StatusTestSuite) TestValidIDAndStatusWithQuotes() {
 		Status:            progresscommon.InProgress,
 	}
 
-	suite.Equal(expected, event)
+	t.Equal(expected, event)
 }

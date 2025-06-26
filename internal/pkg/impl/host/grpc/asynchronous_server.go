@@ -9,13 +9,14 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
 	"github.com/spaulg/solo/internal/pkg/impl/common/grpc/services"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/interceptors"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/service_definitions"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/grpc"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 const hostFileName = "provisioner_host"
@@ -74,18 +75,19 @@ func (t *AsynchronousServer) Start() error {
 			return
 		}
 
+		serviceNameInterceptor := interceptors.NewServiceNameInterceptor()
 		containerNameInterceptor := interceptors.NewContainerNameInterceptor(t.orchestrator)
 		firstPreStartCompleteInterceptor := interceptors.NewFirstPreStartCompleteInterceptor(t.orchestrator)
 
 		t.server = grpc.NewServer(
 			grpc.Creds(t.transportCredentials),
 			grpc.ChainUnaryInterceptor(
-				interceptors.ServiceNameInterceptor,
+				serviceNameInterceptor.ServiceNameUnaryInterceptor,
 				firstPreStartCompleteInterceptor.FirstPreStartCompleteUnaryInterceptor,
 				containerNameInterceptor.ContainerNameUnaryInterceptor,
 			),
 			grpc.ChainStreamInterceptor(
-				interceptors.ServiceNameStreamInterceptor,
+				serviceNameInterceptor.ServiceNameStreamInterceptor,
 				firstPreStartCompleteInterceptor.FirstPreStartCompleteStreamInterceptor,
 				containerNameInterceptor.ContainerNameStreamInterceptor,
 			),

@@ -5,6 +5,9 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
@@ -15,8 +18,6 @@ import (
 	"github.com/spaulg/solo/test/mocks/host/logging"
 	"github.com/spaulg/solo/test/mocks/host/project"
 	"github.com/spaulg/solo/test/mocks/host/wms"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProjectControlTestSuite struct {
@@ -74,6 +75,8 @@ func (t *ProjectControlTestSuite) TestStart_OrchestratorFactoryReturnsError() {
 
 	t.ErrorContains(err, "failed to build orchestrator")
 	t.ErrorContains(err, "mock orchestrator build error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_ServiceStatusReturnsError() {
@@ -93,6 +96,10 @@ func (t *ProjectControlTestSuite) TestStart_ServiceStatusReturnsError() {
 
 	t.ErrorContains(err, "failed to check service status")
 	t.ErrorContains(err, "mock services status error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_AllServicesAlreadyRunning() {
@@ -123,6 +130,11 @@ func (t *ProjectControlTestSuite) TestStart_AllServicesAlreadyRunning() {
 	err := projectControl.Start()
 
 	t.Nil(err)
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockLogHandler.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToBuild() {
@@ -152,6 +164,11 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToBuild() {
 
 	t.ErrorContains(err, "failed to build GRPC server")
 	t.ErrorContains(err, "mock grpc server build error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToStart() {
@@ -181,6 +198,12 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToStart() {
 
 	t.ErrorContains(err, "failed to start GRPC server")
 	t.ErrorContains(err, "mock grpc server start error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_EntrypointCopyFails() {
@@ -215,6 +238,12 @@ func (t *ProjectControlTestSuite) TestStart_EntrypointCopyFails() {
 	err := projectControl.Start()
 
 	t.ErrorContains(err, "failed to copy entrypoint to state directory")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_ContainerNamesFails() {
@@ -252,6 +281,12 @@ func (t *ProjectControlTestSuite) TestStart_ContainerNamesFails() {
 
 	t.ErrorContains(err, "failed to convert service names to container names")
 	t.ErrorContains(err, "mock container names error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
@@ -296,6 +331,14 @@ func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
 
 	t.ErrorContains(err, "failed to start services")
 	t.ErrorContains(err, "mock orchestrator error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
@@ -341,6 +384,14 @@ func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
 
 	t.ErrorContains(err, "error waiting for services to complete workflows")
 	t.ErrorContains(err, "mock guard wait error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStart_Succeeds() {
@@ -395,22 +446,15 @@ func (t *ProjectControlTestSuite) TestStart_Succeeds() {
 	err := projectControl.Start()
 
 	t.Nil(err)
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
 }
-
-// func (t *ProjectControlTestSuite) TestStop_ComposeFileDoesNotExist() {
-// 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir() + "/nonexistent-compose.yml")
-
-// 	projectControl := NewProjectControl(
-// 		t.soloCtx,
-// 		t.mockWorkflowManager,
-// 		t.mockOrchestratorFactory,
-// 		t.mockGrpcServerFactory,
-// 		t.mockWorkflowGuardFactory,
-// 	)
-
-// 	err := projectControl.Stop()
-// 	t.ErrorContains(err, "compose file does not exist")
-// }
 
 func (t *ProjectControlTestSuite) TestStop_OrchestratorFactoryFails() {
 	tmpDir := t.T().TempDir()
@@ -435,6 +479,9 @@ func (t *ProjectControlTestSuite) TestStop_OrchestratorFactoryFails() {
 
 	t.ErrorContains(err, "failed to build orchestrator")
 	t.ErrorContains(err, "mock orchestrator build error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStop_ServicesStatusFails() {
@@ -461,6 +508,10 @@ func (t *ProjectControlTestSuite) TestStop_ServicesStatusFails() {
 
 	t.ErrorContains(err, "failed to check service status")
 	t.ErrorContains(err, "mock services status error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStop_GrpcServerBuildFails() {
@@ -497,6 +548,11 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerBuildFails() {
 
 	t.ErrorContains(err, "failed to build GRPC server")
 	t.ErrorContains(err, "mock grpc server build error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStop_GrpcServerStartFails() {
@@ -533,6 +589,12 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerStartFails() {
 
 	t.ErrorContains(err, "failed to start GRPC server")
 	t.ErrorContains(err, "mock grpc server start error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStop_ContainerNamesFails() {
@@ -571,6 +633,12 @@ func (t *ProjectControlTestSuite) TestStop_ContainerNamesFails() {
 
 	t.ErrorContains(err, "failed to convert service names to container names")
 	t.ErrorContains(err, "mock container names error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
@@ -600,7 +668,6 @@ func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
 	t.mockWorkflowGuard.On("Wait", mock.Anything).Return(errors.New("mock guard wait error"))
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
-	t.mockOrchestrator.On("ComposeStop").Return(nil)
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -614,6 +681,15 @@ func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
 
 	t.ErrorContains(err, "error waiting for services to complete workflows")
 	t.ErrorContains(err, "mock guard wait error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
+	t.mockWorkflowGuard.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
@@ -657,6 +733,15 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 
 	t.ErrorContains(err, "failed to stop services")
 	t.ErrorContains(err, "mock compose stop error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
+	t.mockWorkflowGuard.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestStop_Succeeds() {
@@ -704,22 +789,16 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 	err := projectControl.Stop()
 
 	t.Nil(err)
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
+	t.mockWorkflowGuard.AssertExpectations(t.T())
 }
-
-// func (t *ProjectControlTestSuite) TestDestroy_ComposeFileDoesNotExist() {
-// 	t.mockProject.On("GetGeneratedComposeFilePath").Return("/tmp/nonexistent-compose.yml")
-
-// 	projectControl := NewProjectControl(
-// 		t.soloCtx,
-// 		t.mockWorkflowManager,
-// 		t.mockOrchestratorFactory,
-// 		t.mockGrpcServerFactory,
-// 		t.mockWorkflowGuardFactory,
-// 	)
-
-// 	err := projectControl.Destroy()
-// 	t.ErrorContains(err, "compose file does not exist")
-// }
 
 func (t *ProjectControlTestSuite) TestDestroy_OrchestratorFactoryFails() {
 	tmpDir := t.T().TempDir()
@@ -743,6 +822,9 @@ func (t *ProjectControlTestSuite) TestDestroy_OrchestratorFactoryFails() {
 	err := projectControl.Destroy()
 	t.ErrorContains(err, "failed to build orchestrator")
 	t.ErrorContains(err, "mock orchestrator build error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestDestroy_ServicesStatusFails() {
@@ -768,6 +850,10 @@ func (t *ProjectControlTestSuite) TestDestroy_ServicesStatusFails() {
 	err := projectControl.Destroy()
 	t.ErrorContains(err, "failed to check service status")
 	t.ErrorContains(err, "mock services status error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestDestroy_GrpcServerBuildFails() {
@@ -802,6 +888,11 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerBuildFails() {
 	err := projectControl.Destroy()
 	t.ErrorContains(err, "failed to build GRPC server")
 	t.ErrorContains(err, "mock grpc server build error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestDestroy_GrpcServerStartFails() {
@@ -837,6 +928,12 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerStartFails() {
 	err := projectControl.Destroy()
 	t.ErrorContains(err, "failed to start GRPC server")
 	t.ErrorContains(err, "mock grpc server start error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestDestroy_ContainerNamesFails() {
@@ -874,6 +971,12 @@ func (t *ProjectControlTestSuite) TestDestroy_ContainerNamesFails() {
 	err := projectControl.Destroy()
 	t.ErrorContains(err, "failed to convert service names to container names")
 	t.ErrorContains(err, "mock container names error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
@@ -903,7 +1006,6 @@ func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
 	t.mockWorkflowGuard.On("Wait", mock.Anything).Return(errors.New("mock guard wait error"))
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
-	t.mockOrchestrator.On("ComposeDown").Return(nil)
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -916,6 +1018,15 @@ func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
 	err := projectControl.Destroy()
 	t.ErrorContains(err, "error waiting for services to complete workflows")
 	t.ErrorContains(err, "mock guard wait error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
+	t.mockWorkflowGuard.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
@@ -958,6 +1069,15 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 	err := projectControl.Destroy()
 	t.ErrorContains(err, "failed to destroy services")
 	t.ErrorContains(err, "mock compose down error")
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
+	t.mockWorkflowGuard.AssertExpectations(t.T())
 }
 
 func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
@@ -1004,23 +1124,13 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 
 	err := projectControl.Destroy()
 	t.Nil(err)
+
+	t.mockOrchestratorFactory.AssertExpectations(t.T())
+	t.mockProject.AssertExpectations(t.T())
+	t.mockOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServerFactory.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+	t.mockWorkflowGuardFactory.AssertExpectations(t.T())
+	t.mockWorkflowManager.AssertExpectations(t.T())
+	t.mockWorkflowGuard.AssertExpectations(t.T())
 }
-
-/*
-	2. **Test Start**
-		- Compose file does not exist, and exportComposeFile succeeds.
-		- Compose file does not exist, and exportComposeFile fails.
-		- Compose file exists.
-
-	3. **Test Stop**
-		- Compose file does not exist.
-
-	4. **Test Destroy**
-		- Compose file does not exist.
-
-	5. **Test Clean**
-		- Purge state directory: os.RemoveAll fails.
-		- Purge subfolders: os.RemoveAll fails for one or more.
-		- Happy path: all removals succeed.
-
-*/

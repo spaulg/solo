@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
-	"github.com/spaulg/solo/internal/pkg/impl/host/wms"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
+	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
 type LogWriterEventSubscriber struct {
@@ -37,15 +37,15 @@ func NewLogWriterEventSubscriber(soloCtx *context.CliContext) events_types.Subsc
 
 func (t *LogWriterEventSubscriber) Publish(event events_types.Event) {
 	switch e := event.(type) {
-	case *wms.WorkflowStepOutputEvent:
+	case *wms_types.WorkflowStepOutputEvent:
 		t.writeStepOutput(e)
 
-	case *wms.WorkflowStepCompleteEvent:
+	case *wms_types.WorkflowStepCompleteEvent:
 		t.writeStepResult(e)
 	}
 }
 
-func (t *LogWriterEventSubscriber) writeStepOutput(e *wms.WorkflowStepOutputEvent) {
+func (t *LogWriterEventSubscriber) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
 	if e.Stderr == "" && e.Stdout == "" {
 		return
 	}
@@ -133,7 +133,7 @@ func (t *LogWriterEventSubscriber) writeStepOutput(e *wms.WorkflowStepOutputEven
 	}
 }
 
-func (t *LogWriterEventSubscriber) writeStepResult(e *wms.WorkflowStepCompleteEvent) {
+func (t *LogWriterEventSubscriber) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
 	outputDirectory := path.Join(
 		t.soloCtx.Project.GetStateDirectoryRoot(),
 		"workflow-logs",
