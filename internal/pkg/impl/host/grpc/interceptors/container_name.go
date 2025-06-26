@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+
+	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 )
 
 const ContainerNameContextValueName = "ContainerName"
@@ -26,7 +27,7 @@ func NewContainerNameInterceptor(orchestrator container_types.Orchestrator) *Con
 func (t *ContainerNameInterceptor) ContainerNameUnaryInterceptor(
 	ctx context.Context,
 	req interface{},
-	info *grpc.UnaryServerInfo,
+	_ *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -36,7 +37,7 @@ func (t *ContainerNameInterceptor) ContainerNameUnaryInterceptor(
 
 	containerName, err := t.orchestrator.ResolveContainerNameFromMetadata(md)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to resolve container name from metadata: %v", err)
 	}
 
 	ctx = context.WithValue(ctx, ContainerName(ContainerNameContextValueName), *containerName)
@@ -46,7 +47,7 @@ func (t *ContainerNameInterceptor) ContainerNameUnaryInterceptor(
 func (t *ContainerNameInterceptor) ContainerNameStreamInterceptor(
 	srv interface{},
 	ss grpc.ServerStream,
-	info *grpc.StreamServerInfo,
+	_ *grpc.StreamServerInfo,
 	handler grpc.StreamHandler,
 ) error {
 	ctx := ss.Context()
@@ -57,7 +58,7 @@ func (t *ContainerNameInterceptor) ContainerNameStreamInterceptor(
 
 	containerName, err := t.orchestrator.ResolveContainerNameFromMetadata(md)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to resolve container name from metadata: %v", err)
 	}
 
 	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ContainerName(ContainerNameContextValueName), *containerName))

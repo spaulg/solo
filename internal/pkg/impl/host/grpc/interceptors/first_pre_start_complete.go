@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+
+	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 )
 
 const FirstPreStartCompleteMetadataKey = "first_pre_start_complete"
@@ -27,7 +28,7 @@ func NewFirstPreStartCompleteInterceptor(orchestrator container_types.Orchestrat
 func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteUnaryInterceptor(
 	ctx context.Context,
 	req interface{},
-	info *grpc.UnaryServerInfo,
+	_ *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -46,7 +47,7 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteUnaryInterceptor
 func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteStreamInterceptor(
 	srv interface{},
 	ss grpc.ServerStream,
-	info *grpc.StreamServerInfo,
+	_ *grpc.StreamServerInfo,
 	handler grpc.StreamHandler,
 ) error {
 	ctx := ss.Context()

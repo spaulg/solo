@@ -3,41 +3,48 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
-	"strings"
 )
 
 const ServiceNameContextValueName = "ServiceName"
 
 type ServiceName string
 
-func ServiceNameInterceptor(
+type ServiceNameInterceptor struct{}
+
+func NewServiceNameInterceptor() *ServiceNameInterceptor {
+	return &ServiceNameInterceptor{}
+}
+
+func (t *ServiceNameInterceptor) ServiceNameUnaryInterceptor(
 	ctx context.Context,
 	req interface{},
-	info *grpc.UnaryServerInfo,
+	_ *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 	serviceName, err := findServiceName(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find service name: %v", err)
 	}
 
 	ctx = context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName)
 	return handler(ctx, req)
 }
 
-func ServiceNameStreamInterceptor(
+func (t *ServiceNameInterceptor) ServiceNameStreamInterceptor(
 	srv interface{},
 	ss grpc.ServerStream,
-	info *grpc.StreamServerInfo,
+	_ *grpc.StreamServerInfo,
 	handler grpc.StreamHandler,
 ) error {
 	ctx := ss.Context()
 	serviceName, err := findServiceName(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to find service name: %v", err)
 	}
 
 	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName))
@@ -47,12 +54,12 @@ func ServiceNameStreamInterceptor(
 func findServiceName(ctx context.Context) (string, error) {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		return "", fmt.Errorf("unexpected peer transport credentials")
+		return "", fmt.Errorf("unable to find peer transport credentials")
 	}
 
 	tlsInfo, ok := p.AuthInfo.(credentials.TLSInfo)
 	if !ok {
-		return "", fmt.Errorf("unexpected peer transport credentials")
+		return "", fmt.Errorf("unable to cast transport credentials to TLSInfo")
 	}
 
 	if len(tlsInfo.State.PeerCertificates) == 0 {

@@ -46,19 +46,20 @@ func (t *WorkflowGuard) Publish(event events_types.Event) {
 	var containerName string
 
 	switch e := event.(type) {
-	case *WorkflowSkippedEvent:
+	case *wms_types.WorkflowSkippedEvent:
 		workflowName = e.WorkflowName
 		containerName = e.ContainerName
 
 		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event skipped for workflow %s for container %s", workflowName, containerName))
 
-	case *WorkflowCompleteEvent:
+	case *wms_types.WorkflowCompleteEvent:
 		workflowName = e.WorkflowName
 		containerName = e.ContainerName
 
 		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event completed for workflow %s for container %s", workflowName, containerName))
 
 	default:
+		t.soloCtx.Logger.Debug("Received unsupported event; ignoring")
 		return
 	}
 
@@ -91,17 +92,17 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 	for _, container := range t.containers {
 		go func(container string) {
 			err := callback(container, func(workflowName workflowcommon.WorkflowName) error {
+				// If the workflow is not present in the map, return immediately
+				if _, ok := t.workflowContainerChannels[workflowName]; !ok {
+					t.soloCtx.Logger.Info(fmt.Sprintf("Cannot wait for workflow %s to complete as this is not mapped", workflowName))
+					return fmt.Errorf("unrecognised workflow %s", workflowName)
+				}
+
 				var stopped int32 = 0
 
 				duration := t.soloCtx.Project.GetMaxWorkflowTimeout(workflowName.String())
 				timer := time.NewTimer(duration)
 				startTime := time.Now()
-
-				// If the workflow is not present in the map, return immediately
-				if _, ok := t.workflowContainerChannels[workflowName]; !ok {
-					t.soloCtx.Logger.Info(fmt.Sprintf("Cannot wait for workflow %s to complete as this is not mapped", workflowName))
-					return nil
-				}
 
 				t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for %s to complete %s workflow, time remaining: %v", container, workflowName, duration.Seconds()))
 

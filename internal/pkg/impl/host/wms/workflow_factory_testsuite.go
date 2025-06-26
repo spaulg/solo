@@ -1,10 +1,11 @@
 package wms
 
 import (
+	"github.com/stretchr/testify/suite"
+
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
 	"github.com/spaulg/solo/test/mocks/host/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type WorkflowFactoryTestSuite struct {
@@ -31,4 +32,6 @@ func (t *WorkflowFactoryTestSuite) TestBuild() {
 	workflow := workflowFactory.Make(t.mockProject, serviceName, workflowName)
 
 	t.NotNil(workflow)
+
+	t.mockProject.AssertExpectations(t.T())
 }
