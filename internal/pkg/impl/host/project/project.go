@@ -35,6 +35,7 @@ func NewProject(projectFilePath string, config *config_types.Config) (project_ty
 		WithComposeFiles(projectFilePath, config),
 		cli.WithLoadOptions(func(option *loader.Options) {
 			option.ResolvePaths = false // Keep paths relative in case the user moves their project folder
+			option.SkipInterpolation = true  // Disable interpolation to avoid issues with environment variables in the project file
 		}),
 		cli.WithExtension(project_types.ServiceWorkflowExtensionName, NewServiceWorkflows()),
 	)
