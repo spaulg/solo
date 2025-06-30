@@ -49,13 +49,13 @@ func forkAndExecute(args []string) error {
 
 	if []rune(args[0])[0] == '/' {
 		// Full path of executable given
-		return syscall.Exec(args[0], args, nil)
+		return syscall.Exec(args[0], args, os.Environ())
 	} else {
 		// Shell command
 		shellArgs := []string{"/bin/sh", "-c"}
 		shellArgs = append(shellArgs, strings.Join(args, " "))
 
-		return syscall.Exec("/bin/sh", shellArgs, nil)
+		return syscall.Exec("/bin/sh", shellArgs, os.Environ())
 	}
 }
 
