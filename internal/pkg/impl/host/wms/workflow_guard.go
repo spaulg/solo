@@ -79,7 +79,6 @@ func (t *WorkflowGuard) Publish(event events_types.Event) {
 
 	t.soloCtx.Logger.Debug(fmt.Sprintf("Closing channel for workflow %s and container %s", workflowName, containerName))
 	close(t.workflowContainerChannels[workflowName][containerName])
-	t.workflowContainerChannels[workflowName][containerName] = nil
 }
 
 func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error) error {
