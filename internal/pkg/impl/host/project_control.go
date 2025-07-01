@@ -174,9 +174,9 @@ func (t *ProjectControl) Stop() error {
 
 		defer grpcServer.Stop()
 
-		// Populate a list of container names that will be started
-		servicesToStart := serviceStatus.RunningServices
-		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToStart)
+		// Populate a list of container names that will be stopped
+		servicesToStop := serviceStatus.RunningServices
+		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToStop)
 		if err != nil {
 			return fmt.Errorf("failed to convert service names to container names: %w", err)
 		}
@@ -248,9 +248,9 @@ func (t *ProjectControl) Destroy() error {
 
 		defer grpcServer.Stop()
 
-		// Populate a list of container names that will be started
-		servicesToStart := append(serviceStatus.RunningServices, append(serviceStatus.StoppedServices, serviceStatus.ExitedServices...)...)
-		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToStart)
+		// Populate a list of container names that will be destroyed
+		servicesToDestroy := serviceStatus.RunningServices
+		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToDestroy)
 		if err != nil {
 			return fmt.Errorf("failed to convert service names to container names: %w", err)
 		}
