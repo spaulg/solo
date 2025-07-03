@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const LoadProjectFileAnnotation = "LoadProjectFile"
+
 func Execute() {
 	cobra.EnableCommandSorting = false
 
@@ -53,6 +55,14 @@ func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
 		Use:          "solo",
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Annotations == nil || cmd.Annotations[LoadProjectFileAnnotation] != "true" {
+				return nil
+			}
+			
+			if soloCtx.ConfigLoadErr == nil {
+				soloCtx.ReloadProject()
+			}
+
 			if soloCtx.ProjectLoadErr != nil {
 				fmt.Println(soloCtx.ProjectLoadErr)
 				os.Exit(1)
