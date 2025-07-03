@@ -8,10 +8,11 @@ import (
 
 func NewRestartCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
-		Use:     "restart",
-		GroupID: "lifecycle",
-		Short:   "Restarts your app",
-		Long:    "Restarts your app",
+		Use:         "restart",
+		GroupID:     "lifecycle",
+		Short:       "Restarts your app",
+		Long:        "Restarts your app",
+		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
 		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
 			projectControl, err := host.ProjectControlFactory(soloCtx)
 			if err != nil {

@@ -14,10 +14,11 @@ func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 	var cleanCmdYes bool
 
 	cleanCmd := &cobra.Command{
-		Use:     "clean",
-		GroupID: "lifecycle",
-		Short:   "Clean the app",
-		Long:    "Clean the app",
+		Use:         "clean",
+		GroupID:     "lifecycle",
+		Short:       "Clean the app",
+		Long:        "Clean the app",
+		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if !cleanCmdYes {
 				var cmdConfirmationString string

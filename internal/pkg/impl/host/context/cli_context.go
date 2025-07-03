@@ -42,7 +42,6 @@ func LoadCliContext() *CliContext {
 
 	if configLoadErr == nil {
 		context.Config = context.configReader.GetConfig()
-		context.ReloadProject()
 	}
 
 	return context
