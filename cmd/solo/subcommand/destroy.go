@@ -14,10 +14,11 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 	var destroyCmdYes bool
 
 	destroyCmd := &cobra.Command{
-		Use:     "destroy",
-		GroupID: "lifecycle",
-		Short:   "Destroys your app",
-		Long:    "Destroys your app",
+		Use:         "destroy",
+		GroupID:     "lifecycle",
+		Short:       "Destroys your app",
+		Long:        "Destroys your app",
+		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if !destroyCmdYes {
 				var cmdConfirmationString string

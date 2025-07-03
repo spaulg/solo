@@ -14,10 +14,11 @@ func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
 	var rebuildCmdYes bool
 
 	rebuildCmd := &cobra.Command{
-		Use:     "rebuild",
-		GroupID: "lifecycle",
-		Short:   "Rebuilds your app from scratch, preserving data",
-		Long:    "Rebuilds your app from scratch, preserving data",
+		Use:         "rebuild",
+		GroupID:     "lifecycle",
+		Short:       "Rebuilds your app from scratch, preserving data",
+		Long:        "Rebuilds your app from scratch, preserving data",
+		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if !rebuildCmdYes {
 				var cmdConfirmationString string

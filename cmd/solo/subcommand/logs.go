@@ -9,10 +9,11 @@ import (
 
 func NewLogsCommand(_ *context.CliContext) *cobra.Command {
 	return &cobra.Command{
-		Use:     "logs",
-		GroupID: "tooling",
-		Short:   "Displays logs for your app",
-		Long:    "Displays logs for your app",
+		Use:         "logs",
+		GroupID:     "tooling",
+		Short:       "Displays logs for your app",
+		Long:        "Displays logs for your app",
+		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("logs called")
 		},
