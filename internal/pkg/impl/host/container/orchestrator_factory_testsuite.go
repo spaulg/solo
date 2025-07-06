@@ -1,21 +1,33 @@
 package container
 
 import (
+	"github.com/stretchr/testify/suite"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/project"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/events"
-	"github.com/stretchr/testify/suite"
 )
 
 type OrchestratorFactoryTestSuite struct {
 	suite.Suite
+
+	mockEventManager *events.MockEventManager
 }
 
-func (t *OrchestratorFactoryTestSuite) TestDefaultOrchestratorFactory_Build() {
+func (t *OrchestratorFactoryTestSuite) SetupTest() {
+	t.mockEventManager = &events.MockEventManager{}
+}
+
+func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 	loadedConfig := &config_types.Config{
-		Orchestrator: "docker",
+		OrchestratorSearchOrder: []string{"docker"},
+		Orchestrators: map[string]config_types.OrchestratorConfig{
+			"docker": {
+				Binary: "docker",
+			},
+		},
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
@@ -23,20 +35,35 @@ func (t *OrchestratorFactoryTestSuite) TestDefaultOrchestratorFactory_Build() {
 	t.NoError(err)
 
 	soloCtx := &context.CliContext{
-		Config:  loadedConfig,
+		Config: loadedConfig,
 		Project: loadedProject,
 	}
-	eventManager := &events.MockEventManager{}
 
-	factory := NewOrchestratorFactory(soloCtx, eventManager)
+	factory := NewOrchestratorFactory(soloCtx, t.mockEventManager)
 	t.NotNil(factory)
 
 	orchestrator, err := factory.Build()
 	t.NotNil(orchestrator)
 	t.NoError(err)
 
-	soloCtx.Config.Orchestrator = "unsupported"
-	orchestrator, err = factory.Build()
+}
+
+func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactoryFailure() {
+	loadedConfig := &config_types.Config{
+		OrchestratorSearchOrder: []string{},
+	}
+
+	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
+	loadedProject, err := project.NewProject(projectFilePath, loadedConfig)
+	t.NoError(err)
+
+	soloCtx := &context.CliContext{
+		Config: loadedConfig,
+		Project: loadedProject,
+	}
+
+	factory := NewOrchestratorFactory(soloCtx, t.mockEventManager)
+	orchestrator, err := factory.Build()
 	t.Nil(orchestrator)
 	t.Error(err)
 }

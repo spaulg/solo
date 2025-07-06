@@ -5,10 +5,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host/project"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	"github.com/spaulg/solo/test"
-	"github.com/stretchr/testify/suite"
 )
 
 type TestCertificateAuthority struct {
@@ -50,9 +51,7 @@ func (t *TestCertificateAuthority) TestGenerateCertificate() {
 }
 
 func (t *TestCertificateAuthority) TestExportCACertificate() {
-	loadedConfig := &config_types.Config{
-		Orchestrator: "docker",
-	}
+	loadedConfig := &config_types.Config{}
 
 	projectFilePath := test.GetTestDataFilePath("certificate/solo.yml")
 	loadedProject, err := project.NewProject(projectFilePath, loadedConfig)

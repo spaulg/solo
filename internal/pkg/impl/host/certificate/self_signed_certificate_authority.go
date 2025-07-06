@@ -72,7 +72,7 @@ func NewCertificateAuthority() (certificate_types.Authority, error) {
 
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate key: %v", err)
+		return nil, fmt.Errorf("failed to generate key: %w", err)
 	}
 
 	clientCertDER, err := x509.CreateCertificate(
@@ -83,12 +83,12 @@ func NewCertificateAuthority() (certificate_types.Authority, error) {
 		privateKey,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create certificate: %v", err)
+		return nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal private key bytes: %v", err)
+		return nil, fmt.Errorf("failed to marshal private key bytes: %w", err)
 	}
 
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
@@ -103,12 +103,12 @@ func NewCertificateAuthority() (certificate_types.Authority, error) {
 
 	cert, err := tls.X509KeyPair(certPEM, keyPEM)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load keypair: %v", err)
+		return nil, fmt.Errorf("failed to load keypair: %w", err)
 	}
 
 	cert.Leaf, err = x509.ParseCertificate(clientCertDER)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %v", err)
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
 	return &SelfSignedCertificateAuthority{
@@ -187,7 +187,7 @@ func (t *SelfSignedCertificateAuthority) GenerateCertificate(
 
 	cert.Leaf, err = x509.ParseCertificate(certDER)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %v", err)
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
 	return &cert, nil
