@@ -28,7 +28,7 @@ func (t *ServiceNameInterceptor) ServiceNameUnaryInterceptor(
 ) (interface{}, error) {
 	serviceName, err := findServiceName(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find service name: %v", err)
+		return nil, fmt.Errorf("failed to find service name: %w", err)
 	}
 
 	ctx = context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName)
@@ -44,7 +44,7 @@ func (t *ServiceNameInterceptor) ServiceNameStreamInterceptor(
 	ctx := ss.Context()
 	serviceName, err := findServiceName(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to find service name: %v", err)
+		return fmt.Errorf("failed to find service name: %w", err)
 	}
 
 	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName))
