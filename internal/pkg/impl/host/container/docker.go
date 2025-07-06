@@ -80,31 +80,37 @@ func (t *DockerOrchestrator) runComposeCommandWithProgress(arguments ...string) 
 	return nil
 }
 
-func (t *DockerOrchestrator) ComposeUp() error {
-	return t.runComposeCommandWithProgress(
+func (t *DockerOrchestrator) ComposeUp(serviceNames []string) error {
+	arguments := append([]string{
 		"--progress", "json",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"up", "-d",
-	)
+	}, serviceNames...)
+
+	return t.runComposeCommandWithProgress(arguments...)
 }
 
-func (t *DockerOrchestrator) ComposeStop() error {
-	return t.runComposeCommandWithProgress(
+func (t *DockerOrchestrator) ComposeStop(serviceNames []string) error {
+	arguments := append([]string{
 		"--progress", "json",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"stop",
-	)
+	}, serviceNames...)
+
+	return t.runComposeCommandWithProgress(arguments...)
 }
 
-func (t *DockerOrchestrator) ComposeDown() error {
-	return t.runComposeCommandWithProgress(
+func (t *DockerOrchestrator) ComposeDown(serviceNames []string) error {
+	arguments := append([]string{
 		"--progress", "json",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"down", "-v",
-	)
+	}, serviceNames...)
+
+	return t.runComposeCommandWithProgress(arguments...)
 }
 
 func (t *DockerOrchestrator) Execute(containerName string, command []string) error {
@@ -121,6 +127,7 @@ func (t *DockerOrchestrator) Execute(containerName string, command []string) err
 
 func (t *DockerOrchestrator) ServicesStatus() (*container_types.ServiceStatus, error) {
 	composeCmd := exec.Command(t.dockerCommandPath, "compose",
+		"--profile", strings.Join(t.soloCtx.Profiles, ","),
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"ps",
@@ -203,10 +210,16 @@ func (t *DockerOrchestrator) GetHostGatewayHostname() string {
 }
 
 func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error) {
+	// Reload project with all profiles enabled
+	project, err := project.ReloadWithAllProfilesEnabled()
+	if err != nil {
+		return nil, fmt.Errorf("failed to reload project with all services: %w", err)
+	}
+
 	soloEntrypoint := path.Join(project.GetStateDirectoryRoot(), "solo-entrypoint")
 
 	allServicesDataPath := project.GetAllServicesStateDirectory()
-	_, err := os.Stat(allServicesDataPath)
+	_, err = os.Stat(allServicesDataPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(allServicesDataPath, 0750); err != nil {

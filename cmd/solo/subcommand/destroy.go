@@ -5,21 +5,26 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
-	"github.com/spf13/cobra"
 )
 
 func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 	var destroyCmdYes bool
+	var profiles []string
 
 	destroyCmd := &cobra.Command{
-		Use:         "destroy",
-		GroupID:     "lifecycle",
-		Short:       "Destroys your app",
-		Long:        "Destroys your app",
-		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
+		Use:     "destroy",
+		GroupID: "lifecycle",
+		Short:   "Destroys your app",
+		Long:    "Destroys your app",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := loadProjectE(soloCtx, profiles); err != nil {
+				return err
+			}
+
 			if !destroyCmdYes {
 				var cmdConfirmationString string
 				for {
@@ -48,11 +53,16 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 				return err
 			}
 
-			return projectControl.Clean(false)
+			if len(profiles) == 1 && profiles[0] == "*" {
+				return projectControl.Clean(false)
+			} else {
+				return nil
+			}
 		}),
 	}
 
 	destroyCmd.Flags().BoolVarP(&destroyCmdYes, "yes", "y", false, "Answer yes non-interactively to confirmation questions")
+	destroyCmd.Flags().StringSliceVarP(&profiles, "profile", "", []string{"*"}, "Profiles to use for the command.")
 
 	return destroyCmd
 }

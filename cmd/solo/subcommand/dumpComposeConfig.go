@@ -3,10 +3,11 @@ package subcommand
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host/container"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/events"
-	"github.com/spf13/cobra"
 )
 
 func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
@@ -15,7 +16,13 @@ func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 		GroupID:     "config",
 		Short:       "Dumps the compose config to stdout",
 		Long:        "Dumps the compose config to stdout",
-		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := loadProjectE(soloCtx, []string{}); err != nil {
+				return err
+			}
+
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventManager := events.GetEventManagerInstance()
 			orchestrator, err := container.NewOrchestratorFactory(soloCtx, eventManager).Build()

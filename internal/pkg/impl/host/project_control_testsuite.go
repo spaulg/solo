@@ -298,6 +298,8 @@ func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
 		NotRunningServices: []string{"test_server"},
 	}
 
+	serviceNames := []string{"test_server"}
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
 	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
@@ -317,7 +319,8 @@ func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
 
-	t.mockOrchestrator.On("ComposeUp").Return(errors.New("mock orchestrator error"))
+	t.mockProject.On("ServiceNames").Return(serviceNames)
+	t.mockOrchestrator.On("ComposeUp", serviceNames).Return(errors.New("mock orchestrator error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -350,6 +353,8 @@ func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
 		NotRunningServices: []string{"test_server"},
 	}
 
+	serviceNames := []string{"test_server"}
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
 	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
@@ -370,7 +375,8 @@ func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
 
-	t.mockOrchestrator.On("ComposeUp").Return(nil)
+	t.mockProject.On("ServiceNames").Return(serviceNames)
+	t.mockOrchestrator.On("ComposeUp", serviceNames).Return(nil)
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -403,6 +409,8 @@ func (t *ProjectControlTestSuite) TestStart_Succeeds() {
 		NotRunningServices: []string{"test_server"},
 	}
 
+	serviceNames := []string{"test_server"}
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
 	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
@@ -423,7 +431,8 @@ func (t *ProjectControlTestSuite) TestStart_Succeeds() {
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
 
-	t.mockOrchestrator.On("ComposeUp").Return(nil)
+	t.mockProject.On("ServiceNames").Return(serviceNames)
+	t.mockOrchestrator.On("ComposeUp", serviceNames).Return(nil)
 
 	t.mockWorkflowManager.On("Wait").Return(nil)
 
@@ -701,6 +710,8 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 		NotRunningServices: make([]string, 0),
 	}
 
+	serviceNames := []string{"test_server"}
+
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
@@ -719,7 +730,8 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 	t.mockWorkflowGuard.On("Wait", mock.Anything).Return(nil)
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
-	t.mockOrchestrator.On("ComposeStop").Return(errors.New("mock compose stop error"))
+	t.mockProject.On("ExclusiveServiceNames").Return(serviceNames)
+	t.mockOrchestrator.On("ComposeStop", serviceNames).Return(errors.New("mock compose stop error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -753,6 +765,8 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 		NotRunningServices: make([]string, 0),
 	}
 
+	serviceNames := []string{"test_server"}
+
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
@@ -771,7 +785,8 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 	t.mockWorkflowGuard.On("Wait", mock.Anything).Return(nil)
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
-	t.mockOrchestrator.On("ComposeStop").Return(nil)
+	t.mockProject.On("ExclusiveServiceNames").Return(serviceNames)
+	t.mockOrchestrator.On("ComposeStop", serviceNames).Return(nil)
 	t.mockWorkflowManager.On("Wait").Return(nil)
 
 	t.mockLogHandler.On("Handle", mock.Anything, mock.MatchedBy(func(record slog.Record) bool {
@@ -1045,6 +1060,8 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
@@ -1056,7 +1073,8 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 	t.mockWorkflowGuard.On("Wait", mock.Anything).Return(nil)
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
-	t.mockOrchestrator.On("ComposeDown").Return(errors.New("mock compose down error"))
+	t.mockProject.On("ExclusiveServiceNames").Return(serviceNames)
+	t.mockOrchestrator.On("ComposeDown", serviceNames).Return(errors.New("mock compose down error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -1096,6 +1114,8 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
@@ -1107,7 +1127,8 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 	t.mockWorkflowGuard.On("Wait", mock.Anything).Return(nil)
 	t.mockWorkflowManager.On("Subscribe", mock.Anything)
 	t.mockWorkflowManager.On("Unsubscribe", mock.Anything)
-	t.mockOrchestrator.On("ComposeDown").Return(nil)
+	t.mockProject.On("ExclusiveServiceNames").Return(serviceNames)
+	t.mockOrchestrator.On("ComposeDown", serviceNames).Return(nil)
 	t.mockWorkflowManager.On("Wait").Return(nil)
 
 	t.mockLogHandler.On("Handle", mock.Anything, mock.MatchedBy(func(record slog.Record) bool {

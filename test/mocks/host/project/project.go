@@ -4,12 +4,23 @@ import (
 	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
 	"github.com/stretchr/testify/mock"
+
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
 )
 
 type MockProject struct {
 	mock.Mock
+}
+
+func (m *MockProject) ReloadWithAllProfilesEnabled() (project_types.Project, error) {
+	args := m.Called()
+
+	if p, ok := args.Get(0).(project_types.Project); ok {
+		return p, args.Error(1)
+	} else {
+		return nil, args.Error(1)
+	}
 }
 
 func (m *MockProject) ResolveStateDirectory(relativePath string) string {
@@ -82,12 +93,27 @@ func (m *MockProject) ContainerNames(serviceNames []string) ([]string, error) {
 	}
 }
 
+func (m *MockProject) ProfilesOfServices(serviceNames []string) ([]string, error) {
+	args := m.Called(serviceNames)
+
+	if s, ok := args.Get(0).([]string); ok {
+		return s, args.Error(1)
+	} else {
+		return nil, args.Error(1)
+	}
+}
+
 func (m *MockProject) Services() types.Services {
 	args := m.Called()
 	return args.Get(0).(types.Services)
 }
 
 func (m *MockProject) ServiceNames() []string {
+	args := m.Called()
+	return args.Get(0).([]string)
+}
+
+func (m *MockProject) ExclusiveServiceNames() []string {
 	args := m.Called()
 	return args.Get(0).([]string)
 }

@@ -8,9 +8,9 @@ import (
 )
 
 type Orchestrator interface {
-	ComposeUp() error
-	ComposeStop() error
-	ComposeDown() error
+	ComposeUp(serviceNames []string) error
+	ComposeStop(serviceNames []string) error
+	ComposeDown(serviceNames []string) error
 	Execute(containerName string, command []string) error
 	GetHostGatewayHostname() string
 	ServicesStatus() (*ServiceStatus, error)

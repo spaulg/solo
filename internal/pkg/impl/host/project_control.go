@@ -102,7 +102,7 @@ func (t *ProjectControl) Start() error {
 	defer t.workflowManager.Unsubscribe(guard)
 
 	// Start compose services
-	if err := orchestrator.ComposeUp(); err != nil {
+	if err := orchestrator.ComposeUp(t.soloCtx.Project.ServiceNames()); err != nil {
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
@@ -203,7 +203,7 @@ func (t *ProjectControl) Stop() error {
 		}
 	}
 
-	if err := orchestrator.ComposeStop(); err != nil {
+	if err := orchestrator.ComposeStop(t.soloCtx.Project.ExclusiveServiceNames()); err != nil {
 		return fmt.Errorf("failed to stop services: %w", err)
 	}
 
@@ -277,7 +277,7 @@ func (t *ProjectControl) Destroy() error {
 		}
 	}
 
-	if err := orchestrator.ComposeDown(); err != nil {
+	if err := orchestrator.ComposeDown(t.soloCtx.Project.ExclusiveServiceNames()); err != nil {
 		return fmt.Errorf("failed to destroy services: %w", err)
 	}
 
@@ -309,6 +309,38 @@ func (t *ProjectControl) Clean(purgeStateDirectory bool) error {
 	}
 
 	return nil
+}
+
+func (t *ProjectControl) Rebuild() error {
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build orchestrator: %w", err)
+	}
+
+	// Build workflow service map
+	serviceStatus, err := orchestrator.ServicesStatus()
+	if err != nil {
+		return fmt.Errorf("failed to check service status: %w", err)
+	}
+
+	profiles, err := t.soloCtx.Project.ProfilesOfServices(serviceStatus.RunningServices)
+	if err != nil {
+		return fmt.Errorf("failed to get profiles of services: %w", err)
+	}
+
+	if err := t.Destroy(); err != nil {
+		return err
+	}
+
+	if err := t.Clean(false); err != nil {
+		return err
+	}
+
+	t.soloCtx.Profiles = profiles
+	t.soloCtx.ReloadProject()
+
+	return t.Start()
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
