@@ -9,13 +9,14 @@ import (
 	"os"
 	"time"
 
+	"google.golang.org/grpc/credentials"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host/certificate"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/service_definitions"
 	certificate_types "github.com/spaulg/solo/internal/pkg/types/host/certificate"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/grpc"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
-	"google.golang.org/grpc/credentials"
 )
 
 type MutualTLSServerFactory struct {
@@ -70,12 +71,12 @@ func (t *MutualTLSServerFactory) buildTransportCredentials(
 	// Generate server certificate
 	serverCert, err := t.generateServerCertificate(hostname)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate server certificate: %v", err)
+		return nil, fmt.Errorf("failed to generate server certificate: %w", err)
 	}
 
 	// Generate client certificates for each service
 	if err = t.generateClientCertificate(project); err != nil {
-		return nil, fmt.Errorf("failed to generate server certificate: %v", err)
+		return nil, fmt.Errorf("failed to generate client certificate: %w", err)
 	}
 
 	caChain := x509.NewCertPool()

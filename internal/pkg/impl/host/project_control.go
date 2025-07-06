@@ -119,7 +119,7 @@ func (t *ProjectControl) Start() error {
 		postStartCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "post_start"}
 
 		if err := orchestrator.Execute(container, postStartCommand); err != nil {
-			return fmt.Errorf("error running compose: %v", err)
+			return fmt.Errorf("error running compose: %w", err)
 		}
 
 		if err := guardCallback(workflowcommon.PostStart); err != nil {
@@ -194,7 +194,7 @@ func (t *ProjectControl) Stop() error {
 			preStopCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_stop"}
 
 			if err := orchestrator.Execute(container, preStopCommand); err != nil {
-				return fmt.Errorf("error running compose: %v", err)
+				return fmt.Errorf("error running compose: %w", err)
 			}
 
 			return nil
@@ -268,7 +268,7 @@ func (t *ProjectControl) Destroy() error {
 			preDestroyCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_destroy"}
 
 			if err := orchestrator.Execute(container, preDestroyCommand); err != nil {
-				return fmt.Errorf("error running compose: %v", err)
+				return fmt.Errorf("error running compose: %w", err)
 			}
 
 			return nil
@@ -304,7 +304,7 @@ func (t *ProjectControl) Clean(purgeStateDirectory bool) error {
 
 	for _, purgeDirectory := range purgeDirectoryList {
 		if err := os.RemoveAll(purgeDirectory); err != nil {
-			return fmt.Errorf("failed to remove state directory %s: %v", purgeDirectory, err)
+			return fmt.Errorf("failed to remove state directory %s: %w", purgeDirectory, err)
 		}
 	}
 
@@ -315,16 +315,16 @@ func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
 	composeDirectory := path.Dir(t.soloCtx.Project.GetGeneratedComposeFilePath())
 	if _, err := os.Stat(composeDirectory); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("failed to check .solo directory existence: %v", err)
+			return fmt.Errorf("failed to check .solo directory existence: %w", err)
 		}
 
 		if err := os.MkdirAll(composeDirectory, 0755); err != nil {
-			return fmt.Errorf("failed to create .solo directory: %v", err)
+			return fmt.Errorf("failed to create .solo directory: %w", err)
 		}
 	}
 
 	if err := os.WriteFile(t.soloCtx.Project.GetGeneratedComposeFilePath(), composeYml, 0640); err != nil {
-		return fmt.Errorf("failed to write compose file: %v", err)
+		return fmt.Errorf("failed to write compose file: %w", err)
 	}
 
 	return nil
@@ -335,7 +335,7 @@ func (t *ProjectControl) composeFileExists() (bool, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
 		} else {
-			return false, fmt.Errorf("error looking for compose file: %v", err)
+			return false, fmt.Errorf("error looking for compose file: %w", err)
 		}
 	}
 

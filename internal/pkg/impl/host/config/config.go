@@ -5,20 +5,20 @@ import (
 )
 
 const (
-	DefaultHostEntrypoint      = "/usr/local/bin/solo-entrypoint"
-	DefaultContainerEntrypoint = "/usr/local/sbin/solo"
-	DefaultStateDirectoryName  = "./.solo"
-	DefaultOrchestrator        = "docker"
-	DefaultGrpcServerPort      = 0
-	DefaultLoggingEnabled      = true
-	DefaultLoggingLevel        = "warning"
-	DefaultLoggingHandler      = "text"
+	DefaultHostEntrypoint         = "/usr/local/bin/solo-entrypoint"
+	DefaultContainerEntrypoint    = "/usr/local/sbin/solo"
+	DefaultStateDirectoryName     = "./.solo"
+	DefaultGrpcServerPort         = 0
+	DefaultLoggingEnabled         = true
+	DefaultLoggingLevel           = "warning"
+	DefaultLoggingHandler         = "text"
+	DefaultDockerBinary           = "docker"
+	DefaultDockerOrchestratorName = "docker"
 )
 
 func NewConfig() config_types.Config {
 	return config_types.Config{
 		StateDirectoryName: DefaultStateDirectoryName,
-		Orchestrator:       DefaultOrchestrator,
 		GrpcServerPort:     DefaultGrpcServerPort,
 
 		Entrypoint: config_types.Entrypoint{
@@ -30,6 +30,13 @@ func NewConfig() config_types.Config {
 			Enabled: DefaultLoggingEnabled,
 			Level:   DefaultLoggingLevel,
 			Handler: DefaultLoggingHandler,
+		},
+
+		OrchestratorSearchOrder: []string{DefaultDockerOrchestratorName},
+		Orchestrators: map[string]config_types.OrchestratorConfig{
+			DefaultDockerOrchestratorName: {
+				Binary: DefaultDockerBinary,
+			},
 		},
 	}
 }

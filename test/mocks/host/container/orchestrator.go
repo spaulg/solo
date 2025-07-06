@@ -1,11 +1,12 @@
 package container
 
 import (
+	"github.com/stretchr/testify/mock"
+	"google.golang.org/grpc/metadata"
+
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
-	"github.com/stretchr/testify/mock"
-	"google.golang.org/grpc/metadata"
 )
 
 type MockOrchestrator struct {
@@ -54,17 +55,6 @@ func (m *MockOrchestrator) ExportComposeConfiguration(config *config_types.Confi
 
 	if b, ok := configBytes.([]byte); ok {
 		return b, args.Error(1)
-	} else {
-		return nil, args.Error(1)
-	}
-}
-
-func (m *MockOrchestrator) ResolveServiceNameFromContainerName(containerName string) (*string, error) {
-	args := m.Called(containerName)
-	serviceName := args.Get(0)
-
-	if s, ok := serviceName.(*string); ok {
-		return s, args.Error(1)
 	} else {
 		return nil, args.Error(1)
 	}

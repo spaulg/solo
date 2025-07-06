@@ -110,7 +110,7 @@ func (t *AsynchronousServer) Start() error {
 	}()
 
 	if err := <-t.grpcServiceErrorCh; err != nil {
-		return fmt.Errorf("failed to start grpc service: %v", err)
+		return fmt.Errorf("failed to start grpc service: %w", err)
 	}
 
 	return t.writeHostFile()
@@ -125,11 +125,11 @@ func (t *AsynchronousServer) writeHostFile() error {
 	hostFilePath := path.Join(t.stateDirectory, hostFileName)
 	hostFile, err := os.OpenFile(hostFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to open host file: %v", err)
+		return fmt.Errorf("failed to open host file: %w", err)
 	}
 
 	if _, err := hostFile.WriteString(hostname + ":" + strconv.Itoa(int(t.port))); err != nil {
-		return fmt.Errorf("failed to write to host file: %v", err)
+		return fmt.Errorf("failed to write to host file: %w", err)
 	}
 
 	return nil

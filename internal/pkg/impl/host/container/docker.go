@@ -12,13 +12,14 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host/container/progress"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
-	"google.golang.org/grpc/metadata"
 )
 
 type ComposeServiceStatus struct {
@@ -31,26 +32,29 @@ type DockerInspect struct {
 }
 
 type DockerOrchestrator struct {
-	soloCtx          *context.CliContext
-	eventManager     events_types.Manager
-	projectDirectory string
-	composeFile      string
+	soloCtx           *context.CliContext
+	eventManager      events_types.Manager
+	dockerCommandPath string
+	projectDirectory  string
+	composeFile       string
 }
 
 func NewDockerOrchestrator(
 	soloCtx *context.CliContext,
 	eventManager events_types.Manager,
+	dockerCommandPath string,
 ) container_types.Orchestrator {
 	return &DockerOrchestrator{
-		soloCtx:          soloCtx,
-		eventManager:     eventManager,
-		projectDirectory: soloCtx.Project.GetDirectory(),
-		composeFile:      soloCtx.Project.GetGeneratedComposeFilePath(),
+		soloCtx:           soloCtx,
+		eventManager:      eventManager,
+		dockerCommandPath: dockerCommandPath,
+		projectDirectory:  soloCtx.Project.GetDirectory(),
+		composeFile:       soloCtx.Project.GetGeneratedComposeFilePath(),
 	}
 }
 
 func (t *DockerOrchestrator) runComposeCommandWithProgress(arguments ...string) error {
-	composeCmd := exec.Command("/usr/local/bin/docker", append([]string{"compose"}, arguments...)...)
+	composeCmd := exec.Command(t.dockerCommandPath, append([]string{"compose"}, arguments...)...)
 
 	stderr, err := composeCmd.StderrPipe()
 	if err != nil {
@@ -104,7 +108,7 @@ func (t *DockerOrchestrator) ComposeDown() error {
 }
 
 func (t *DockerOrchestrator) Execute(containerName string, command []string) error {
-	containerCmd := exec.Command("/usr/local/bin/docker", append([]string{
+	containerCmd := exec.Command(t.dockerCommandPath, append([]string{
 		"exec", "-d", containerName,
 	}, command...)...)
 
@@ -116,7 +120,7 @@ func (t *DockerOrchestrator) Execute(containerName string, command []string) err
 }
 
 func (t *DockerOrchestrator) ServicesStatus() (*container_types.ServiceStatus, error) {
-	composeCmd := exec.Command("/usr/local/bin/docker", "compose",
+	composeCmd := exec.Command(t.dockerCommandPath, "compose",
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"ps",
@@ -206,10 +210,10 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Con
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(allServicesDataPath, 0750); err != nil {
-				return nil, fmt.Errorf("failed to create all services data directoiry: %v", err)
+				return nil, fmt.Errorf("failed to create all services data directory: %w", err)
 			}
 		} else {
-			return nil, fmt.Errorf("failed to create all services data directoiry: %v", err)
+			return nil, fmt.Errorf("failed to create all services data directory: %w", err)
 		}
 	}
 
@@ -226,10 +230,10 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Con
 		if err != nil {
 			if os.IsNotExist(err) {
 				if err := os.MkdirAll(serviceLogPath, 0750); err != nil {
-					return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+					return nil, fmt.Errorf("failed to create service data directory: %w", err)
 				}
 			} else {
-				return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+				return nil, fmt.Errorf("failed to create service data directory: %w", err)
 			}
 		}
 
@@ -238,10 +242,10 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Con
 		if err != nil {
 			if os.IsNotExist(err) {
 				if err := os.MkdirAll(serviceDataPath, 0750); err != nil {
-					return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+					return nil, fmt.Errorf("failed to create service data directory: %w", err)
 				}
 			} else {
-				return nil, fmt.Errorf("failed to create service data directoiry: %v", err)
+				return nil, fmt.Errorf("failed to create service data directory: %w", err)
 			}
 		}
 
@@ -277,11 +281,6 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Con
 	return project.MarshalYAML()
 }
 
-func (t *DockerOrchestrator) ResolveServiceNameFromContainerName(containerName string) (*string, error) {
-	serviceName := "example"
-	return &serviceName, nil
-}
-
 func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (*string, error) {
 	containerNames := md.Get("hostname")
 
@@ -289,7 +288,7 @@ func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (*
 		return nil, fmt.Errorf("unable to resolve container name")
 	}
 
-	composeCmd := exec.Command("/usr/local/bin/docker", "inspect",
+	composeCmd := exec.Command(t.dockerCommandPath, "inspect",
 		"--format", "{{ json . }}",
 		"--type", "container",
 		containerNames[0],

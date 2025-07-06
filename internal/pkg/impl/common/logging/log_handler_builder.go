@@ -46,7 +46,7 @@ func (t *LogHandlerBuilder) WithLogHandlerName(handler string) *LogHandlerBuilde
 func (t *LogHandlerBuilder) Build() (slog.Handler, error) {
 	logFile, err := os.OpenFile(t.logFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open log file: %v", err)
+		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
 
 	switch t.handler {

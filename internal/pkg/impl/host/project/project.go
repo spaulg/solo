@@ -34,19 +34,19 @@ func NewProject(projectFilePath string, config *config_types.Config) (project_ty
 	projectOptions, err := cli.NewProjectOptions(nil,
 		WithComposeFiles(projectFilePath, config),
 		cli.WithLoadOptions(func(option *loader.Options) {
-			option.ResolvePaths = false // Keep paths relative in case the user moves their project folder
-			option.SkipInterpolation = true  // Disable interpolation to avoid issues with environment variables in the project file
+			option.ResolvePaths = false     // Keep paths relative in case the user moves their project folder
+			option.SkipInterpolation = true // Disable interpolation to avoid issues with environment variables in the project file
 		}),
 		cli.WithExtension(project_types.ServiceWorkflowExtensionName, NewServiceWorkflows()),
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("error building project options: %v", err)
+		return nil, fmt.Errorf("error building project options: %w", err)
 	}
 
 	compose, err := projectOptions.LoadProject(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("error loading project: %v", err)
+		return nil, fmt.Errorf("error loading project: %w", err)
 	}
 
 	projectDirectory := filepath.Dir(projectFilePath)

@@ -3,9 +3,10 @@ package subcommand
 import (
 	"fmt"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
+
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 )
 
 func NewDumpConfigCommand(soloCtx *context.CliContext) *cobra.Command {
