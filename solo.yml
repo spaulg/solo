@@ -71,5 +71,23 @@ services:
           - name: Install vim
             run: apt install -y vim
 
+  mail:
+    profiles: ["mail"]
+    build:
+      context: .
+      dockerfile: ./examples/symfony-webapp/Dockerfile.mail
+    entrypoint: /mailpit
+    ports:
+      - "8025:8025"
+    expose:
+      - "8025"
+      - "1025"
+
+    volumes:
+      - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
+      - "./internal:/solo/internal"
+      - "./go.mod:/solo/go.mod"
+      - "./go.sum:/solo/go.sum"
+
 volumes:
   composer:

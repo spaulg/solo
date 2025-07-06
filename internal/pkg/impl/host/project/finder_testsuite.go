@@ -3,9 +3,10 @@ package project
 import (
 	"path"
 
+	"github.com/stretchr/testify/suite"
+
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	"github.com/spaulg/solo/test"
-	"github.com/stretchr/testify/suite"
 )
 
 type FinderTestSuite struct {
@@ -22,7 +23,7 @@ func (t *FinderTestSuite) TestFindProjectFile() {
 	startPath := test.GetTestDataFilePath("project/foo/bar/baz")
 	expectedProjectPath := path.Join(path.Dir(path.Dir(path.Dir(startPath))), DefaultProjectFileName)
 
-	project, err := FindProject(startPath, t.config)
+	project, err := FindProject(startPath, t.config, []string{})
 
 	t.NoError(err)
 	t.NotNil(project)
@@ -31,7 +32,7 @@ func (t *FinderTestSuite) TestFindProjectFile() {
 }
 
 func (t *FinderTestSuite) TestProjectFileNotFoundBeforeFsRoot() {
-	project, err := FindProject(t.T().TempDir(), t.config)
+	project, err := FindProject(t.T().TempDir(), t.config, []string{})
 
 	t.Error(err)
 	t.ErrorContains(err, "filesystem root reached, project file not found")

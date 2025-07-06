@@ -39,3 +39,15 @@ services:
           - name: composer install
             run: composer install
             cwd: /var/www/project
+
+  mail:
+    profiles: ["mail"]
+    build:
+      context: .
+      dockerfile: ./Dockerfile.mail
+    entrypoint: /mailpit
+    ports:
+      - "8025:8025"
+    expose:
+      - "8025"
+      - "1025"

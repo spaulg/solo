@@ -13,18 +13,18 @@ type MockOrchestrator struct {
 	mock.Mock
 }
 
-func (m *MockOrchestrator) ComposeUp() error {
-	args := m.Called()
+func (m *MockOrchestrator) ComposeUp(serviceNames []string) error {
+	args := m.Called(serviceNames)
 	return args.Error(0)
 }
 
-func (m *MockOrchestrator) ComposeStop() error {
-	args := m.Called()
+func (m *MockOrchestrator) ComposeStop(serviceNames []string) error {
+	args := m.Called(serviceNames)
 	return args.Error(0)
 }
 
-func (m *MockOrchestrator) ComposeDown() error {
-	args := m.Called()
+func (m *MockOrchestrator) ComposeDown(serviceNames []string) error {
+	args := m.Called(serviceNames)
 	return args.Error(0)
 }
 
