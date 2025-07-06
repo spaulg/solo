@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/gofrs/flock"
+	"github.com/spf13/cobra"
+
 	"github.com/spaulg/solo/internal/pkg/impl/common/logging"
 	"github.com/spaulg/solo/internal/pkg/impl/host/config"
 	"github.com/spaulg/solo/internal/pkg/impl/host/project"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
-	"github.com/spf13/cobra"
 )
 
 const lockFileName = "locking_file"
@@ -28,6 +29,7 @@ type CliContext struct {
 	Logger          *slog.Logger
 	lockFile        *flock.Flock
 	TriggerDateTime time.Time
+	Profiles        []string
 }
 
 func LoadCliContext() *CliContext {
@@ -48,7 +50,7 @@ func LoadCliContext() *CliContext {
 }
 
 func (t *CliContext) ReloadProject() {
-	loadedProject, projectLoadErr := project.FindProject("./", t.Config)
+	loadedProject, projectLoadErr := project.FindProject("./", t.Config, t.Profiles)
 	if projectLoadErr == nil {
 		t.ConfigLoadErr = t.configReader.AddConfigPath(loadedProject.GetDirectory())
 		t.Config = t.configReader.GetConfig()

@@ -31,11 +31,11 @@ func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
-	loadedProject, err := project.NewProject(projectFilePath, loadedConfig)
+	loadedProject, err := project.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
 	soloCtx := &context.CliContext{
-		Config: loadedConfig,
+		Config:  loadedConfig,
 		Project: loadedProject,
 	}
 
@@ -54,11 +54,11 @@ func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactoryFailure() {
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
-	loadedProject, err := project.NewProject(projectFilePath, loadedConfig)
+	loadedProject, err := project.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
 	soloCtx := &context.CliContext{
-		Config: loadedConfig,
+		Config:  loadedConfig,
 		Project: loadedProject,
 	}
 

@@ -1,18 +1,27 @@
 package subcommand
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
-	"github.com/spf13/cobra"
 )
 
 func NewStartCommand(soloCtx *context.CliContext) *cobra.Command {
-	return &cobra.Command{
+	var profiles []string
+
+	startCmd := &cobra.Command{
 		Use:         "start",
 		GroupID:     "lifecycle",
 		Short:       "Starts your app",
 		Long:        "Starts your app",
-		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := loadProjectE(soloCtx, profiles); err != nil {
+				return err
+			}
+
+			return nil
+		},
 		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
 			projectControl, err := host.ProjectControlFactory(soloCtx)
 			if err != nil {
@@ -22,4 +31,8 @@ func NewStartCommand(soloCtx *context.CliContext) *cobra.Command {
 			return projectControl.Start()
 		}),
 	}
+
+	startCmd.Flags().StringSliceVarP(&profiles, "profile", "", nil, "Profiles to use for the command.")
+
+	return startCmd
 }

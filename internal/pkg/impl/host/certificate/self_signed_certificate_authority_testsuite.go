@@ -54,7 +54,7 @@ func (t *TestCertificateAuthority) TestExportCACertificate() {
 	loadedConfig := &config_types.Config{}
 
 	projectFilePath := test.GetTestDataFilePath("certificate/solo.yml")
-	loadedProject, err := project.NewProject(projectFilePath, loadedConfig)
+	loadedProject, err := project.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
 	ca, err := NewCertificateAuthority()

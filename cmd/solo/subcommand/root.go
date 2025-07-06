@@ -13,14 +13,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const LoadProjectFileAnnotation = "LoadProjectFile"
-
 func Execute() {
 	cobra.EnableCommandSorting = false
 
 	soloCtx := context.LoadCliContext()
 
-	rootCmd := NewRootCommand(soloCtx)
+	rootCmd := NewRootCommand()
 	rootCmd.AddGroup(&cobra.Group{ID: "lifecycle", Title: "Life Cycle Commands:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "tooling", Title: "Tooling Commands:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "config", Title: "Config Commands:"})
@@ -50,41 +48,10 @@ func Execute() {
 	}
 }
 
-func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
+func NewRootCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:          "solo",
 		SilenceUsage: true,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if cmd.Annotations == nil || cmd.Annotations[LoadProjectFileAnnotation] != "true" {
-				return nil
-			}
-			
-			if soloCtx.ConfigLoadErr == nil {
-				soloCtx.ReloadProject()
-			}
-
-			if soloCtx.ProjectLoadErr != nil {
-				fmt.Println(soloCtx.ProjectLoadErr)
-				os.Exit(1)
-			}
-
-			if soloCtx.ConfigLoadErr != nil {
-				fmt.Println(soloCtx.ConfigLoadErr)
-				os.Exit(1)
-			}
-
-			// If logging is enabled override the default logger
-			if soloCtx.Config.Logging.Enabled {
-				handler, err := buildLogHandler(soloCtx)
-				if err != nil {
-					return err
-				}
-
-				soloCtx.Logger = slog.New(handler)
-			}
-
-			return nil
-		},
 	}
 }
 
@@ -103,4 +70,34 @@ func buildLogHandler(soloCtx *context.CliContext) (slog.Handler, error) {
 		WithLogLevel(config.Logging.Level).
 		WithLogHandlerName(config.Logging.Handler).
 		Build()
+}
+
+func loadProjectE(soloCtx *context.CliContext, profiles []string) error {
+	soloCtx.Profiles = profiles
+
+	if soloCtx.ConfigLoadErr == nil {
+		soloCtx.ReloadProject()
+	}
+
+	if soloCtx.ProjectLoadErr != nil {
+		fmt.Println(soloCtx.ProjectLoadErr)
+		os.Exit(1)
+	}
+
+	if soloCtx.ConfigLoadErr != nil {
+		fmt.Println(soloCtx.ConfigLoadErr)
+		os.Exit(1)
+	}
+
+	// If logging is enabled override the default logger
+	if soloCtx.Config.Logging.Enabled {
+		handler, err := buildLogHandler(soloCtx)
+		if err != nil {
+			return err
+		}
+
+		soloCtx.Logger = slog.New(handler)
+	}
+
+	return nil
 }

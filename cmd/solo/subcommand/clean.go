@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/spaulg/solo/internal/pkg/impl/host"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
-	"github.com/spf13/cobra"
 )
 
 func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
@@ -18,8 +19,11 @@ func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 		GroupID:     "lifecycle",
 		Short:       "Clean the app",
 		Long:        "Clean the app",
-		Annotations: map[string]string{LoadProjectFileAnnotation: "true"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := loadProjectE(soloCtx, []string{"*"}); err != nil {
+				return err
+			}
+
 			if !cleanCmdYes {
 				var cmdConfirmationString string
 				for {

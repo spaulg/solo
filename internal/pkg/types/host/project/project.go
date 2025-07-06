@@ -20,8 +20,11 @@ type Project interface {
 	GetGeneratedComposeFilePath() string
 	GetMaxWorkflowTimeout(eventName string) time.Duration
 	ContainerNames(serviceNames []string) ([]string, error)
+	ProfilesOfServices(serviceNames []string) ([]string, error)
 	Services() types.Services
 	ServiceNames() []string
+	ExclusiveServiceNames() []string
 	MarshalYAML() ([]byte, error)
 	Name() string
+	ReloadWithAllProfilesEnabled() (Project, error)
 }

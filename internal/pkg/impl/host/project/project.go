@@ -13,6 +13,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/sirupsen/logrus"
+
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
@@ -30,7 +31,7 @@ type Project struct {
 	filePath              string
 }
 
-func NewProject(projectFilePath string, config *config_types.Config) (project_types.Project, error) {
+func NewProject(projectFilePath string, config *config_types.Config, profiles []string) (project_types.Project, error) {
 	projectOptions, err := cli.NewProjectOptions(nil,
 		WithComposeFiles(projectFilePath, config),
 		cli.WithLoadOptions(func(option *loader.Options) {
@@ -38,6 +39,7 @@ func NewProject(projectFilePath string, config *config_types.Config) (project_ty
 			option.SkipInterpolation = true // Disable interpolation to avoid issues with environment variables in the project file
 		}),
 		cli.WithExtension(project_types.ServiceWorkflowExtensionName, NewServiceWorkflows()),
+		cli.WithProfiles(profiles),
 	)
 
 	if err != nil {
@@ -59,6 +61,22 @@ func NewProject(projectFilePath string, config *config_types.Config) (project_ty
 
 	// Set default values in extensions
 	project.loadServiceExtensionDefaults()
+
+	return project, nil
+}
+
+func (t *Project) ReloadWithAllProfilesEnabled() (project_types.Project, error) {
+	compose, err := t.WithProfiles(append(t.Profiles, t.DisabledServices.GetProfiles()...))
+	if err != nil {
+		return nil, fmt.Errorf("error loading project: %w", err)
+	}
+
+	project := &Project{
+		projectStateDirectory: t.projectStateDirectory,
+		directory:             t.directory,
+		filePath:              t.filePath,
+		compose:               compose,
+	}
 
 	return project, nil
 }
@@ -134,8 +152,51 @@ func (t *Project) Services() types.Services {
 	return t.compose.Services
 }
 
+func (t *Project) ProfilesOfServices(serviceNames []string) ([]string, error) {
+	var profileNames []string
+	var profileNameMap = make(map[string]bool)
+
+	for _, serviceName := range serviceNames {
+		service, err := t.GetService(serviceName)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, profile := range service.Profiles {
+			if profile == "*" {
+				continue
+			}
+
+			if _, exists := profileNameMap[profile]; !exists {
+				profileNames = append(profileNames, profile)
+				profileNameMap[profile] = true
+			}
+		}
+	}
+
+	return profileNames, nil
+}
+
 func (t *Project) ServiceNames() []string {
 	return t.compose.ServiceNames()
+}
+
+func (t *Project) ExclusiveServiceNames() []string {
+	if len(t.Profiles) == 1 && t.Profiles[0] == "*" {
+		return t.ServiceNames()
+	}
+
+	var exclusiveNames []string
+
+	for _, service := range t.compose.Services {
+		if len(service.Profiles) == 0 {
+			continue
+		}
+
+		exclusiveNames = append(exclusiveNames, service.Name)
+	}
+
+	return exclusiveNames
 }
 
 func (t *Project) ContainerNames(serviceNames []string) ([]string, error) {
