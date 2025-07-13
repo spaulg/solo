@@ -20,8 +20,12 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 		GroupID: "lifecycle",
 		Short:   "Destroys your app",
 		Long:    "Destroys your app",
+		Annotations: map[string]string{
+			RequireConfigLoadSuccessAnnotation:  "true",
+			RequireProjectLoadSuccessAnnotation: "true",
+		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := loadProjectE(soloCtx, profiles); err != nil {
+			if err := soloCtx.Project.ReloadWithProfiles(profiles); err != nil {
 				return err
 			}
 

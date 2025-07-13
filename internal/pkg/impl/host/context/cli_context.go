@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -29,10 +30,9 @@ type CliContext struct {
 	Logger          *slog.Logger
 	lockFile        *flock.Flock
 	TriggerDateTime time.Time
-	Profiles        []string
 }
 
-func LoadCliContext() *CliContext {
+func LoadCliContext() (*CliContext, error) {
 	loadedConfigReader, configLoadErr := config.NewConfigReader()
 
 	context := &CliContext{
@@ -44,20 +44,41 @@ func LoadCliContext() *CliContext {
 
 	if configLoadErr == nil {
 		context.Config = context.configReader.GetConfig()
+
+		loadedProject, projectLoadErr := project.FindProject("./", context.Config, []string{})
+		if projectLoadErr == nil {
+			context.ConfigLoadErr = context.configReader.AddConfigPath(loadedProject.GetDirectory())
+			context.Config = context.configReader.GetConfig()
+		}
+
+		context.Project = loadedProject
+		context.ProjectLoadErr = projectLoadErr
+
+		// If logging is enabled override the default logger
+		if context.Config.Logging.Enabled && context.Project != nil {
+			stateDirectory := path.Join(context.Project.GetStateDirectoryRoot(), "cli", "logs")
+			if err := os.MkdirAll(stateDirectory, 0755); err != nil {
+				return nil, fmt.Errorf("failed to create log directory: %v", err)
+			}
+
+			logFileName := path.Join(stateDirectory, time.Now().Format("2006-01-02.log"))
+
+			builder := logging.NewLogHandlerBuilder()
+			handler, err := builder.
+				WithLogFilePath(logFileName).
+				WithLogLevel(context.Config.Logging.Level).
+				WithLogHandlerName(context.Config.Logging.Handler).
+				Build()
+
+			if err != nil {
+				return nil, err
+			}
+
+			context.Logger = slog.New(handler)
+		}
 	}
 
-	return context
-}
-
-func (t *CliContext) ReloadProject() {
-	loadedProject, projectLoadErr := project.FindProject("./", t.Config, t.Profiles)
-	if projectLoadErr == nil {
-		t.ConfigLoadErr = t.configReader.AddConfigPath(loadedProject.GetDirectory())
-		t.Config = t.configReader.GetConfig()
-	}
-
-	t.Project = loadedProject
-	t.ProjectLoadErr = projectLoadErr
+	return context, nil
 }
 
 func (t *CliContext) ProtectWithLock(impl func(*cobra.Command, []string) error) func(cmd *cobra.Command, args []string) error {

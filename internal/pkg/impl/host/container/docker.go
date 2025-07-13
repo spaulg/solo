@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"syscall"
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"google.golang.org/grpc/metadata"
@@ -113,6 +114,40 @@ func (t *DockerOrchestrator) ComposeDown(serviceNames []string) error {
 	return t.runComposeCommandWithProgress(arguments...)
 }
 
+func (t *DockerOrchestrator) ComposeForkAndExecute(
+	serviceName string,
+	command string,
+	arguments []string,
+	workingDirectory string,
+) error {
+	// Verify service is running
+	status, err := t.ServicesStatus([]string{serviceName})
+	if err != nil {
+		return fmt.Errorf("failed to get service status: %w", err)
+	}
+
+	if len(status.RunningServices) != 1 {
+		return fmt.Errorf("service %s is not running", serviceName)
+	}
+
+	argv := []string{
+		t.dockerCommandPath, "compose",
+		"-f", t.composeFile,
+		"--project-directory", t.projectDirectory,
+		"exec",
+		"--index", "1",
+	}
+
+	if workingDirectory != "" {
+		argv = append(argv, "--workdir", workingDirectory)
+	}
+
+	argv = append(argv, serviceName, command)
+	argv = append(argv, arguments...)
+
+	return syscall.Exec(t.dockerCommandPath, argv, os.Environ())
+}
+
 func (t *DockerOrchestrator) Execute(containerName string, command []string) error {
 	containerCmd := exec.Command(t.dockerCommandPath, append([]string{
 		"exec", "-d", containerName,
@@ -125,15 +160,22 @@ func (t *DockerOrchestrator) Execute(containerName string, command []string) err
 	return nil
 }
 
-func (t *DockerOrchestrator) ServicesStatus() (*container_types.ServiceStatus, error) {
-	composeCmd := exec.Command(t.dockerCommandPath, "compose",
-		"--profile", strings.Join(t.soloCtx.Profiles, ","),
+func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*container_types.ServiceStatus, error) {
+	arguments := []string{
+		"compose",
+		"--profile", strings.Join(t.soloCtx.Project.Profiles(), ","),
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"ps",
 		"--format", "json",
 		"--all",
-	)
+	}
+
+	if len(serviceNames) > 0 {
+		arguments = append(arguments, serviceNames...)
+	}
+
+	composeCmd := exec.Command(t.dockerCommandPath, arguments...)
 
 	var stdoutBuf bytes.Buffer
 	composeCmd.Stdout = &stdoutBuf
@@ -188,7 +230,11 @@ func (t *DockerOrchestrator) ServicesStatus() (*container_types.ServiceStatus, e
 	}
 
 	// Add services with no container
-	for _, service := range t.soloCtx.Project.ServiceNames() {
+	if serviceNames == nil {
+		serviceNames = t.soloCtx.Project.ServiceNames()
+	}
+
+	for _, service := range serviceNames {
 		if !runningServiceNameMap[service] && !stoppedServiceNameMap[service] {
 			// Service is neither running nor stopped
 			absentServiceNames = append(absentServiceNames, service)

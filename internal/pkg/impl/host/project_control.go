@@ -6,7 +6,9 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
+	"github.com/spaulg/solo/internal/pkg/impl/common/cmd"
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
@@ -54,7 +56,7 @@ func (t *ProjectControl) Start() error {
 		}
 	}
 
-	serviceStatus, err := orchestrator.ServicesStatus()
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
@@ -151,7 +153,7 @@ func (t *ProjectControl) Stop() error {
 	}
 
 	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus()
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
@@ -225,7 +227,7 @@ func (t *ProjectControl) Destroy() error {
 	}
 
 	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus()
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
@@ -319,7 +321,7 @@ func (t *ProjectControl) Rebuild() error {
 	}
 
 	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus()
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
@@ -337,10 +339,38 @@ func (t *ProjectControl) Rebuild() error {
 		return err
 	}
 
-	t.soloCtx.Profiles = profiles
-	t.soloCtx.ReloadProject()
+	if err := t.soloCtx.Project.ReloadWithProfiles(profiles); err != nil {
+		return err
+	}
 
 	return t.Start()
+}
+
+func (t *ProjectControl) ExecuteTool(name string, args []string) error {
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build orchestrator: %w", err)
+	}
+
+	tools := t.soloCtx.Project.Tools()
+	toolConfig, ok := tools[name]
+
+	if !ok {
+		return fmt.Errorf("tool %s not found in project configuration", name)
+	}
+
+	// Parse the initial command and args for a full path or
+	// shell and split into arguments
+	command, arguments := cmd.SplitCommand(toolConfig.Command + " " + strings.Join(args, " "))
+	workingDirectory := ""
+
+	// If a static working directory is specified, use it
+	if toolConfig.WorkingDirectory != "" {
+		workingDirectory = toolConfig.WorkingDirectory
+	}
+
+	return orchestrator.ComposeForkAndExecute(toolConfig.Service, command, arguments, workingDirectory)
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {

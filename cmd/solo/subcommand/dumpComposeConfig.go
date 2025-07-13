@@ -12,16 +12,13 @@ import (
 
 func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
-		Use:         "dump-compose-config",
-		GroupID:     "config",
-		Short:       "Dumps the compose config to stdout",
-		Long:        "Dumps the compose config to stdout",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := loadProjectE(soloCtx, []string{}); err != nil {
-				return err
-			}
-
-			return nil
+		Use:     "dump-compose-config",
+		GroupID: "config",
+		Short:   "Dumps the compose config to stdout",
+		Long:    "Dumps the compose config to stdout",
+		Annotations: map[string]string{
+			RequireConfigLoadSuccessAnnotation:  "true",
+			RequireProjectLoadSuccessAnnotation: "true",
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventManager := events.GetEventManagerInstance()

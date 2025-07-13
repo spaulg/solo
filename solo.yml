@@ -1,3 +1,16 @@
+x-tools:
+  composer:
+    description: "Composer for PHP dependency management"
+    command: composer
+    service: php
+    working_directory: /var/www/project
+
+  php:
+    description: "PHP interpreter"
+    command: php
+    service: php
+    working_directory: /var/www/project
+
 services:
   nginx:
     build:

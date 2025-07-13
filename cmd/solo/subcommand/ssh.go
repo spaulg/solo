@@ -8,7 +8,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 )
 
-func NewSSHCommand(soloCtx *context.CliContext) *cobra.Command {
+func NewSSHCommand(_ *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:     "ssh",
 		GroupID: "tooling",
@@ -19,12 +19,9 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := loadProjectE(soloCtx, []string{}); err != nil {
-				return err
-			}
-
-			return nil
+		Annotations: map[string]string{
+			RequireConfigLoadSuccessAnnotation:  "true",
+			RequireProjectLoadSuccessAnnotation: "true",
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("ssh called")
