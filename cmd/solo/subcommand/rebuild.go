@@ -19,8 +19,12 @@ func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
 		GroupID: "lifecycle",
 		Short:   "Rebuilds your app from scratch, preserving data",
 		Long:    "Rebuilds your app from scratch, preserving data",
+		Annotations: map[string]string{
+			RequireConfigLoadSuccessAnnotation:  "true",
+			RequireProjectLoadSuccessAnnotation: "true",
+		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := loadProjectE(soloCtx, []string{"*"}); err != nil {
+			if err := soloCtx.Project.ReloadWithProfiles([]string{"*"}); err != nil {
 				return err
 			}
 

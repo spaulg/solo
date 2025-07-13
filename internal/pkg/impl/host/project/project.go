@@ -39,6 +39,7 @@ func NewProject(projectFilePath string, config *config_types.Config, profiles []
 			option.SkipInterpolation = true // Disable interpolation to avoid issues with environment variables in the project file
 		}),
 		cli.WithExtension(project_types.ServiceWorkflowExtensionName, NewServiceWorkflows()),
+		cli.WithExtension(project_types.ToolExtensionName, NewTools()),
 		cli.WithProfiles(profiles),
 	)
 
@@ -60,13 +61,33 @@ func NewProject(projectFilePath string, config *config_types.Config, profiles []
 	}
 
 	// Set default values in extensions
+	project.loadToolExtensionDefaults()
 	project.loadServiceExtensionDefaults()
 
 	return project, nil
 }
 
+func (t *Project) Profiles() []string {
+	return t.compose.Profiles
+}
+
+func (t *Project) ReloadWithProfiles(profiles []string) error {
+	compose, err := t.WithProfiles(profiles)
+	if err != nil {
+		return fmt.Errorf("error reloading project with profiles: %w", err)
+	}
+
+	t.compose = compose
+
+	// Set default values in extensions
+	t.loadToolExtensionDefaults()
+	t.loadServiceExtensionDefaults()
+
+	return nil
+}
+
 func (t *Project) ReloadWithAllProfilesEnabled() (project_types.Project, error) {
-	compose, err := t.WithProfiles(append(t.Profiles, t.DisabledServices.GetProfiles()...))
+	compose, err := t.WithProfiles([]string{"*"})
 	if err != nil {
 		return nil, fmt.Errorf("error loading project: %w", err)
 	}
@@ -152,6 +173,14 @@ func (t *Project) Services() types.Services {
 	return t.compose.Services
 }
 
+func (t *Project) Tools() project_types.Tools {
+	if t, ok := t.Extensions[project_types.ToolExtensionName].(project_types.Tools); ok {
+		return t
+	} else {
+		return project_types.Tools{}
+	}
+}
+
 func (t *Project) ProfilesOfServices(serviceNames []string) ([]string, error) {
 	var profileNames []string
 	var profileNameMap = make(map[string]bool)
@@ -182,7 +211,7 @@ func (t *Project) ServiceNames() []string {
 }
 
 func (t *Project) ExclusiveServiceNames() []string {
-	if len(t.Profiles) == 1 && t.Profiles[0] == "*" {
+	if len(t.compose.Profiles) == 1 && t.compose.Profiles[0] == "*" {
 		return t.ServiceNames()
 	}
 
@@ -269,6 +298,12 @@ func WithComposeFiles(projectFilePath string, config *config_types.Config) func(
 		o.ConfigPaths = append(o.ConfigPaths, projectFilePath)
 
 		return nil
+	}
+}
+
+func (t *Project) loadToolExtensionDefaults() {
+	if t.Extensions == nil {
+		t.Extensions = make(types.Extensions)
 	}
 }
 

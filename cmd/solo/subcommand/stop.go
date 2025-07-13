@@ -15,12 +15,12 @@ func NewStopCommand(soloCtx *context.CliContext) *cobra.Command {
 		GroupID: "lifecycle",
 		Short:   "Stops your app",
 		Long:    "Stops your app",
+		Annotations: map[string]string{
+			RequireConfigLoadSuccessAnnotation:  "true",
+			RequireProjectLoadSuccessAnnotation: "true",
+		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := loadProjectE(soloCtx, profiles); err != nil {
-				return err
-			}
-
-			return nil
+			return soloCtx.Project.ReloadWithProfiles(profiles)
 		},
 		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
 			projectControl, err := host.ProjectControlFactory(soloCtx)
