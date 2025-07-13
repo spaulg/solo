@@ -2,9 +2,9 @@ package host
 
 import (
 	"errors"
+	"log/slog"
 	"os"
 	"testing"
-	"log/slog"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -87,7 +87,9 @@ func (t *ProjectControlTestSuite) TestStart_OrchestratorFactoryReturnsError() {
 func (t *ProjectControlTestSuite) TestStart_ServiceStatusReturnsError() {
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(nil, errors.New("mock services status error"))
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(nil, errors.New("mock services status error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -118,7 +120,9 @@ func (t *ProjectControlTestSuite) TestStart_AllServicesAlreadyRunning() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 
 	t.mockLogHandler.On("Handle", mock.Anything, mock.MatchedBy(func(record slog.Record) bool {
 		return record.Message == "All required services already running"
@@ -153,7 +157,9 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToBuild() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(nil, errors.New("mock grpc server build error"))
 
@@ -187,7 +193,9 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToStart() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(errors.New("mock grpc server start error"))
 
@@ -222,7 +230,9 @@ func (t *ProjectControlTestSuite) TestStart_EntrypointCopyFails() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -262,7 +272,9 @@ func (t *ProjectControlTestSuite) TestStart_ContainerNamesFails() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -307,7 +319,9 @@ func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -362,7 +376,9 @@ func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -418,7 +434,9 @@ func (t *ProjectControlTestSuite) TestStart_Succeeds() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -508,7 +526,9 @@ func (t *ProjectControlTestSuite) TestStop_ServicesStatusFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(nil, errors.New("mock services status error"))
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(nil, errors.New("mock services status error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -546,7 +566,9 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerBuildFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(nil, errors.New("mock grpc server build error"))
 
@@ -587,7 +609,9 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerStartFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(errors.New("mock grpc server start error"))
 
@@ -629,7 +653,9 @@ func (t *ProjectControlTestSuite) TestStop_ContainerNamesFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
@@ -673,7 +699,9 @@ func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
@@ -726,7 +754,9 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
@@ -781,7 +811,9 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
@@ -857,7 +889,9 @@ func (t *ProjectControlTestSuite) TestDestroy_ServicesStatusFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(nil, errors.New("mock services status error"))
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(nil, errors.New("mock services status error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -894,7 +928,9 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerBuildFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(nil, errors.New("mock grpc server build error"))
 
 	projectControl := NewProjectControl(
@@ -933,7 +969,9 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerStartFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(errors.New("mock grpc server start error"))
 
@@ -974,7 +1012,9 @@ func (t *ProjectControlTestSuite) TestDestroy_ContainerNamesFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
@@ -1017,7 +1057,9 @@ func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
@@ -1069,7 +1111,9 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
@@ -1123,7 +1167,9 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus").Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
+		return arg == nil
+	})).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, t.mockProject, 0).Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)

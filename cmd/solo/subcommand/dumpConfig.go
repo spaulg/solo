@@ -11,16 +11,12 @@ import (
 
 func NewDumpConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
-		Use:         "dump-config",
-		GroupID:     "config",
-		Short:       "Dumps the solo config to stdout",
-		Long:        "Dumps the solo config to stdout",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := loadProjectE(soloCtx, []string{}); err != nil {
-				return err
-			}
-
-			return nil
+		Use:     "dump-config",
+		GroupID: "config",
+		Short:   "Dumps the solo config to stdout",
+		Long:    "Dumps the solo config to stdout",
+		Annotations: map[string]string{
+			RequireConfigLoadSuccessAnnotation: "true",
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configYaml, err := yaml.Marshal(soloCtx.Config)

@@ -1,8 +1,7 @@
 package wms
 
 import (
-	"strings"
-
+	"github.com/spaulg/solo/internal/pkg/impl/common/cmd"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
@@ -15,7 +14,7 @@ type Step struct {
 }
 
 func NewStep(id string, name string, command string, workingDirectory *string) wms_types.Step {
-	command, arguments := extractCommandArgs(command)
+	command, arguments := cmd.SplitCommand(command)
 
 	cwd := "/"
 	if workingDirectory != nil {
@@ -76,64 +75,4 @@ func (t *Step) Trigger(start wms_types.StepTriggerLambda, progress wms_types.Ste
 	}
 
 	return nil
-}
-
-func extractCommandArgs(command string) (string, []string) {
-	if []rune(command)[0] == '/' {
-		// Exec format
-		return extractExecCommandArgs(command)
-	} else {
-		// Shell format
-		return extractShellCommandArgs(command)
-	}
-}
-
-func extractExecCommandArgs(command string) (string, []string) {
-	var extracted []string
-	var current strings.Builder
-	escaped := false
-	singleQuoted := false
-	doubleQuoted := false
-
-	for _, char := range command {
-		if char == '\\' && !escaped && !singleQuoted && !doubleQuoted {
-			escaped = true
-		} else if char == '"' && !escaped && !singleQuoted {
-			if doubleQuoted {
-				doubleQuoted = false
-
-				extracted = append(extracted, current.String())
-				current.Reset()
-			} else {
-				doubleQuoted = true
-			}
-		} else if char == '\'' && !escaped && !doubleQuoted {
-			if singleQuoted {
-				singleQuoted = false
-
-				extracted = append(extracted, current.String())
-				current.Reset()
-			} else {
-				singleQuoted = true
-			}
-		} else if char == ' ' && !escaped && !singleQuoted && !doubleQuoted {
-			if current.Len() > 0 {
-				extracted = append(extracted, current.String())
-				current.Reset()
-			}
-		} else {
-			current.WriteRune(char)
-			escaped = false
-		}
-	}
-
-	if current.Len() > 0 {
-		extracted = append(extracted, current.String())
-	}
-
-	return extracted[0], extracted[1:]
-}
-
-func extractShellCommandArgs(command string) (string, []string) {
-	return "/bin/sh", []string{"-c", command}
 }

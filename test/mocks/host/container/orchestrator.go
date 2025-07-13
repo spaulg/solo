@@ -28,6 +28,11 @@ func (m *MockOrchestrator) ComposeDown(serviceNames []string) error {
 	return args.Error(0)
 }
 
+func (m *MockOrchestrator) ComposeForkAndExecute(serviceName string, command string, arguments []string, workingDirectory string) error {
+	args := m.Called(serviceName, command, arguments, workingDirectory)
+	return args.Error(0)
+}
+
 func (m *MockOrchestrator) Execute(containerName string, command []string) error {
 	args := m.Called(containerName, command)
 	return args.Error(0)
@@ -38,8 +43,8 @@ func (m *MockOrchestrator) GetHostGatewayHostname() string {
 	return args.Get(0).(string)
 }
 
-func (m *MockOrchestrator) ServicesStatus() (*container_types.ServiceStatus, error) {
-	args := m.Called()
+func (m *MockOrchestrator) ServicesStatus(serviceNames []string) (*container_types.ServiceStatus, error) {
+	args := m.Called(serviceNames)
 	serviceStatus := args.Get(0)
 
 	if s, ok := serviceStatus.(*container_types.ServiceStatus); ok {

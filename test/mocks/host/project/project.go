@@ -103,6 +103,29 @@ func (m *MockProject) ProfilesOfServices(serviceNames []string) ([]string, error
 	}
 }
 
+func (m *MockProject) ReloadWithProfiles(profiles []string) error {
+	args := m.Called(profiles)
+	return args.Error(0)
+}
+
+func (m *MockProject) Tools() project_types.Tools {
+	args := m.Called()
+	if t, ok := args.Get(0).(project_types.Tools); ok {
+		return t
+	} else {
+		return nil
+	}
+}
+
+func (m *MockProject) Profiles() []string {
+	args := m.Called()
+	if s, ok := args.Get(0).([]string); ok {
+		return s
+	} else {
+		return nil
+	}
+}
+
 func (m *MockProject) Services() types.Services {
 	args := m.Called()
 	return args.Get(0).(types.Services)

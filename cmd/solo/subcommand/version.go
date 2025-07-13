@@ -3,8 +3,9 @@ package subcommand
 import (
 	"fmt"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spf13/cobra"
+
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 )
 
 func NewVersionCommand(_ *context.CliContext) *cobra.Command {
