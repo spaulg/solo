@@ -34,7 +34,7 @@ func Execute() {
 	rootCmd.AddCommand(NewCleanSubCommand(soloCtx))
 
 	// Tooling
-	rootCmd.AddCommand(NewSSHCommand(soloCtx))
+	rootCmd.AddCommand(NewShCommand(soloCtx))
 	rootCmd.AddCommand(NewLogsCommand(soloCtx))
 	rootCmd.AddCommand(NewToolCommands(soloCtx)...)
 

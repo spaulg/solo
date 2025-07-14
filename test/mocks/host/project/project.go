@@ -131,6 +131,11 @@ func (m *MockProject) Services() types.Services {
 	return args.Get(0).(types.Services)
 }
 
+func (m *MockProject) HasService(serviceName string) bool {
+	args := m.Called(serviceName)
+	return args.Get(0).(bool)
+}
+
 func (m *MockProject) ServiceNames() []string {
 	args := m.Called()
 	return args.Get(0).([]string)
