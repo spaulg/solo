@@ -360,6 +360,11 @@ func (t *ProjectControl) ExecuteTool(name string, args []string) error {
 		return fmt.Errorf("tool %s not found in project configuration", name)
 	}
 
+	// Validate service exists in the project
+	if !t.soloCtx.Project.HasService(toolConfig.Service) {
+		return fmt.Errorf("service %s not found in project configuration", toolConfig.Service)
+	}
+
 	// Parse the initial command and args for a full path or
 	// shell and split into arguments
 	command, arguments := cmd.SplitCommand(toolConfig.Command + " " + strings.Join(args, " "))
@@ -371,6 +376,21 @@ func (t *ProjectControl) ExecuteTool(name string, args []string) error {
 	}
 
 	return orchestrator.ComposeForkAndExecute(toolConfig.Service, command, arguments, workingDirectory)
+}
+
+func (t *ProjectControl) ExecuteShell(serviceName string) error {
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build orchestrator: %w", err)
+	}
+
+	// Validate service exists in the project
+	if !t.soloCtx.Project.HasService(serviceName) {
+		return fmt.Errorf("service %s not found in project configuration", serviceName)
+	}
+
+	return orchestrator.ComposeForkAndExecute(serviceName, "/bin/sh", nil, "")
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {

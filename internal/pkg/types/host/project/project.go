@@ -24,6 +24,7 @@ type Project interface {
 	ProfilesOfServices(serviceNames []string) ([]string, error)
 	Services() types.Services
 	ServiceNames() []string
+	HasService(serviceName string) bool
 	ExclusiveServiceNames() []string
 	MarshalYAML() ([]byte, error)
 	Name() string
