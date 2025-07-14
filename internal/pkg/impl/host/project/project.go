@@ -210,6 +210,11 @@ func (t *Project) ServiceNames() []string {
 	return t.compose.ServiceNames()
 }
 
+func (t *Project) HasService(serviceName string) bool {
+	_, exists := t.compose.Services[serviceName]
+	return exists
+}
+
 func (t *Project) ExclusiveServiceNames() []string {
 	if len(t.compose.Profiles) == 1 && t.compose.Profiles[0] == "*" {
 		return t.ServiceNames()
