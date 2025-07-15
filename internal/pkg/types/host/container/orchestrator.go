@@ -11,10 +11,13 @@ type Orchestrator interface {
 	ComposeUp(serviceNames []string) error
 	ComposeStop(serviceNames []string) error
 	ComposeDown(serviceNames []string) error
-	ComposeForkAndExecute(serviceName string, command string, arguments []string, workingDirectory string) error
-	Execute(containerName string, command []string) error
+	ComposeForkAndExecute(serviceName string, index int, command string, arguments []string, workingDirectory string) error
+	ForkAndExecute(containerName string, command string, arguments []string, workingDirectory string) error
+	StartCommand(containerName string, command []string) error
+	RunCommand(containerName string, command []string) (string, error)
 	GetHostGatewayHostname() string
 	ServicesStatus(serviceNames []string) (*ServiceStatus, error)
 	ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error)
-	ResolveContainerNameFromMetadata(md metadata.MD) (*string, error)
+	ResolveContainerNameFromMetadata(md metadata.MD) (string, error)
+	ResolveContainerNameFromServiceName(serviceName string, index int) (string, error)
 }

@@ -1,9 +1,11 @@
 package subcommand
 
 import (
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
 )
 
 func NewRootCommand(_ *context.EntrypointContext) *cobra.Command {
@@ -24,6 +26,7 @@ func Execute() {
 	rootCmd := NewRootCommand(entrypointCtx)
 	rootCmd.AddCommand(NewEntrypointCommand(entrypointCtx))
 	rootCmd.AddCommand(NewTriggerEventCommand(entrypointCtx))
+	rootCmd.AddCommand(NewCatShellsCommand(entrypointCtx))
 
 	err = rootCmd.Execute()
 	if err != nil {

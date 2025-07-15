@@ -6,8 +6,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
+	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 	"github.com/spaulg/solo/test/mocks/host/project"
+	"github.com/spaulg/solo/test/mocks/host/project/compose"
 )
 
 func TestWorkflowFactoryTestSuite(t *testing.T) {
@@ -28,11 +29,16 @@ func (t *WorkflowFactoryTestSuite) TestBuild() {
 	serviceName := "test"
 	workflowName := workflowcommon.FirstPreStart
 
-	workflowConfig := project_types.ServiceWorkflowConfig{
-		Steps: make([]project_types.WorkflowStep, 0),
+	workflowConfig := compose_types.ServiceWorkflowConfig{
+		Steps: make([]compose_types.WorkflowStep, 0),
 	}
 
-	t.mockProject.On("GetServiceWorkflow", serviceName, workflowName.String()).Return(workflowConfig)
+	mockServices := &compose.MockServices{}
+	mockServiceConfig := &compose.MockServiceConfig{}
+
+	t.mockProject.On("Services").Return(mockServices)
+	mockServices.On("GetService", serviceName).Return(mockServiceConfig)
+	mockServiceConfig.On("GetServiceWorkflow", workflowName.String()).Return(workflowConfig)
 
 	workflowFactory := NewWorkflowFactory()
 	workflow := workflowFactory.Make(t.mockProject, serviceName, workflowName)

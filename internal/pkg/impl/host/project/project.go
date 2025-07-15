@@ -15,8 +15,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
+	compose_impl "github.com/spaulg/solo/internal/pkg/impl/host/project/compose"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
+	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 )
 
 const generatedComposeFileName = "docker-compose.yml"
@@ -65,6 +67,10 @@ func NewProject(projectFilePath string, config *config_types.Config, profiles []
 	project.loadServiceExtensionDefaults()
 
 	return project, nil
+}
+
+func (t *Project) GetCompose() *types.Project {
+	return t.compose
 }
 
 func (t *Project) Profiles() []string {
@@ -138,11 +144,6 @@ func (t *Project) GetFilePath() string {
 	return t.filePath
 }
 
-func (t *Project) GetServiceWorkflow(serviceName string, eventName string) project_types.ServiceWorkflowConfig {
-	serviceWorkflows := t.compose.Services[serviceName].Extensions[project_types.ServiceWorkflowExtensionName].(project_types.ServiceWorkflows)
-	return serviceWorkflows[eventName]
-}
-
 func (t *Project) GetGeneratedComposeFilePath() string {
 	return path.Join(t.projectStateDirectory, generatedComposeFileName)
 }
@@ -151,7 +152,7 @@ func (t *Project) GetMaxWorkflowTimeout(eventName string) time.Duration {
 	maxTimeout := types.Duration(0)
 
 	for _, serviceConfig := range t.compose.Services {
-		serviceWorkflows := serviceConfig.Extensions[project_types.ServiceWorkflowExtensionName].(project_types.ServiceWorkflows)
+		serviceWorkflows := serviceConfig.Extensions[project_types.ServiceWorkflowExtensionName].(compose_types.ServiceWorkflows)
 
 		if v, ok := serviceWorkflows[eventName]; ok && *v.Timeout > maxTimeout {
 			maxTimeout = *v.Timeout
@@ -165,102 +166,16 @@ func (t *Project) Name() string {
 	return t.compose.Name
 }
 
-func (t *Project) MarshalYAML() ([]byte, error) {
-	return t.compose.MarshalYAML()
+func (t *Project) Services() compose_types.Services {
+	return compose_impl.NewServices(t.compose)
 }
 
-func (t *Project) Services() types.Services {
-	return t.compose.Services
-}
-
-func (t *Project) Tools() project_types.Tools {
-	if t, ok := t.Extensions[project_types.ToolExtensionName].(project_types.Tools); ok {
+func (t *Project) Tools() compose_types.Tools {
+	if t, ok := t.Extensions[project_types.ToolExtensionName].(compose_types.Tools); ok {
 		return t
 	} else {
-		return project_types.Tools{}
+		return compose_types.Tools{}
 	}
-}
-
-func (t *Project) ProfilesOfServices(serviceNames []string) ([]string, error) {
-	var profileNames []string
-	var profileNameMap = make(map[string]bool)
-
-	for _, serviceName := range serviceNames {
-		service, err := t.GetService(serviceName)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, profile := range service.Profiles {
-			if profile == "*" {
-				continue
-			}
-
-			if _, exists := profileNameMap[profile]; !exists {
-				profileNames = append(profileNames, profile)
-				profileNameMap[profile] = true
-			}
-		}
-	}
-
-	return profileNames, nil
-}
-
-func (t *Project) ServiceNames() []string {
-	return t.compose.ServiceNames()
-}
-
-func (t *Project) HasService(serviceName string) bool {
-	_, exists := t.compose.Services[serviceName]
-	return exists
-}
-
-func (t *Project) ExclusiveServiceNames() []string {
-	if len(t.compose.Profiles) == 1 && t.compose.Profiles[0] == "*" {
-		return t.ServiceNames()
-	}
-
-	var exclusiveNames []string
-
-	for _, service := range t.compose.Services {
-		if len(service.Profiles) == 0 {
-			continue
-		}
-
-		exclusiveNames = append(exclusiveNames, service.Name)
-	}
-
-	return exclusiveNames
-}
-
-func (t *Project) ContainerNames(serviceNames []string) ([]string, error) {
-	var containerNames []string
-
-	if err := t.ForEachService(serviceNames, func(name string, service *types.ServiceConfig) error {
-		replicas := 1
-
-		if service.Deploy != nil && service.Deploy.Replicas != nil {
-			replicas = *service.Deploy.Replicas
-		}
-
-		if len(service.ContainerName) > 0 && replicas == 1 {
-			// single container with a name defined by the container_name option
-			containerNames = append(containerNames, service.ContainerName)
-		} else {
-			// one or more containers defined by the format {project}-{service}-{number}
-			// consider moving this format to the orchestrator
-			for i := 1; i <= replicas; i++ {
-				containerName := fmt.Sprintf("%s-%s-%d", t.Name(), name, i)
-				containerNames = append(containerNames, containerName)
-			}
-		}
-
-		return nil
-	}, types.IncludeDependencies); err != nil {
-		return nil, err
-	}
-
-	return containerNames, nil
 }
 
 func WithComposeFiles(projectFilePath string, config *config_types.Config) func(o *cli.ProjectOptions) error {
@@ -326,10 +241,10 @@ func (t *Project) loadServiceExtensionDefaults() {
 			serviceConfig.Extensions[project_types.ServiceWorkflowExtensionName] = v
 		}
 
-		workflows := v.(project_types.ServiceWorkflows)
+		workflows := v.(compose_types.ServiceWorkflows)
 		for _, workflowName := range workflowcommon.WorkflowNames {
 			if _, ok := workflows[workflowName.String()]; !ok {
-				workflows[workflowName.String()] = project_types.ServiceWorkflowConfig{
+				workflows[workflowName.String()] = compose_types.ServiceWorkflowConfig{
 					Timeout: &defaultDuration,
 				}
 			} else if workflows[workflowName.String()].Timeout == nil {

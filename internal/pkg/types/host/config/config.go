@@ -22,4 +22,6 @@ type Config struct {
 	GrpcServerPort          int                           `mapstructure:"grpc_server_port" yaml:"grpc_server_port"`
 	OrchestratorSearchOrder []string                      `mapstructure:"orchestrator_search_order" yaml:"orchestrator_search_order"`
 	Orchestrators           map[string]OrchestratorConfig `mapstructure:"orchestrators" yaml:"orchestrators"`
+	ShellPriority           []string                      `mapstructure:"shell_priority" yaml:"shell_priority"`
+	DefaultShell            string                        `mapstructure:"default_shell" yaml:"default_shell"`
 }

@@ -17,5 +17,5 @@ func (t *WorkflowFactory) Make(
 	serviceName string,
 	workflowName workflowcommon.WorkflowName,
 ) wms_types.Orchestrator {
-	return NewOrchestrator(project.GetServiceWorkflow(serviceName, workflowName.String()))
+	return NewOrchestrator(project.Services().GetService(serviceName).GetServiceWorkflow(workflowName.String()))
 }

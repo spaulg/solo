@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
+	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 )
 
 type MockProject struct {
@@ -68,9 +69,9 @@ func (m *MockProject) GetFilePath() string {
 	return args.Get(0).(string)
 }
 
-func (m *MockProject) GetServiceWorkflow(serviceName string, eventName string) project_types.ServiceWorkflowConfig {
+func (m *MockProject) GetServiceWorkflow(serviceName string, eventName string) compose_types.ServiceWorkflowConfig {
 	args := m.Called(serviceName, eventName)
-	return args.Get(0).(project_types.ServiceWorkflowConfig)
+	return args.Get(0).(compose_types.ServiceWorkflowConfig)
 }
 
 func (m *MockProject) GetGeneratedComposeFilePath() string {
@@ -108,9 +109,9 @@ func (m *MockProject) ReloadWithProfiles(profiles []string) error {
 	return args.Error(0)
 }
 
-func (m *MockProject) Tools() project_types.Tools {
+func (m *MockProject) Tools() compose_types.Tools {
 	args := m.Called()
-	if t, ok := args.Get(0).(project_types.Tools); ok {
+	if t, ok := args.Get(0).(compose_types.Tools); ok {
 		return t
 	} else {
 		return nil
@@ -126,9 +127,19 @@ func (m *MockProject) Profiles() []string {
 	}
 }
 
-func (m *MockProject) Services() types.Services {
+func (m *MockProject) GetCompose() *types.Project {
 	args := m.Called()
-	return args.Get(0).(types.Services)
+
+	if c, ok := args.Get(0).(*types.Project); ok {
+		return c
+	} else {
+		return nil
+	}
+}
+
+func (m *MockProject) Services() compose_types.Services {
+	args := m.Called()
+	return args.Get(0).(compose_types.Services)
 }
 
 func (m *MockProject) HasService(serviceName string) bool {

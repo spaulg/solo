@@ -1,6 +1,7 @@
 package host
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -88,7 +89,7 @@ func (t *ProjectControl) Start() error {
 	}
 
 	// Populate a list of container names that will be started
-	containerNames, err := t.soloCtx.Project.ContainerNames(serviceStatus.NotRunningServices)
+	containerNames, err := t.soloCtx.Project.Services().ContainerNames(serviceStatus.NotRunningServices)
 	if err != nil {
 		return fmt.Errorf("failed to convert service names to container names: %w", err)
 	}
@@ -104,7 +105,7 @@ func (t *ProjectControl) Start() error {
 	defer t.workflowManager.Unsubscribe(guard)
 
 	// Start compose services
-	if err := orchestrator.ComposeUp(t.soloCtx.Project.ServiceNames()); err != nil {
+	if err := orchestrator.ComposeUp(t.soloCtx.Project.Services().ServiceNames()); err != nil {
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
@@ -120,7 +121,7 @@ func (t *ProjectControl) Start() error {
 		// Exec post start commands
 		postStartCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "post_start"}
 
-		if err := orchestrator.Execute(container, postStartCommand); err != nil {
+		if err := orchestrator.StartCommand(container, postStartCommand); err != nil {
 			return fmt.Errorf("error running compose: %w", err)
 		}
 
@@ -178,7 +179,7 @@ func (t *ProjectControl) Stop() error {
 
 		// Populate a list of container names that will be stopped
 		servicesToStop := serviceStatus.RunningServices
-		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToStop)
+		containerNames, err := t.soloCtx.Project.Services().ContainerNames(servicesToStop)
 		if err != nil {
 			return fmt.Errorf("failed to convert service names to container names: %w", err)
 		}
@@ -195,7 +196,7 @@ func (t *ProjectControl) Stop() error {
 			// Exec pre stop commands
 			preStopCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_stop"}
 
-			if err := orchestrator.Execute(container, preStopCommand); err != nil {
+			if err := orchestrator.StartCommand(container, preStopCommand); err != nil {
 				return fmt.Errorf("error running compose: %w", err)
 			}
 
@@ -205,7 +206,7 @@ func (t *ProjectControl) Stop() error {
 		}
 	}
 
-	if err := orchestrator.ComposeStop(t.soloCtx.Project.ExclusiveServiceNames()); err != nil {
+	if err := orchestrator.ComposeStop(t.soloCtx.Project.Services().ExclusiveServiceNames()); err != nil {
 		return fmt.Errorf("failed to stop services: %w", err)
 	}
 
@@ -252,7 +253,7 @@ func (t *ProjectControl) Destroy() error {
 
 		// Populate a list of container names that will be destroyed
 		servicesToDestroy := serviceStatus.RunningServices
-		containerNames, err := t.soloCtx.Project.ContainerNames(servicesToDestroy)
+		containerNames, err := t.soloCtx.Project.Services().ContainerNames(servicesToDestroy)
 		if err != nil {
 			return fmt.Errorf("failed to convert service names to container names: %w", err)
 		}
@@ -269,7 +270,7 @@ func (t *ProjectControl) Destroy() error {
 			// Exec pre destroy commands
 			preDestroyCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_destroy"}
 
-			if err := orchestrator.Execute(container, preDestroyCommand); err != nil {
+			if err := orchestrator.StartCommand(container, preDestroyCommand); err != nil {
 				return fmt.Errorf("error running compose: %w", err)
 			}
 
@@ -279,7 +280,7 @@ func (t *ProjectControl) Destroy() error {
 		}
 	}
 
-	if err := orchestrator.ComposeDown(t.soloCtx.Project.ExclusiveServiceNames()); err != nil {
+	if err := orchestrator.ComposeDown(t.soloCtx.Project.Services().ExclusiveServiceNames()); err != nil {
 		return fmt.Errorf("failed to destroy services: %w", err)
 	}
 
@@ -326,7 +327,7 @@ func (t *ProjectControl) Rebuild() error {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
 
-	profiles, err := t.soloCtx.Project.ProfilesOfServices(serviceStatus.RunningServices)
+	profiles, err := t.soloCtx.Project.Services().ProfilesOfServices(serviceStatus.RunningServices)
 	if err != nil {
 		return fmt.Errorf("failed to get profiles of services: %w", err)
 	}
@@ -361,7 +362,7 @@ func (t *ProjectControl) ExecuteTool(name string, args []string) error {
 	}
 
 	// Validate service exists in the project
-	if !t.soloCtx.Project.HasService(toolConfig.Service) {
+	if !t.soloCtx.Project.Services().HasService(toolConfig.Service) {
 		return fmt.Errorf("service %s not found in project configuration", toolConfig.Service)
 	}
 
@@ -375,10 +376,10 @@ func (t *ProjectControl) ExecuteTool(name string, args []string) error {
 		workingDirectory = toolConfig.WorkingDirectory
 	}
 
-	return orchestrator.ComposeForkAndExecute(toolConfig.Service, command, arguments, workingDirectory)
+	return orchestrator.ComposeForkAndExecute(toolConfig.Service, 1, command, arguments, workingDirectory)
 }
 
-func (t *ProjectControl) ExecuteShell(serviceName string) error {
+func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName string) error {
 	// Build orchestrator
 	orchestrator, err := t.orchestratorFactory.Build()
 	if err != nil {
@@ -386,11 +387,61 @@ func (t *ProjectControl) ExecuteShell(serviceName string) error {
 	}
 
 	// Validate service exists in the project
-	if !t.soloCtx.Project.HasService(serviceName) {
+	if !t.soloCtx.Project.Services().HasService(serviceName) {
 		return fmt.Errorf("service %s not found in project configuration", serviceName)
 	}
 
-	return orchestrator.ComposeForkAndExecute(serviceName, "/bin/sh", nil, "")
+	// Get the desired container name
+	containerName, err := orchestrator.ResolveContainerNameFromServiceName(serviceName, index)
+	if err != nil {
+		return fmt.Errorf("failed to resolve container name for service %s: %w", serviceName, err)
+	}
+
+	if shell == "" {
+		// List the shells in the container
+		catShellsCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "cat-shells"}
+
+		output, err := orchestrator.RunCommand(containerName, catShellsCommand)
+		if err != nil {
+			return err
+		}
+
+		// Select a shell to use
+		var shellList []string
+		if err := json.Unmarshal([]byte(output), &shellList); err != nil {
+			return err
+		}
+
+		if len(shellList) > 0 {
+			shellmap := make(map[string][]string)
+
+			for _, fullShellPath := range shellList {
+				shellPath, shellFile := path.Split(fullShellPath)
+				if _, ok := shellmap[shellFile]; !ok {
+					shellmap[shellFile] = make([]string, 0)
+				}
+
+				shellmap[shellFile] = append(shellmap[shellFile], shellPath)
+			}
+
+			for _, priorityShell := range t.soloCtx.Config.ShellPriority {
+				if shellList, ok := shellmap[priorityShell]; ok && len(shellList) > 0 {
+					shell = path.Join(shellList[len(shellList)-1], priorityShell)
+					break
+				}
+			}
+
+			// If a shell from the preferred list could not be
+			// selected, take the first one from the list
+			if shell == "" {
+				shell = shellList[0]
+			}
+		} else {
+			shell = t.soloCtx.Config.DefaultShell
+		}
+	}
+
+	return orchestrator.ForkAndExecute(containerName, shell, nil, "")
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {

@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
+
+	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 )
 
 type Project interface {
@@ -16,17 +18,11 @@ type Project interface {
 	GetStateDirectoryRoot() string
 	GetDirectory() string
 	GetFilePath() string
-	GetServiceWorkflow(serviceName string, eventName string) ServiceWorkflowConfig
 	GetGeneratedComposeFilePath() string
 	GetMaxWorkflowTimeout(eventName string) time.Duration
-	Tools() Tools
-	ContainerNames(serviceNames []string) ([]string, error)
-	ProfilesOfServices(serviceNames []string) ([]string, error)
-	Services() types.Services
-	ServiceNames() []string
-	HasService(serviceName string) bool
-	ExclusiveServiceNames() []string
-	MarshalYAML() ([]byte, error)
+	GetCompose() *types.Project
+	Tools() compose_types.Tools
+	Services() compose_types.Services
 	Name() string
 	ReloadWithAllProfilesEnabled() (Project, error)
 	ReloadWithProfiles(profiles []string) error
