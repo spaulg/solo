@@ -40,7 +40,7 @@ func (t *ContainerNameInterceptor) ContainerNameUnaryInterceptor(
 		return nil, fmt.Errorf("failed to resolve container name from metadata: %w", err)
 	}
 
-	ctx = context.WithValue(ctx, ContainerName(ContainerNameContextValueName), *containerName)
+	ctx = context.WithValue(ctx, ContainerName(ContainerNameContextValueName), containerName)
 	return handler(ctx, req)
 }
 
@@ -61,6 +61,6 @@ func (t *ContainerNameInterceptor) ContainerNameStreamInterceptor(
 		return fmt.Errorf("failed to resolve container name from metadata: %w", err)
 	}
 
-	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ContainerName(ContainerNameContextValueName), *containerName))
+	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ContainerName(ContainerNameContextValueName), containerName))
 	return handler(srv, streamWrapper)
 }

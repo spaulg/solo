@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
+	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 )
 
 func TestOrchestratorTestSuite(t *testing.T) {
@@ -23,7 +23,7 @@ type OrchestratorTestSuite struct {
 	suite.Suite
 
 	expectedSteps []expectedStep
-	config        project_types.ServiceWorkflowConfig
+	config        compose_types.ServiceWorkflowConfig
 }
 
 func (t *OrchestratorTestSuite) SetupTest() {
@@ -50,8 +50,8 @@ func (t *OrchestratorTestSuite) SetupTest() {
 		},
 	}
 
-	t.config = project_types.ServiceWorkflowConfig{
-		Steps: []project_types.WorkflowStep{
+	t.config = compose_types.ServiceWorkflowConfig{
+		Steps: []compose_types.WorkflowStep{
 			{
 				Name: "step1",
 				Run:  "/bin/foo arg1 arg2",

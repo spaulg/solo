@@ -2,13 +2,15 @@ package subcommand
 
 import (
 	"errors"
-	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
 	"syscall"
+
+	"github.com/spf13/cobra"
+
+	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
 )
 
 func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {
