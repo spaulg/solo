@@ -3,10 +3,11 @@ package subcommand
 import (
 	"errors"
 
+	"github.com/spf13/cobra"
+
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/entrypoint"
 	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
-	"github.com/spf13/cobra"
 )
 
 func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {

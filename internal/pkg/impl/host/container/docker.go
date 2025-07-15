@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -116,6 +117,7 @@ func (t *DockerOrchestrator) ComposeDown(serviceNames []string) error {
 
 func (t *DockerOrchestrator) ComposeForkAndExecute(
 	serviceName string,
+	index int,
 	command string,
 	arguments []string,
 	workingDirectory string,
@@ -135,7 +137,7 @@ func (t *DockerOrchestrator) ComposeForkAndExecute(
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"exec",
-		"--index", "1",
+		"--index", strconv.Itoa(index),
 	}
 
 	if workingDirectory != "" {
@@ -148,7 +150,28 @@ func (t *DockerOrchestrator) ComposeForkAndExecute(
 	return syscall.Exec(t.dockerCommandPath, argv, os.Environ())
 }
 
-func (t *DockerOrchestrator) Execute(containerName string, command []string) error {
+func (t *DockerOrchestrator) ForkAndExecute(
+	containerName string,
+	command string,
+	arguments []string,
+	workingDirectory string,
+) error {
+	argv := []string{
+		t.dockerCommandPath,
+		"exec", "-it",
+	}
+
+	if workingDirectory != "" {
+		argv = append(argv, "--workdir", workingDirectory)
+	}
+
+	argv = append(argv, containerName, command)
+	argv = append(argv, arguments...)
+
+	return syscall.Exec(t.dockerCommandPath, argv, append(os.Environ(), "DOCKER_CLI_HINTS=false"))
+}
+
+func (t *DockerOrchestrator) StartCommand(containerName string, command []string) error {
 	containerCmd := exec.Command(t.dockerCommandPath, append([]string{
 		"exec", "-d", containerName,
 	}, command...)...)
@@ -158,6 +181,26 @@ func (t *DockerOrchestrator) Execute(containerName string, command []string) err
 	}
 
 	return nil
+}
+
+func (t *DockerOrchestrator) RunCommand(containerName string, command []string) (string, error) {
+	containerCmd := exec.Command(t.dockerCommandPath, append([]string{
+		"exec", "-t", containerName,
+	}, command...)...)
+
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+
+	containerCmd.Stdout = &stdoutBuf
+	containerCmd.Stderr = &stderrBuf
+
+	if err := containerCmd.Run(); err != nil {
+		// Include stderr in error message for better debugging
+		return "", fmt.Errorf("failed to execute command %v in container %s: %w (stderr: %s)",
+			command, containerName, err, stderrBuf.String())
+	}
+
+	return stdoutBuf.String(), nil
 }
 
 func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*container_types.ServiceStatus, error) {
@@ -231,7 +274,7 @@ func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*container_t
 
 	// Add services with no container
 	if serviceNames == nil {
-		serviceNames = t.soloCtx.Project.ServiceNames()
+		serviceNames = t.soloCtx.Project.Services().ServiceNames()
 	}
 
 	for _, service := range serviceNames {
@@ -276,7 +319,9 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Con
 		}
 	}
 
-	for index, service := range project.Services() {
+	compose := project.GetCompose()
+
+	for index, service := range compose.Services {
 		// Replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
 		if len(service.Entrypoint) > 0 {
 			service.Command = append(service.Entrypoint, service.Command...)
@@ -334,23 +379,45 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Con
 		service.ExtraHosts = types.HostsList{}
 		service.ExtraHosts["host.docker.internal"] = []string{"host-gateway"}
 
-		project.Services()[index] = service
+		compose.Services[index] = service
 	}
 
-	return project.MarshalYAML()
+	return compose.MarshalYAML()
 }
 
-func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (*string, error) {
+func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (string, error) {
 	containerNames := md.Get("hostname")
 
 	if len(containerNames) == 0 {
-		return nil, fmt.Errorf("unable to resolve container name")
+		return "", fmt.Errorf("unable to resolve container name")
 	}
 
+	return t.resolveContainerNameFromIdOrName(containerNames[0])
+}
+
+func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName string, index int) (string, error) {
+	service := t.soloCtx.Project.Services().GetService(serviceName).GetConfig()
+	replicas := 1
+
+	if service.Deploy != nil && service.Deploy.Replicas != nil {
+		replicas = *service.Deploy.Replicas
+	}
+
+	containerName := ""
+	if len(service.ContainerName) > 0 && replicas == 1 {
+		containerName = service.ContainerName
+	} else {
+		containerName = fmt.Sprintf("%s-%s-%d", t.soloCtx.Project.Name(), serviceName, index)
+	}
+
+	return t.resolveContainerNameFromIdOrName(containerName)
+}
+
+func (t *DockerOrchestrator) resolveContainerNameFromIdOrName(containerNameOrId string) (string, error) {
 	composeCmd := exec.Command(t.dockerCommandPath, "inspect",
 		"--format", "{{ json . }}",
 		"--type", "container",
-		containerNames[0],
+		containerNameOrId,
 	)
 
 	var stdoutBuf bytes.Buffer
@@ -358,17 +425,17 @@ func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (*
 
 	if err := composeCmd.Run(); err != nil {
 		t.soloCtx.Logger.Error("Failed to run")
-		return nil, err
+		return "", err
 	}
 
 	inspect := DockerInspect{}
 	if err := json.Unmarshal(stdoutBuf.Bytes(), &inspect); err != nil {
 		t.soloCtx.Logger.Error("Failed to unmarshall")
-		return nil, err
+		return "", err
 	}
 
 	containerName := inspect.Name
 	containerName = strings.TrimLeft(containerName, "/")
 
-	return &containerName, nil
+	return containerName, nil
 }

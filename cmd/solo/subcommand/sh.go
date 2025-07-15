@@ -10,11 +10,14 @@ import (
 )
 
 func NewShCommand(soloCtx *context.CliContext) *cobra.Command {
-	return &cobra.Command{
+	var shellPath string
+	var replica int
+
+	shCmd := &cobra.Command{
 		Use:     "sh [service]",
 		GroupID: "tooling",
-		Short:   "Drops into a shell on a service",
-		Long:    "Drops into a shell on a service",
+		Short:   "Start a shell in a service",
+		Long:    "Start a shell in a service",
 		Annotations: map[string]string{
 			RequireConfigLoadSuccessAnnotation:  "true",
 			RequireProjectLoadSuccessAnnotation: "true",
@@ -32,7 +35,12 @@ func NewShCommand(soloCtx *context.CliContext) *cobra.Command {
 				return err
 			}
 
-			return projectControl.ExecuteShell(args[0])
+			return projectControl.ExecuteShell(shellPath, replica, args[0])
 		},
 	}
+
+	shCmd.Flags().StringVarP(&shellPath, "shell", "s", "", "Override the shell")
+	shCmd.Flags().IntVarP(&replica, "replica", "r", 1, "Replica number to target (default: 1)")
+
+	return shCmd
 }

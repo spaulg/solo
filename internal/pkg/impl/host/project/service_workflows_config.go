@@ -1,9 +1,9 @@
 package project
 
 import (
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
+	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 )
 
-func NewServiceWorkflows() project_types.ServiceWorkflows {
-	return make(project_types.ServiceWorkflows)
+func NewServiceWorkflows() compose_types.ServiceWorkflows {
+	return make(compose_types.ServiceWorkflows)
 }

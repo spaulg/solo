@@ -103,7 +103,7 @@ func (t *MutualTLSServerFactory) generateServerCertificate(hostname string) (*tl
 }
 
 func (t *MutualTLSServerFactory) generateClientCertificate(project project_types.Project) error {
-	for _, serviceName := range project.ServiceNames() {
+	for _, serviceName := range project.Services().ServiceNames() {
 		clientCert, err := t.certificateAuthority.GenerateCertificate(
 			certificate.WithOrganization([]string{"Solo Client"}),
 			certificate.WithCommonName("service:"+serviceName),

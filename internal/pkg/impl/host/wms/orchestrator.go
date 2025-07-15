@@ -6,16 +6,17 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
+
+	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
 type Orchestrator struct {
-	steps []project_types.WorkflowStep
+	steps []compose_types.WorkflowStep
 }
 
 func NewOrchestrator(
-	workflow project_types.ServiceWorkflowConfig,
+	workflow compose_types.ServiceWorkflowConfig,
 ) wms_types.Orchestrator {
 	return &Orchestrator{
 		steps: workflow.Steps,
