@@ -167,7 +167,7 @@ func (t *Project) Name() string {
 }
 
 func (t *Project) Services() compose_types.Services {
-	return compose_impl.NewServices(t.compose)
+	return compose_impl.NewServices(t, t.compose)
 }
 
 func (t *Project) Tools() compose_types.Tools {
