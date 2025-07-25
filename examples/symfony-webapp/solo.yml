@@ -5,7 +5,7 @@ services:
       dockerfile: ./Dockerfile.nginx
     command: [ "/usr/sbin/nginx", "-g", "daemon off;" ]
     ports:
-      - "80:80"
+      - "81:80"
 
     volumes:
       - "./public:/var/www/project/public"
@@ -18,11 +18,17 @@ services:
     command: /usr/sbin/php-fpm8.4 -FO
 
     volumes:
+      - "composer:/root/.cache/composer"
       - "./:/var/www/project"
       - "./pool.conf:/etc/php/8.4/fpm/pool.d/www.conf"
 
+    deploy:
+      replicas: 3
+
     x-workflows:
       first_pre_start:
+        timeout: 180s
+
         steps:
           - name: Download composer setup
             run: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
@@ -51,3 +57,6 @@ services:
     expose:
       - "8025"
       - "1025"
+
+volumes:
+  composer:
