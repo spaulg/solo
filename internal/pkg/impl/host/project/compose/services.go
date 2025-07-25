@@ -6,27 +6,30 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 )
 
 type Services struct {
+	project project_types.Project
 	compose *types.Project
 }
 
-func NewServices(compose *types.Project) compose_types.Services {
+func NewServices(project project_types.Project, compose *types.Project) compose_types.Services {
 	return &Services{
+		project: project,
 		compose: compose,
 	}
 }
 
 func (t *Services) GetService(serviceName string) compose_types.ServiceConfig {
-	return NewServiceConfig(t.compose.Services[serviceName])
+	return NewServiceConfig(t.project, t.compose.Services[serviceName])
 }
 
 func (t *Services) ServiceConfigIterator() iter.Seq2[string, compose_types.ServiceConfig] {
 	return func(yield func(string, compose_types.ServiceConfig) bool) {
 		for name, config := range t.compose.Services {
-			yield(name, NewServiceConfig(config))
+			yield(name, NewServiceConfig(t.project, config))
 		}
 	}
 }

@@ -391,6 +391,13 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 		return fmt.Errorf("service %s not found in project configuration", serviceName)
 	}
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current working directory: %w", err)
+	}
+
+	workingDirectory := t.soloCtx.Project.Services().GetService(serviceName).ResolveContainerWorkingDirectory(cwd)
+
 	// Get the desired container name
 	containerName, err := orchestrator.ResolveContainerNameFromServiceName(serviceName, index)
 	if err != nil {
@@ -441,7 +448,7 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 		}
 	}
 
-	return orchestrator.ForkAndExecute(containerName, shell, nil, "")
+	return orchestrator.ForkAndExecute(containerName, shell, nil, workingDirectory)
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
