@@ -17,50 +17,40 @@ import (
 type WorkflowServerImpl struct {
 	soloCtx *context.CliContext
 	services.UnimplementedWorkflowServer
-	eventManager    events_types.Manager
-	workflowFactory wms_types.WorkflowFactory
+	eventManager        events_types.Manager
+	workflowFactory     wms_types.WorkflowFactory
+	workflowExecTracker *WorkflowExecTracker
 }
 
 func NewWorkflowService(
 	soloCtx *context.CliContext,
 	eventManager events_types.Manager,
 	workflowFactory wms_types.WorkflowFactory,
+	workflowExecTracker *WorkflowExecTracker,
 ) *WorkflowServerImpl {
 	return &WorkflowServerImpl{
-		soloCtx:         soloCtx,
-		eventManager:    eventManager,
-		workflowFactory: workflowFactory,
+		soloCtx:             soloCtx,
+		eventManager:        eventManager,
+		workflowFactory:     workflowFactory,
+		workflowExecTracker: workflowExecTracker,
 	}
 }
 
-func (t WorkflowServerImpl) FirstPreStartWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
+func (t WorkflowServerImpl) RunWorkflowStream(
+	server grpc.BidiStreamingServer[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse],
 ) error {
-	return t.workflowStream(commonworkflow.FirstPreStart, server)
-}
+	message, err := server.Recv()
+	if err != nil {
+		return err
+	}
 
-func (t WorkflowServerImpl) PreStartWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PreStart, server)
-}
-
-func (t WorkflowServerImpl) PostStartWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PostStart, server)
-}
-
-func (t WorkflowServerImpl) PreStopWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PreStop, server)
-}
-
-func (t WorkflowServerImpl) PreDestroyWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PreDestroy, server)
+	switch request := message.Request.(type) {
+	case *services.RunWorkflowStreamRequest_RunRequest:
+		bidiStreamServer := NewRunWorkflowStreamWrapper(server)
+		return t.workflowStream(commonworkflow.WorkflowNameFromString(request.RunRequest.WorkflowName), bidiStreamServer)
+	default:
+		return errors.New("unsupported first message")
+	}
 }
 
 func (t WorkflowServerImpl) workflowStream(
@@ -82,11 +72,30 @@ func (t WorkflowServerImpl) workflowStream(
 		return fmt.Errorf("unauthorized")
 	}
 
+	// todo: handle service level workflow execution skipping
+	//		 Service level events need atomic map of service names and worklows that should be skipped.
+	//		 This needs to happen here, as it needs to be close to the workflow execution logic.
+	//		 There is some overlap with the workflow guard, but this is more about skipping
+	//		 the workflow execution, while the guard is about aborting after timeouts.
+	//		 The map needs to save/load to disk as a json file.
+	//		 When a service is destroyed, its status should be reset so that it does not
+	//		 get skipped the next time its started.
+
+	isFirstExecution := false
+	var err error
+
+	if workflowName.IsServiceWorkflow() {
+		isFirstExecution, err = t.workflowExecTracker.MarkExecuted(serviceName, workflowName)
+		if err != nil {
+			return fmt.Errorf("failed to mark service workflow as executed: %w", err)
+		}
+	}
+
 	// First pre start complete
 	firstPreStartCompleteContextValueName := interceptors.FirstPreStartComplete(interceptors.FirstPreStartCompleteContextValueName)
 	firstPreStartComplete, ok := server.Context().Value(firstPreStartCompleteContextValueName).(string)
 
-	if workflowName == commonworkflow.FirstPreStart && (ok || firstPreStartComplete == "true") {
+	if !isFirstExecution || (workflowName == commonworkflow.FirstPreStartContainer && (ok || firstPreStartComplete == "true")) {
 		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
 			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 				ServiceName:   serviceName,

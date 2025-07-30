@@ -30,7 +30,7 @@ services:
       - "./go.sum:/solo/go.sum"
 
     x-workflows:
-      first_pre_start:
+      first_pre_start_container:
         timeout: 180s
 
         steps:
@@ -58,7 +58,7 @@ services:
       replicas: 3
 
     x-workflows:
-      first_pre_start:
+      first_pre_start_container:
         timeout: 180s
 
         steps:

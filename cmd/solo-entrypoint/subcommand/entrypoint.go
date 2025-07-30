@@ -29,12 +29,20 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 			defer workflowRunner.Close()
 
 			if !isServiceBuilt() {
-				if err := workflowRunner.Execute(commonworkflow.FirstPreStart); err != nil {
+				if err := workflowRunner.Execute(commonworkflow.FirstPreStartContainer); err != nil {
 					panic(err)
 				}
 			}
 
-			if err := workflowRunner.Execute(commonworkflow.PreStart); err != nil {
+			if err := workflowRunner.Execute(commonworkflow.FirstPreStartService); err != nil {
+				panic(err)
+			}
+
+			if err := workflowRunner.Execute(commonworkflow.PreStartContainer); err != nil {
+				panic(err)
+			}
+
+			if err := workflowRunner.Execute(commonworkflow.PreStartService); err != nil {
 				panic(err)
 			}
 

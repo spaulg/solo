@@ -8,13 +8,14 @@ import (
 	"os/exec"
 	"sync"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/spaulg/solo/internal/pkg/impl/common/grpc/services"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	entrypointcontext "github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
 	grpc_credentials_types "github.com/spaulg/solo/internal/pkg/types/entrypoint/grpc/credentials"
 	workflow_types "github.com/spaulg/solo/internal/pkg/types/entrypoint/workflow"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 const FirstPreStartCompleteMetadataKey = "first_pre_start_complete"
@@ -26,7 +27,7 @@ type GrpcWorkflowRunner struct {
 	metadataState  *MetadataState
 }
 
-type WorkflowStream grpc.BidiStreamingClient[services.WorkflowStreamRequest, services.WorkflowStreamResponse]
+type WorkflowStream grpc.BidiStreamingClient[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse]
 
 func NewGrpcWorkflowRunner(
 	entrypointCtx *entrypointcontext.EntrypointContext,
@@ -58,7 +59,7 @@ func NewGrpcWorkflowRunner(
 }
 
 func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) error {
-	stream, err := t.buildStream(workflowName)
+	stream, err := t.buildStream()
 	if err != nil {
 		return err
 	}
@@ -69,6 +70,16 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 			t.entrypointCtx.Logger.Error("Failed to close GRPC stream")
 		}
 	}(stream)
+
+	if err := stream.Send(&services.RunWorkflowStreamRequest{
+		Request: &services.RunWorkflowStreamRequest_RunRequest{
+			RunRequest: &services.WorkflowRunRequest{
+				WorkflowName: workflowName.String(),
+			},
+		},
+	}); err != nil {
+		return err
+	}
 
 	for {
 		instruction, err := stream.Recv()
@@ -90,11 +101,15 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stdout))
 					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stderr))
 
-					if err := stream.Send(&services.WorkflowStreamRequest{
-						Result: services.WorkflowResult_RUN_COMMAND_RESULT,
-						RunCommandResult: &services.WorkflowRunResult{
-							Stdout: stdout,
-							Stderr: stderr,
+					if err := stream.Send(&services.RunWorkflowStreamRequest{
+						Request: &services.RunWorkflowStreamRequest_StreamRequest{
+							StreamRequest: &services.WorkflowStreamRequest{
+								Result: services.WorkflowResult_RUN_COMMAND_RESULT,
+								RunCommandResult: &services.WorkflowRunResult{
+									Stdout: stdout,
+									Stderr: stderr,
+								},
+							},
 						},
 					}); err != nil {
 						return err
@@ -108,17 +123,21 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 				return err
 			}
 
-			if err := stream.Send(&services.WorkflowStreamRequest{
-				Result: services.WorkflowResult_RUN_COMMAND_RESULT,
-				RunCommandResult: &services.WorkflowRunResult{
-					ExitCode: &exitCode,
+			if err := stream.Send(&services.RunWorkflowStreamRequest{
+				Request: &services.RunWorkflowStreamRequest_StreamRequest{
+					StreamRequest: &services.WorkflowStreamRequest{
+						Result: services.WorkflowResult_RUN_COMMAND_RESULT,
+						RunCommandResult: &services.WorkflowRunResult{
+							ExitCode: &exitCode,
+						},
+					},
 				},
 			}); err != nil {
 				return err
 			}
 
 		case services.WorkflowAction_COMPLETE_ACTION:
-			if workflowName == commonworkflow.FirstPreStart {
+			if workflowName == commonworkflow.FirstPreStartContainer {
 				t.metadataState.Set(FirstPreStartCompleteMetadataKey, "true")
 			}
 
@@ -138,23 +157,9 @@ func (t *GrpcWorkflowRunner) Close() error {
 	return t.conn.Close()
 }
 
-func (t *GrpcWorkflowRunner) buildStream(workflowName commonworkflow.WorkflowName) (WorkflowStream, error) {
+func (t *GrpcWorkflowRunner) buildStream() (WorkflowStream, error) {
 	ctx := metadata.NewOutgoingContext(context.Background(), t.metadataState.ExportToGrpcMetadata())
-
-	switch workflowName {
-	case commonworkflow.FirstPreStart:
-		return t.workflowClient.FirstPreStartWorkflowStream(ctx)
-	case commonworkflow.PreStart:
-		return t.workflowClient.PreStartWorkflowStream(ctx)
-	case commonworkflow.PostStart:
-		return t.workflowClient.PostStartWorkflowStream(ctx)
-	case commonworkflow.PreStop:
-		return t.workflowClient.PreStopWorkflowStream(ctx)
-	case commonworkflow.PreDestroy:
-		return t.workflowClient.PreDestroyWorkflowStream(ctx)
-	default:
-		return nil, errors.New("invalid wms name")
-	}
+	return t.workflowClient.RunWorkflowStream(ctx)
 }
 
 func (t *GrpcWorkflowRunner) execute(

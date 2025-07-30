@@ -27,7 +27,7 @@ func (t *WorkflowFactoryTestSuite) SetupTest() {
 
 func (t *WorkflowFactoryTestSuite) TestBuild() {
 	serviceName := "test"
-	workflowName := workflowcommon.FirstPreStart
+	workflowName := workflowcommon.FirstPreStartContainer
 
 	workflowConfig := compose_types.ServiceWorkflowConfig{
 		Steps: make([]compose_types.WorkflowStep, 0),

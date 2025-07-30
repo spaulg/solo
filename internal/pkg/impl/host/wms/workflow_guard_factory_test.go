@@ -20,7 +20,7 @@ type WorkflowGuardFactoryTestSuite struct {
 func (t *WorkflowGuardFactoryTestSuite) TestBuild() {
 	soloCtx := &context.CliContext{}
 
-	workflowNames := []workflowcommon.WorkflowName{workflowcommon.FirstPreStart, workflowcommon.PreStart, workflowcommon.PostStart}
+	workflowNames := []workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer, workflowcommon.PreStartContainer, workflowcommon.PostStartContainer}
 	containerNames := []string{"container1", "container2"}
 
 	workflowGuardFactory := NewWorkflowGuardFactory(soloCtx)
