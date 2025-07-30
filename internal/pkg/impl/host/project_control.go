@@ -12,11 +12,14 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/common/cmd"
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/wms"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/grpc"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
+
+const workflowExecTrackerFile = "workflow_exec_tracker.json"
 
 type ProjectControl struct {
 	soloCtx              *context.CliContext
@@ -67,9 +70,15 @@ func (t *ProjectControl) Start() error {
 		return nil
 	}
 
+	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile))
+	if err != nil {
+		return fmt.Errorf("failed to load workflow execution tracker: %w", err)
+	}
+
 	// Start GRPC services
 	grpcServer, err := t.grpcServerFactory.Build(
 		orchestrator,
+		workflowExecutionTracker,
 		t.soloCtx.Project,
 		t.soloCtx.Config.GrpcServerPort,
 	)
@@ -96,9 +105,13 @@ func (t *ProjectControl) Start() error {
 
 	workflowNames := []workflowcommon.WorkflowName{
 		workflowcommon.FirstPreStartContainer,
+		workflowcommon.FirstPreStartService,
 		workflowcommon.PreStartContainer,
+		workflowcommon.PreStartService,
 		workflowcommon.PostStartContainer,
+		workflowcommon.PostStartService,
 		workflowcommon.FirstPostStartContainer,
+		workflowcommon.FirstPostStartService,
 	}
 
 	guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
@@ -115,14 +128,24 @@ func (t *ProjectControl) Start() error {
 			return err
 		}
 
+		if err := guardCallback(workflowcommon.FirstPreStartService); err != nil {
+			return err
+		}
+
 		if err := guardCallback(workflowcommon.PreStartContainer); err != nil {
+			return err
+		}
+
+		if err := guardCallback(workflowcommon.PreStartService); err != nil {
 			return err
 		}
 
 		// Exec post start commands
 		postStartEvents := []workflowcommon.WorkflowName{
 			workflowcommon.PostStartContainer,
+			workflowcommon.PostStartService,
 			workflowcommon.FirstPostStartContainer,
+			workflowcommon.FirstPostStartService,
 		}
 
 		for _, event := range postStartEvents {
@@ -172,8 +195,14 @@ func (t *ProjectControl) Stop() error {
 	}
 
 	if len(serviceStatus.RunningServices) > 0 {
+		workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile))
+		if err != nil {
+			return fmt.Errorf("failed to load workflow execution tracker: %w", err)
+		}
+
 		grpcServer, err := t.grpcServerFactory.Build(
 			orchestrator,
+			workflowExecutionTracker,
 			t.soloCtx.Project,
 			t.soloCtx.Config.GrpcServerPort,
 		)
@@ -249,9 +278,15 @@ func (t *ProjectControl) Destroy() error {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
 
+	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile))
+	if err != nil {
+		return fmt.Errorf("failed to load workflow execution tracker: %w", err)
+	}
+
 	if len(serviceStatus.RunningServices) > 0 {
 		grpcServer, err := t.grpcServerFactory.Build(
 			orchestrator,
+			workflowExecutionTracker,
 			t.soloCtx.Project,
 			t.soloCtx.Config.GrpcServerPort,
 		)
@@ -306,6 +341,11 @@ func (t *ProjectControl) Destroy() error {
 
 	// Wait for all events to be delivered
 	t.workflowManager.Wait()
+
+	// Reset service workflow status for affected services
+	if err := workflowExecutionTracker.Clear(serviceStatus.RunningServices, workflowcommon.WorkflowNames); err != nil {
+		return fmt.Errorf("failed to clear workflow execution tracker: %w", err)
+	}
 
 	return nil
 }
