@@ -45,6 +45,7 @@ func NewMutualTLSServerFactory(
 
 func (t *MutualTLSServerFactory) Build(
 	orchestrator container_types.Orchestrator,
+	workflowExecutionTracker wms_types.WorkflowExecTracker,
 	project project_types.Project,
 	port int,
 ) (grpc_types.Server, error) {
@@ -60,6 +61,7 @@ func (t *MutualTLSServerFactory) Build(
 		t.eventManager,
 		orchestrator,
 		t.workflowFactory,
+		workflowExecutionTracker,
 	)
 
 	return NewAsynchronousServer(

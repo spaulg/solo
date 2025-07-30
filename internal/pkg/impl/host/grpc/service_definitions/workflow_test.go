@@ -35,6 +35,7 @@ type WorkflowTestSuite struct {
 	mockProject              *project.MockProject
 	mockLogHandler           *logging.MockHandler
 	mockEventManager         *events.MockEventManager
+	mockWorkflowExecTracker  *wms.MockWorkflowExecTracker
 	mockWorkflowOrchestrator *wms.MockWorkflow
 	mockWorkflowFactory      *wms.MockWorkflowFactory
 	mockOrchestrator         *container.MockOrchestrator
@@ -48,6 +49,7 @@ func (t *WorkflowTestSuite) SetupTest() {
 	t.mockProject = &project.MockProject{}
 	t.mockOrchestrator = &container.MockOrchestrator{}
 	t.mockGrpcServer = &grpc.MockBidiStreamingServer[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse]{}
+	t.mockWorkflowExecTracker = &wms.MockWorkflowExecTracker{}
 
 	t.mockLogHandler = &logging.MockHandler{}
 	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
@@ -85,7 +87,14 @@ func (t *WorkflowTestSuite) TestMissingServiceName() {
 		},
 	}, nil).Once()
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.Error(err, "unauthorized")
@@ -117,7 +126,14 @@ func (t *WorkflowTestSuite) TestMissingContainerName() {
 		return record.Message == "Container name not found"
 	})).Return(nil)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.Error(err, "unauthorized")
@@ -171,7 +187,14 @@ func (t *WorkflowTestSuite) TestNilWorkflowFromFactory() {
 		RunCommand: nil,
 	}).Return(nil)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -214,7 +237,14 @@ func (t *WorkflowTestSuite) TestFirstPreStartSkippedWorkflowStepTrigger() {
 		RunCommand: nil,
 	}).Return(nil)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -226,7 +256,14 @@ func (t *WorkflowTestSuite) TestFirstPreStartSkippedWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestFirstPreStartRecvError() {
 	t.testServerRecvErrorFor(commonworkflow.FirstPreStartContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -238,7 +275,14 @@ func (t *WorkflowTestSuite) TestFirstPreStartRecvError() {
 func (t *WorkflowTestSuite) TestPreStartRecvError() {
 	t.testServerRecvErrorFor(commonworkflow.PreStartContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -250,7 +294,14 @@ func (t *WorkflowTestSuite) TestPreStartRecvError() {
 func (t *WorkflowTestSuite) TestPostStartRecvError() {
 	t.testServerRecvErrorFor(commonworkflow.PostStartContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -262,7 +313,14 @@ func (t *WorkflowTestSuite) TestPostStartRecvError() {
 func (t *WorkflowTestSuite) TestPreStopRecvError() {
 	t.testServerRecvErrorFor(commonworkflow.PreStopContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -274,7 +332,14 @@ func (t *WorkflowTestSuite) TestPreStopRecvError() {
 func (t *WorkflowTestSuite) TestPreDestroyRecvError() {
 	t.testServerRecvErrorFor(commonworkflow.PreDestroyContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -286,7 +351,14 @@ func (t *WorkflowTestSuite) TestPreDestroyRecvError() {
 func (t *WorkflowTestSuite) TestFirstPreStartUnknownWorkflowResult() {
 	t.testUnknownWorkflowResult(commonworkflow.FirstPreStartContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -298,7 +370,14 @@ func (t *WorkflowTestSuite) TestFirstPreStartUnknownWorkflowResult() {
 func (t *WorkflowTestSuite) TestPreStartUnknownWorkflowResult() {
 	t.testUnknownWorkflowResult(commonworkflow.PreStartContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -310,7 +389,14 @@ func (t *WorkflowTestSuite) TestPreStartUnknownWorkflowResult() {
 func (t *WorkflowTestSuite) TestPostStartUnknownWorkflowResult() {
 	t.testUnknownWorkflowResult(commonworkflow.PostStartContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -322,7 +408,14 @@ func (t *WorkflowTestSuite) TestPostStartUnknownWorkflowResult() {
 func (t *WorkflowTestSuite) TestPreStopUnknownWorkflowResult() {
 	t.testUnknownWorkflowResult(commonworkflow.PreStopContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -334,7 +427,14 @@ func (t *WorkflowTestSuite) TestPreStopUnknownWorkflowResult() {
 func (t *WorkflowTestSuite) TestPreDestroyUnknownWorkflowResult() {
 	t.testUnknownWorkflowResult(commonworkflow.PreDestroyContainer)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -346,7 +446,14 @@ func (t *WorkflowTestSuite) TestPreDestroyUnknownWorkflowResult() {
 func (t *WorkflowTestSuite) TestFirstPreStartZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.FirstPreStartContainer, 0)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -358,7 +465,14 @@ func (t *WorkflowTestSuite) TestFirstPreStartZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPreStartZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PreStartContainer, 0)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -370,7 +484,14 @@ func (t *WorkflowTestSuite) TestPreStartZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPostStartZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PostStartContainer, 0)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -382,7 +503,14 @@ func (t *WorkflowTestSuite) TestPostStartZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPreStopZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PreStopContainer, 0)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -394,7 +522,14 @@ func (t *WorkflowTestSuite) TestPreStopZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPreDestroyZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PreDestroyContainer, 0)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -406,7 +541,14 @@ func (t *WorkflowTestSuite) TestPreDestroyZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestFirstPreStartNonZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.FirstPreStartContainer, 10)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -418,7 +560,14 @@ func (t *WorkflowTestSuite) TestFirstPreStartNonZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPreStartNonZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PreStartContainer, 10)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -430,7 +579,14 @@ func (t *WorkflowTestSuite) TestPreStartNonZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPostStartNonZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PostStartContainer, 10)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -442,7 +598,14 @@ func (t *WorkflowTestSuite) TestPostStartNonZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPreStopNonZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PreStopContainer, 10)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())
@@ -454,7 +617,14 @@ func (t *WorkflowTestSuite) TestPreStopNonZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) TestPreDestroyNonZeroWorkflowStepTrigger() {
 	t.testWorkflowExecFor(commonworkflow.PreDestroyContainer, 10)
 
-	workflowService := NewWorkflowService(t.soloCtx, t.mockEventManager, t.mockOrchestrator, t.mockWorkflowFactory)
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
 	_ = workflowService.RunWorkflowStream(t.mockGrpcServer)
 
 	t.mockEventManager.AssertExpectations(t.T())

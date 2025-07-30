@@ -34,7 +34,15 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 				}
 			}
 
+			if err := workflowRunner.Execute(commonworkflow.FirstPreStartService); err != nil {
+				panic(err)
+			}
+
 			if err := workflowRunner.Execute(commonworkflow.PreStartContainer); err != nil {
+				panic(err)
+			}
+
+			if err := workflowRunner.Execute(commonworkflow.PreStartService); err != nil {
 				panic(err)
 			}
 

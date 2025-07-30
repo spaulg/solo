@@ -16,7 +16,7 @@ import (
 )
 
 func TestOrchestratorTestSuite(t *testing.T) {
-	suite.Run(t, new(OrchestratorTestSuite))
+	suite.Run(t, new(WorkflowTestSuite))
 }
 
 type expectedStep struct {
@@ -26,7 +26,7 @@ type expectedStep struct {
 	Cwd       string
 }
 
-type OrchestratorTestSuite struct {
+type WorkflowTestSuite struct {
 	suite.Suite
 
 	soloCtx        *cli_context.CliContext
@@ -37,7 +37,7 @@ type OrchestratorTestSuite struct {
 	config        compose_types.ServiceWorkflowConfig
 }
 
-func (t *OrchestratorTestSuite) SetupTest() {
+func (t *WorkflowTestSuite) SetupTest() {
 	cwd := "/"
 
 	t.mockProject = &project.MockProject{}
@@ -98,7 +98,7 @@ func (t *OrchestratorTestSuite) SetupTest() {
 	}
 }
 
-func (t *OrchestratorTestSuite) TestIteration() {
+func (t *WorkflowTestSuite) TestIteration() {
 	orchestrator := NewWorkflow(t.soloCtx, "/", t.config)
 
 	counter := 0
@@ -112,7 +112,7 @@ func (t *OrchestratorTestSuite) TestIteration() {
 	}
 }
 
-func (t *OrchestratorTestSuite) TestIterationWithEarlyBreak() {
+func (t *WorkflowTestSuite) TestIterationWithEarlyBreak() {
 	orchestrator := NewWorkflow(t.soloCtx, "/", t.config)
 
 	counter := 0

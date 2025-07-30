@@ -18,9 +18,10 @@ import (
 type WorkflowServerImpl struct {
 	soloCtx *context.CliContext
 	services.UnimplementedWorkflowServer
-	eventManager    events_types.Manager
-	orchestrator    container_types.Orchestrator
-	workflowFactory wms_types.WorkflowFactory
+	eventManager        events_types.Manager
+	orchestrator        container_types.Orchestrator
+	workflowFactory     wms_types.WorkflowFactory
+	workflowExecTracker wms_types.WorkflowExecTracker
 }
 
 func NewWorkflowService(
@@ -28,12 +29,14 @@ func NewWorkflowService(
 	eventManager events_types.Manager,
 	orchestrator container_types.Orchestrator,
 	workflowFactory wms_types.WorkflowFactory,
+	workflowExecTracker wms_types.WorkflowExecTracker,
 ) *WorkflowServerImpl {
 	return &WorkflowServerImpl{
-		soloCtx:         soloCtx,
-		eventManager:    eventManager,
-		orchestrator:    orchestrator,
-		workflowFactory: workflowFactory,
+		soloCtx:             soloCtx,
+		eventManager:        eventManager,
+		orchestrator:        orchestrator,
+		workflowFactory:     workflowFactory,
+		workflowExecTracker: workflowExecTracker,
 	}
 }
 
@@ -73,6 +76,16 @@ func (t WorkflowServerImpl) workflowStream(
 		return fmt.Errorf("unauthorized")
 	}
 
+	isFirstExecution := true
+	var err error
+
+	if workflowName.IsServiceWorkflow() {
+		isFirstExecution, err = t.workflowExecTracker.MarkExecuted(serviceName, workflowName)
+		if err != nil {
+			return fmt.Errorf("failed to mark service workflow as executed: %w", err)
+		}
+	}
+
 	// First pre start complete
 	firstPreStartCompleteContextValueName := interceptors.FirstPreStartComplete(interceptors.FirstPreStartContainerCompleteContextValueName)
 	firstPreStartComplete, firstPreStartok := server.Context().Value(firstPreStartCompleteContextValueName).(string)
@@ -81,8 +94,9 @@ func (t WorkflowServerImpl) workflowStream(
 	firstPostStartCompleteContextValueName := interceptors.FirstPostStartComplete(interceptors.FirstPostStartContainerCompleteContextValueName)
 	firstPostStartComplete, firstPostStartok := server.Context().Value(firstPostStartCompleteContextValueName).(string)
 
-	if workflowName == commonworkflow.FirstPreStartContainer && (firstPreStartok || firstPreStartComplete == "true") ||
-		workflowName == commonworkflow.FirstPostStartContainer && (firstPostStartok || firstPostStartComplete == "true") {
+	if !isFirstExecution ||
+		(workflowName == commonworkflow.FirstPreStartContainer && (firstPreStartok || firstPreStartComplete == "true")) ||
+		(workflowName == commonworkflow.FirstPostStartContainer && (firstPostStartok || firstPostStartComplete == "true")) {
 		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
 			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 				ServiceName:   serviceName,

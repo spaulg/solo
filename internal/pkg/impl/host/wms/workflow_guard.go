@@ -59,7 +59,6 @@ func (t *WorkflowGuard) Publish(event events_types.Event) {
 		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event completed for workflow %s for container %s", workflowName, containerName))
 
 	default:
-		t.soloCtx.Logger.Debug("Received unsupported event; ignoring")
 		return
 	}
 

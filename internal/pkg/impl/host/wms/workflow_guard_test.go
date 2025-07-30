@@ -37,7 +37,6 @@ func (t *WorkflowGuardTestSuite) SetupTest() {
 	t.mockProject.On("GetMaxWorkflowTimeout", "first_pre_start_container").Return(30 * time.Second)
 
 	t.mockLogHandler = &logging.MockHandler{}
-	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
 
 	t.soloCtx = &solo_context.CliContext{
 		Project: t.mockProject,
@@ -52,6 +51,7 @@ func (t *WorkflowGuardTestSuite) SetupTest() {
 }
 
 func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
+	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
 	t.mockLogHandler.On("Handle", context.Background(), mock.Anything).Return(nil)
 
 	guard := NewWorkflowGuard(
@@ -87,10 +87,6 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 }
 
 func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedEventType() {
-	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Received unsupported event; ignoring"
-	})).Return(nil)
-
 	guard := NewWorkflowGuard(
 		t.soloCtx,
 		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
@@ -109,6 +105,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedEventType() {
 }
 
 func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
+	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
+
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
 		return record.Message == "Received event completed for workflow pre_start_container for container container1"
 	})).Return(nil)
@@ -136,6 +134,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
 }
 
 func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
+	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
+
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
 		return record.Message == "Received event completed for workflow first_pre_start_container for container container2"
 	})).Return(nil)
@@ -163,6 +163,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 }
 
 func (t *WorkflowGuardTestSuite) TestWaitWithUnrecognisedWorkflow() {
+	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
+
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
 		return record.Message == "Cannot wait for workflow pre_start_container to complete as this is not mapped"
 	})).Return(nil)
