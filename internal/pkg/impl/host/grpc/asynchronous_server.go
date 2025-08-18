@@ -14,7 +14,6 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/common/grpc/services"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/interceptors"
-	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/service_definitions"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/grpc"
 )
@@ -26,7 +25,7 @@ type AsynchronousServer struct {
 	port                 uint32
 	stateDirectory       string
 	transportCredentials credentials.TransportCredentials
-	workflowService      *service_definitions.WorkflowServerImpl
+	workflowService      services.WorkflowServer
 	server               *grpc.Server
 	grpcServiceErrorCh   chan error
 }
@@ -36,7 +35,7 @@ func NewAsynchronousServer(
 	port int,
 	stateDirectory string,
 	transportCredentials credentials.TransportCredentials,
-	workflowService *service_definitions.WorkflowServerImpl,
+	workflowService services.WorkflowServer,
 ) grpc_types.Server {
 	return &AsynchronousServer{
 		orchestrator:         orchestrator,

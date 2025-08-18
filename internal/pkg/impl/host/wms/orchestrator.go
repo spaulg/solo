@@ -12,14 +12,17 @@ import (
 )
 
 type Orchestrator struct {
-	steps []compose_types.WorkflowStep
+	serviceWorkingDirectory string
+	steps                   []compose_types.WorkflowStep
 }
 
 func NewOrchestrator(
+	serviceWorkingDirectory string,
 	workflow compose_types.ServiceWorkflowConfig,
 ) wms_types.Orchestrator {
 	return &Orchestrator{
-		steps: workflow.Steps,
+		serviceWorkingDirectory: serviceWorkingDirectory,
+		steps:                   workflow.Steps,
 	}
 }
 
@@ -33,7 +36,12 @@ func (t *Orchestrator) StepIterator() iter.Seq[wms_types.Step] {
 		for stepNumber < stepCount {
 			id := ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
 
-			step := NewStep(id.String(), t.steps[stepNumber].Name, t.steps[stepNumber].Run, t.steps[stepNumber].Cwd)
+			workingDirectory := t.serviceWorkingDirectory
+			if t.steps[stepNumber].WorkingDirectory != nil {
+				workingDirectory = *t.steps[stepNumber].WorkingDirectory
+			}
+
+			step := NewStep(id.String(), t.steps[stepNumber].Name, t.steps[stepNumber].Run, workingDirectory)
 			if !yield(step) {
 				return
 			}

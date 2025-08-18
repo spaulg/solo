@@ -20,4 +20,5 @@ type Orchestrator interface {
 	ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error)
 	ResolveContainerNameFromMetadata(md metadata.MD) (string, error)
 	ResolveContainerNameFromServiceName(serviceName string, index int) (string, error)
+	ResolveImageWorkingDirectory(serviceName string) (string, error)
 }

@@ -4,3 +4,5 @@ RUN echo "deb http://deb.debian.org/debian bookworm-backports main" >> /etc/apt/
 RUN apt update -y
 RUN apt install -y golang-1.23 ca-certificates
 RUN ln -s /usr/lib/go-1.23/bin/go /usr/local/bin/go
+
+WORKDIR "/var/www"

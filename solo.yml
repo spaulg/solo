@@ -45,6 +45,7 @@ services:
       context: .
       dockerfile: ./examples/symfony-webapp/Dockerfile.php
     command: /usr/sbin/php-fpm8.4 -FO
+    working_dir: /var/www/project
     volumes:
       - "composer:/root/.cache/composer"
       - "./examples/symfony-webapp:/var/www/project"
@@ -76,7 +77,6 @@ services:
 
           - name: composer install
             run: composer install
-            cwd: /var/www/project
 
           - name: Update apt
             run: apt update -y

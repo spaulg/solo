@@ -8,7 +8,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc"
-	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/service_definitions"
 	"github.com/spaulg/solo/internal/pkg/impl/host/subscribers"
 	"github.com/spaulg/solo/internal/pkg/impl/host/wms"
 )
@@ -19,7 +18,6 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	eventManager.Subscribe(subscribers.NewLogWriterEventSubscriber(soloCtx))
 
 	workflowFactory := wms.NewWorkflowFactory()
-	workflowService := service_definitions.NewWorkflowService(soloCtx, eventManager, workflowFactory)
 
 	// Container orchestrator factory
 	orchestratorFactory := container.NewOrchestratorFactory(soloCtx, eventManager)
@@ -30,7 +28,7 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 		return nil, fmt.Errorf("failed to initialize certificate authority: %w", err)
 	}
 
-	grpcServerFactory := grpc.NewMutualTLSServerFactory(certificateAuthority, workflowService)
+	grpcServerFactory := grpc.NewMutualTLSServerFactory(soloCtx, eventManager, workflowFactory, certificateAuthority)
 
 	workflowGuardFactory := wms.NewWorkflowGuardFactory(soloCtx)
 
