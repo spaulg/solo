@@ -12,25 +12,34 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/certificate"
+	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/service_definitions"
 	certificate_types "github.com/spaulg/solo/internal/pkg/types/host/certificate"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
+	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/grpc"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
+	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
 type MutualTLSServerFactory struct {
+	soloCtx              *context.CliContext
+	eventManager         events_types.Manager
+	workflowFactory      wms_types.WorkflowFactory
 	certificateAuthority certificate_types.Authority
-	workflowService      *service_definitions.WorkflowServerImpl
 }
 
 func NewMutualTLSServerFactory(
+	soloCtx *context.CliContext,
+	eventManager events_types.Manager,
+	workflowFactory wms_types.WorkflowFactory,
 	certificateAuthority certificate_types.Authority,
-	workflowService *service_definitions.WorkflowServerImpl,
 ) grpc_types.ServerFactory {
 	return &MutualTLSServerFactory{
+		soloCtx:              soloCtx,
+		eventManager:         eventManager,
+		workflowFactory:      workflowFactory,
 		certificateAuthority: certificateAuthority,
-		workflowService:      workflowService,
 	}
 }
 
@@ -46,12 +55,19 @@ func (t *MutualTLSServerFactory) Build(
 		return nil, err
 	}
 
+	workflowService := service_definitions.NewWorkflowService(
+		t.soloCtx,
+		t.eventManager,
+		orchestrator,
+		t.workflowFactory,
+	)
+
 	return NewAsynchronousServer(
 		orchestrator,
 		port,
 		project.GetAllServicesStateDirectory(),
 		transportCredentials,
-		t.workflowService,
+		workflowService,
 	), nil
 }
 

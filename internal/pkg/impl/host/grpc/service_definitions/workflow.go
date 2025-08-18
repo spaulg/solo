@@ -10,6 +10,7 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/interceptors"
+	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
@@ -18,17 +19,20 @@ type WorkflowServerImpl struct {
 	soloCtx *context.CliContext
 	services.UnimplementedWorkflowServer
 	eventManager    events_types.Manager
+	orchestrator    container_types.Orchestrator
 	workflowFactory wms_types.WorkflowFactory
 }
 
 func NewWorkflowService(
 	soloCtx *context.CliContext,
 	eventManager events_types.Manager,
+	orchestrator container_types.Orchestrator,
 	workflowFactory wms_types.WorkflowFactory,
 ) *WorkflowServerImpl {
 	return &WorkflowServerImpl{
 		soloCtx:         soloCtx,
 		eventManager:    eventManager,
+		orchestrator:    orchestrator,
 		workflowFactory: workflowFactory,
 	}
 }
@@ -133,7 +137,10 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 		},
 	})
 
-	workflow := t.workflowFactory.Make(t.soloCtx.Project, serviceName, workflowName)
+	workflow, err := t.workflowFactory.Make(t.soloCtx.Project, t.orchestrator, serviceName, workflowName)
+	if err != nil {
+		return false, fmt.Errorf("failed to create workflow: %w", err)
+	}
 
 	if workflow != nil {
 		for step := range workflow.StepIterator() {

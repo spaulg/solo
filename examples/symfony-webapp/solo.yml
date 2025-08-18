@@ -44,7 +44,7 @@ services:
 
           - name: composer install
             run: composer install
-            cwd: /var/www/project
+            working_directory: /var/www/project
 
   mail:
     profiles: ["mail"]

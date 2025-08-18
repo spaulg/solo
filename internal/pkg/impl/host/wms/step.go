@@ -13,20 +13,15 @@ type Step struct {
 	workingDirectory string
 }
 
-func NewStep(id string, name string, command string, workingDirectory *string) wms_types.Step {
+func NewStep(id string, name string, command string, workingDirectory string) wms_types.Step {
 	command, arguments := cmd.SplitCommand(command)
-
-	cwd := "/"
-	if workingDirectory != nil {
-		cwd = *workingDirectory
-	}
 
 	return &Step{
 		id:               id,
 		name:             name,
 		command:          command,
 		arguments:        arguments,
-		workingDirectory: cwd,
+		workingDirectory: workingDirectory,
 	}
 }
 
@@ -50,7 +45,11 @@ func (t *Step) GetWorkingDirectory() string {
 	return t.workingDirectory
 }
 
-func (t *Step) Trigger(start wms_types.StepTriggerLambda, progress wms_types.StepProgressLambda, complete wms_types.StepCompleteLambda) error {
+func (t *Step) Trigger(
+	start wms_types.StepTriggerLambda,
+	progress wms_types.StepProgressLambda,
+	complete wms_types.StepCompleteLambda,
+) error {
 	// Start step
 	if err := start(); err != nil {
 		return err

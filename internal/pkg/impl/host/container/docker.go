@@ -30,7 +30,10 @@ type ComposeServiceStatus struct {
 }
 
 type DockerInspect struct {
-	Name string `json:"Name"`
+	Name   string `json:"Name"`
+	Config struct {
+		WorkingDir string `json:"WorkingDir"`
+	} `json:"Config"`
 }
 
 type DockerOrchestrator struct {
@@ -395,6 +398,37 @@ func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (s
 	return t.resolveContainerNameFromIdOrName(containerNames[0])
 }
 
+func (t *DockerOrchestrator) ResolveImageWorkingDirectory(serviceName string) (string, error) {
+	composeCmd := exec.Command(t.dockerCommandPath,
+		"compose",
+		"-f", t.composeFile,
+		"--project-directory", t.projectDirectory,
+		"images",
+		"-q",
+		serviceName,
+	)
+
+	var stdoutBuf bytes.Buffer
+	composeCmd.Stdout = &stdoutBuf
+
+	if err := composeCmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to lookup image from service %s: %w", serviceName, err)
+	}
+
+	imageNameOrId := strings.TrimSpace(stdoutBuf.String())
+	inspect, err := t.dockerInspect("image", imageNameOrId)
+	if err != nil {
+		return "", fmt.Errorf("failed to inspect image %s: %w", imageNameOrId, err)
+	}
+
+	workingDirectory := "/"
+	if inspect.Config.WorkingDir != "" {
+		workingDirectory = inspect.Config.WorkingDir
+	}
+
+	return workingDirectory, nil
+}
+
 func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName string, index int) (string, error) {
 	service := t.soloCtx.Project.Services().GetService(serviceName).GetConfig()
 	replicas := 1
@@ -414,10 +448,22 @@ func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName str
 }
 
 func (t *DockerOrchestrator) resolveContainerNameFromIdOrName(containerNameOrId string) (string, error) {
+	inspect, err := t.dockerInspect("container", containerNameOrId)
+	if err != nil {
+		return "", fmt.Errorf("failed to inspect container %s: %w", containerNameOrId, err)
+	}
+
+	containerName := inspect.Name
+	containerName = strings.TrimLeft(containerName, "/")
+
+	return containerName, nil
+}
+
+func (t *DockerOrchestrator) dockerInspect(artifactName string, nameOrId string) (*DockerInspect, error) {
 	composeCmd := exec.Command(t.dockerCommandPath, "inspect",
 		"--format", "{{ json . }}",
-		"--type", "container",
-		containerNameOrId,
+		"--type", artifactName,
+		nameOrId,
 	)
 
 	var stdoutBuf bytes.Buffer
@@ -425,17 +471,14 @@ func (t *DockerOrchestrator) resolveContainerNameFromIdOrName(containerNameOrId 
 
 	if err := composeCmd.Run(); err != nil {
 		t.soloCtx.Logger.Error("Failed to run")
-		return "", err
+		return nil, err
 	}
 
 	inspect := DockerInspect{}
 	if err := json.Unmarshal(stdoutBuf.Bytes(), &inspect); err != nil {
 		t.soloCtx.Logger.Error("Failed to unmarshall")
-		return "", err
+		return nil, err
 	}
 
-	containerName := inspect.Name
-	containerName = strings.TrimLeft(containerName, "/")
-
-	return containerName, nil
+	return &inspect, nil
 }

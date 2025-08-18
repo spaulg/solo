@@ -53,26 +53,26 @@ func (t *OrchestratorTestSuite) SetupTest() {
 	t.config = compose_types.ServiceWorkflowConfig{
 		Steps: []compose_types.WorkflowStep{
 			{
-				Name: "step1",
-				Run:  "/bin/foo arg1 arg2",
-				Cwd:  &cwd,
+				Name:             "step1",
+				Run:              "/bin/foo arg1 arg2",
+				WorkingDirectory: &cwd,
 			},
 			{
-				Name: "step2",
-				Run:  "/bin/bar arg3 arg4",
-				Cwd:  &cwd,
+				Name:             "step2",
+				Run:              "/bin/bar arg3 arg4",
+				WorkingDirectory: &cwd,
 			},
 			{
-				Name: "step3",
-				Run:  "/bin/baz arg5 arg6",
-				Cwd:  &cwd,
+				Name:             "step3",
+				Run:              "/bin/baz arg5 arg6",
+				WorkingDirectory: &cwd,
 			},
 		},
 	}
 }
 
 func (t *OrchestratorTestSuite) TestIteration() {
-	orchestrator := NewOrchestrator(t.config)
+	orchestrator := NewOrchestrator("/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {
@@ -86,7 +86,7 @@ func (t *OrchestratorTestSuite) TestIteration() {
 }
 
 func (t *OrchestratorTestSuite) TestIterationWithEarlyBreak() {
-	orchestrator := NewOrchestrator(t.config)
+	orchestrator := NewOrchestrator("/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {

@@ -3,9 +3,9 @@ package compose
 import "github.com/compose-spec/compose-go/v2/types"
 
 type WorkflowStep struct {
-	Name string  `yaml:"name"`
-	Run  string  `yaml:"run"`
-	Cwd  *string `yaml:"cwd"`
+	Name             string  `yaml:"name"`
+	Run              string  `yaml:"run"`
+	WorkingDirectory *string `yaml:"working_dir"`
 }
 
 type ServiceWorkflowConfig struct {

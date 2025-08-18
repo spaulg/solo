@@ -84,3 +84,8 @@ func (m *MockOrchestrator) ResolveContainerNameFromServiceName(serviceName strin
 	args := m.Called(serviceName, index)
 	return args.String(0), args.Error(1)
 }
+
+func (m *MockOrchestrator) ResolveImageWorkingDirectory(service string) (string, error) {
+	args := m.Called(service)
+	return args.String(0), args.Error(1)
+}
