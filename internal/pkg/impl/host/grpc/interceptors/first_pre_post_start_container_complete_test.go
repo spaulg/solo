@@ -29,7 +29,7 @@ func (t *FirstPreStartCompleteTestSuite) SetupTest() {
 func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnaryInterceptor() {
 	expectedFirstPreStartComplete := "true"
 	md := metadata.MD{}
-	md.Set(FirstPreStartCompleteMetadataKey, expectedFirstPreStartComplete)
+	md.Set(FirstPreStartContainerCompleteMetadataKey, expectedFirstPreStartComplete)
 	ctx := metadata.NewIncomingContext(context.Background(), md)
 
 	info := &grpc.UnaryServerInfo{}
@@ -38,7 +38,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnar
 
 	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
 	result, err := interceptor.FirstPreStartCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
-		firstPreStartComplete, ok := ctx.Value(FirstPreStartComplete(FirstPreStartCompleteContextValueName)).(string)
+		firstPreStartComplete, ok := ctx.Value(FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName)).(string)
 
 		t.True(ok)
 		t.Equal(expectedFirstPreStartComplete, firstPreStartComplete)
@@ -70,7 +70,7 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteUnaryIntercept
 func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStreamInterceptor() {
 	expectedFirstPreStartComplete := "true"
 	md := metadata.MD{}
-	md.Set(FirstPreStartCompleteMetadataKey, expectedFirstPreStartComplete)
+	md.Set(FirstPreStartContainerCompleteMetadataKey, expectedFirstPreStartComplete)
 	ctx := metadata.NewIncomingContext(context.Background(), md)
 
 	info := &grpc.StreamServerInfo{}
@@ -81,7 +81,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStre
 
 	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
 	err := interceptor.FirstPreStartCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
-		firstPreStartComplete, ok := stream.Context().Value(FirstPreStartComplete(FirstPreStartCompleteContextValueName)).(string)
+		firstPreStartComplete, ok := stream.Context().Value(FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName)).(string)
 
 		t.True(ok)
 		t.Equal(expectedFirstPreStartComplete, firstPreStartComplete)

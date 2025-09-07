@@ -37,34 +37,21 @@ func NewWorkflowService(
 	}
 }
 
-func (t WorkflowServerImpl) FirstPreStartWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
+func (t WorkflowServerImpl) RunWorkflowStream(
+	server grpc.BidiStreamingServer[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse],
 ) error {
-	return t.workflowStream(commonworkflow.FirstPreStart, server)
-}
+	message, err := server.Recv()
+	if err != nil {
+		return err
+	}
 
-func (t WorkflowServerImpl) PreStartWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PreStart, server)
-}
-
-func (t WorkflowServerImpl) PostStartWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PostStart, server)
-}
-
-func (t WorkflowServerImpl) PreStopWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PreStop, server)
-}
-
-func (t WorkflowServerImpl) PreDestroyWorkflowStream(
-	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-) error {
-	return t.workflowStream(commonworkflow.PreDestroy, server)
+	switch request := message.Request.(type) {
+	case *services.RunWorkflowStreamRequest_RunRequest:
+		bidiStreamServer := NewRunWorkflowStreamWrapper(server)
+		return t.workflowStream(commonworkflow.WorkflowNameFromString(request.RunRequest.WorkflowName), bidiStreamServer)
+	default:
+		return errors.New("unsupported first message")
+	}
 }
 
 func (t WorkflowServerImpl) workflowStream(
@@ -87,10 +74,15 @@ func (t WorkflowServerImpl) workflowStream(
 	}
 
 	// First pre start complete
-	firstPreStartCompleteContextValueName := interceptors.FirstPreStartComplete(interceptors.FirstPreStartCompleteContextValueName)
-	firstPreStartComplete, ok := server.Context().Value(firstPreStartCompleteContextValueName).(string)
+	firstPreStartCompleteContextValueName := interceptors.FirstPreStartComplete(interceptors.FirstPreStartContainerCompleteContextValueName)
+	firstPreStartComplete, firstPreStartok := server.Context().Value(firstPreStartCompleteContextValueName).(string)
 
-	if workflowName == commonworkflow.FirstPreStart && (ok || firstPreStartComplete == "true") {
+	// First post start complete
+	firstPostStartCompleteContextValueName := interceptors.FirstPostStartComplete(interceptors.FirstPostStartContainerCompleteContextValueName)
+	firstPostStartComplete, firstPostStartok := server.Context().Value(firstPostStartCompleteContextValueName).(string)
+
+	if workflowName == commonworkflow.FirstPreStartContainer && (firstPreStartok || firstPreStartComplete == "true") ||
+		workflowName == commonworkflow.FirstPostStartContainer && (firstPostStartok || firstPostStartComplete == "true") {
 		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
 			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 				ServiceName:   serviceName,

@@ -95,9 +95,10 @@ func (t *ProjectControl) Start() error {
 	}
 
 	workflowNames := []workflowcommon.WorkflowName{
-		workflowcommon.FirstPreStart,
-		workflowcommon.PreStart,
-		workflowcommon.PostStart,
+		workflowcommon.FirstPreStartContainer,
+		workflowcommon.PreStartContainer,
+		workflowcommon.PostStartContainer,
+		workflowcommon.FirstPostStartContainer,
 	}
 
 	guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
@@ -110,23 +111,34 @@ func (t *ProjectControl) Start() error {
 	}
 
 	if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
-		if err := guardCallback(workflowcommon.FirstPreStart); err != nil {
+		if err := guardCallback(workflowcommon.FirstPreStartContainer); err != nil {
 			return err
 		}
 
-		if err := guardCallback(workflowcommon.PreStart); err != nil {
+		if err := guardCallback(workflowcommon.PreStartContainer); err != nil {
 			return err
 		}
 
 		// Exec post start commands
-		postStartCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "post_start"}
-
-		if err := orchestrator.StartCommand(container, postStartCommand); err != nil {
-			return fmt.Errorf("error running compose: %w", err)
+		postStartEvents := []workflowcommon.WorkflowName{
+			workflowcommon.PostStartContainer,
+			workflowcommon.FirstPostStartContainer,
 		}
 
-		if err := guardCallback(workflowcommon.PostStart); err != nil {
-			return err
+		for _, event := range postStartEvents {
+			postStartCommand := []string{
+				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
+				"trigger-event",
+				event.String(),
+			}
+
+			if err := orchestrator.StartCommand(container, postStartCommand); err != nil {
+				return fmt.Errorf("error running compose: %w", err)
+			}
+
+			if err := guardCallback(event); err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -185,7 +197,7 @@ func (t *ProjectControl) Stop() error {
 		}
 
 		workflowNames := []workflowcommon.WorkflowName{
-			workflowcommon.PreStop,
+			workflowcommon.PreStopContainer,
 		}
 
 		guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
@@ -194,7 +206,11 @@ func (t *ProjectControl) Stop() error {
 
 		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
 			// Exec pre stop commands
-			preStopCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_stop"}
+			preStopCommand := []string{
+				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
+				"trigger-event",
+				workflowcommon.PreStopContainer.String(),
+			}
 
 			if err := orchestrator.StartCommand(container, preStopCommand); err != nil {
 				return fmt.Errorf("error running compose: %w", err)
@@ -259,7 +275,7 @@ func (t *ProjectControl) Destroy() error {
 		}
 
 		workflowNames := []workflowcommon.WorkflowName{
-			workflowcommon.PreDestroy,
+			workflowcommon.PreDestroyContainer,
 		}
 
 		guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
@@ -268,7 +284,11 @@ func (t *ProjectControl) Destroy() error {
 
 		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
 			// Exec pre destroy commands
-			preDestroyCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "trigger-event", "pre_destroy"}
+			preDestroyCommand := []string{
+				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
+				"trigger-event",
+				workflowcommon.PreDestroyContainer.String(),
+			}
 
 			if err := orchestrator.StartCommand(container, preDestroyCommand); err != nil {
 				return fmt.Errorf("error running compose: %w", err)

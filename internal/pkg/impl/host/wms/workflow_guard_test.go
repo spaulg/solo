@@ -34,7 +34,7 @@ type WorkflowGuardTestSuite struct {
 
 func (t *WorkflowGuardTestSuite) SetupTest() {
 	t.mockProject = &project.MockProject{}
-	t.mockProject.On("GetMaxWorkflowTimeout", "first_pre_start").Return(30 * time.Second)
+	t.mockProject.On("GetMaxWorkflowTimeout", "first_pre_start_container").Return(30 * time.Second)
 
 	t.mockLogHandler = &logging.MockHandler{}
 	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
@@ -56,7 +56,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 
 	guard := NewWorkflowGuard(
 		t.soloCtx,
-		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStart},
+		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"container1", "container2"},
 	)
 
@@ -64,7 +64,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 			ServiceName:   "test-service",
 			ContainerName: "container1",
-			WorkflowName:  workflowcommon.FirstPreStart,
+			WorkflowName:  workflowcommon.FirstPreStartContainer,
 		},
 		Successful: true,
 	})
@@ -73,13 +73,13 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 			ServiceName:   "test-service",
 			ContainerName: "container2",
-			WorkflowName:  workflowcommon.FirstPreStart,
+			WorkflowName:  workflowcommon.FirstPreStartContainer,
 		},
 		Successful: true,
 	})
 
 	err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
-		return guardCallback(workflowcommon.FirstPreStart)
+		return guardCallback(workflowcommon.FirstPreStartContainer)
 	})
 
 	t.NoError(err)
@@ -93,7 +93,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedEventType() {
 
 	guard := NewWorkflowGuard(
 		t.soloCtx,
-		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStart},
+		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"container1"},
 	)
 
@@ -101,7 +101,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedEventType() {
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 			ServiceName:   "test-service",
 			ContainerName: "container1",
-			WorkflowName:  workflowcommon.PreStart,
+			WorkflowName:  workflowcommon.PreStartContainer,
 		},
 	})
 
@@ -110,16 +110,16 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedEventType() {
 
 func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Received event completed for workflow pre_start for container container1"
+		return record.Message == "Received event completed for workflow pre_start_container for container container1"
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Workflow pre_start not registered for workflow guard"
+		return record.Message == "Workflow pre_start_container not registered for workflow guard"
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
 		t.soloCtx,
-		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStart},
+		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"container1"},
 	)
 
@@ -127,7 +127,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 			ServiceName:   "test-service",
 			ContainerName: "container1",
-			WorkflowName:  workflowcommon.PreStart,
+			WorkflowName:  workflowcommon.PreStartContainer,
 		},
 		Successful: true,
 	})
@@ -137,7 +137,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
 
 func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Received event completed for workflow first_pre_start for container container2"
+		return record.Message == "Received event completed for workflow first_pre_start_container for container container2"
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
@@ -146,7 +146,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 
 	guard := NewWorkflowGuard(
 		t.soloCtx,
-		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStart},
+		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"container1"},
 	)
 
@@ -154,7 +154,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 			ServiceName:   "test-service",
 			ContainerName: "container2",
-			WorkflowName:  workflowcommon.FirstPreStart,
+			WorkflowName:  workflowcommon.FirstPreStartContainer,
 		},
 		Successful: true,
 	})
@@ -164,27 +164,27 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 
 func (t *WorkflowGuardTestSuite) TestWaitWithUnrecognisedWorkflow() {
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Cannot wait for workflow pre_start to complete as this is not mapped"
+		return record.Message == "Cannot wait for workflow pre_start_container to complete as this is not mapped"
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Error waiting for container container1: unrecognised workflow pre_start"
+		return record.Message == "Error waiting for container container1: unrecognised workflow pre_start_container"
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Encountered 1 errors while waiting for containers: [unrecognised workflow pre_start]"
+		return record.Message == "Encountered 1 errors while waiting for containers: [unrecognised workflow pre_start_container]"
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
 		t.soloCtx,
-		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStart},
+		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"container1"},
 	)
 
 	err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
-		return guardCallback(workflowcommon.PreStart)
+		return guardCallback(workflowcommon.PreStartContainer)
 	})
 
 	t.ErrorContains(err, "encountered errors while waiting for containers")
-	t.ErrorContains(err, "[unrecognised workflow pre_start]")
+	t.ErrorContains(err, "[unrecognised workflow pre_start_container]")
 }

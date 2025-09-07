@@ -29,12 +29,12 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 			defer workflowRunner.Close()
 
 			if !isServiceBuilt() {
-				if err := workflowRunner.Execute(commonworkflow.FirstPreStart); err != nil {
+				if err := workflowRunner.Execute(commonworkflow.FirstPreStartContainer); err != nil {
 					panic(err)
 				}
 			}
 
-			if err := workflowRunner.Execute(commonworkflow.PreStart); err != nil {
+			if err := workflowRunner.Execute(commonworkflow.PreStartContainer); err != nil {
 				panic(err)
 			}
 
@@ -62,7 +62,7 @@ func forkAndExecute(args []string) error {
 }
 
 func isServiceBuilt() bool {
-	markerFile := "/solo/service/data/first_pre_start_complete"
+	markerFile := "/solo/service/data/first_pre_start_container_complete"
 
 	if _, err := os.Stat(markerFile); err != nil {
 		return false
