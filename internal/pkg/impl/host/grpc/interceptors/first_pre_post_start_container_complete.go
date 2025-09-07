@@ -10,10 +10,13 @@ import (
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 )
 
-const FirstPreStartCompleteMetadataKey = "first_pre_start_complete"
-const FirstPreStartCompleteContextValueName = "FirstPreStartComplete"
+const FirstPreStartContainerCompleteMetadataKey = "first_pre_start_container_complete"
+const FirstPostStartContainerCompleteMetadataKey = "first_post_start_container_complete"
+const FirstPreStartContainerCompleteContextValueName = "FirstPreStartComplete"
+const FirstPostStartContainerCompleteContextValueName = "FirstPostStartComplete"
 
 type FirstPreStartComplete string
+type FirstPostStartComplete string
 
 type FirstPreStartCompleteInterceptor struct {
 	orchestrator container_types.Orchestrator
@@ -36,9 +39,14 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteUnaryInterceptor
 		return nil, fmt.Errorf("failed to load metadata from incoming context")
 	}
 
-	firstPreStartComplete := md.Get(FirstPreStartCompleteMetadataKey)
+	firstPreStartComplete := md.Get(FirstPreStartContainerCompleteMetadataKey)
 	if len(firstPreStartComplete) > 0 {
-		ctx = context.WithValue(ctx, FirstPreStartComplete(FirstPreStartCompleteContextValueName), firstPreStartComplete[0])
+		ctx = context.WithValue(ctx, FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName), firstPreStartComplete[0])
+	}
+
+	firstPostStartComplete := md.Get(FirstPostStartContainerCompleteMetadataKey)
+	if len(firstPostStartComplete) > 0 {
+		ctx = context.WithValue(ctx, FirstPostStartComplete(FirstPostStartContainerCompleteContextValueName), firstPostStartComplete[0])
 	}
 
 	return handler(ctx, req)
@@ -56,9 +64,14 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteStreamIntercepto
 		return fmt.Errorf("failed to load metadata from incoming context")
 	}
 
-	firstPreStartComplete := md.Get(FirstPreStartCompleteMetadataKey)
+	firstPreStartComplete := md.Get(FirstPreStartContainerCompleteMetadataKey)
 	if len(firstPreStartComplete) > 0 {
-		ctx = context.WithValue(ctx, FirstPreStartComplete(FirstPreStartCompleteContextValueName), firstPreStartComplete[0])
+		ctx = context.WithValue(ctx, FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName), firstPreStartComplete[0])
+	}
+
+	firstPostStartComplete := md.Get(FirstPostStartContainerCompleteMetadataKey)
+	if len(firstPostStartComplete) > 0 {
+		ctx = context.WithValue(ctx, FirstPostStartComplete(FirstPostStartContainerCompleteContextValueName), firstPostStartComplete[0])
 	}
 
 	streamWrapper := NewServerStreamWrapper(ss, ctx)
