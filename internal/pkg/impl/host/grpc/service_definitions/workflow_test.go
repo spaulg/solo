@@ -498,6 +498,7 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 		step.On("GetCommand").Return("/bin/sh")
 		step.On("GetArguments").Return([]string{"-c", "echo \"Hello World\""})
 		step.On("GetWorkingDirectory").Return("/")
+		step.On("GetShell").Return("/bin/sh")
 
 		step.On(
 			"Trigger",
@@ -517,6 +518,7 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 				Command:   "/bin/sh",
 				Arguments: []string{"-c", "echo \"Hello World\""},
 				Cwd:       "/",
+				Shell:     "/bin/sh",
 			}).Return()
 
 			t.mockGrpcServer.On("Send", &services.WorkflowStreamResponse{
@@ -572,6 +574,7 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 				Command:   "/bin/sh",
 				Arguments: []string{"-c", "echo \"Hello World\""},
 				Cwd:       "/",
+				Shell:     "/bin/sh",
 				ExitCode:  uint8(exitCode),
 			}).Return()
 
@@ -633,6 +636,7 @@ func (t *WorkflowTestSuite) testServerRecvErrorFor(workflow commonworkflow.Workf
 		step.On("GetCommand").Return("/bin/sh")
 		step.On("GetArguments").Return([]string{"-c", "echo \"Hello World\""})
 		step.On("GetWorkingDirectory").Return("/")
+		step.On("GetShell").Return("/bin/sh")
 
 		step.On(
 			"Trigger",
@@ -652,6 +656,7 @@ func (t *WorkflowTestSuite) testServerRecvErrorFor(workflow commonworkflow.Workf
 				Command:   "/bin/sh",
 				Arguments: []string{"-c", "echo \"Hello World\""},
 				Cwd:       "/",
+				Shell:     "/bin/sh",
 			}).Return()
 
 			t.mockGrpcServer.On("Send", &services.WorkflowStreamResponse{
@@ -723,6 +728,7 @@ func (t *WorkflowTestSuite) testUnknownWorkflowResult(workflow commonworkflow.Wo
 		step.On("GetCommand").Return("/bin/sh")
 		step.On("GetArguments").Return([]string{"-c", "echo \"Hello World\""})
 		step.On("GetWorkingDirectory").Return("/")
+		step.On("GetShell").Return("/bin/sh")
 
 		step.On(
 			"Trigger",
@@ -742,6 +748,7 @@ func (t *WorkflowTestSuite) testUnknownWorkflowResult(workflow commonworkflow.Wo
 				Command:   "/bin/sh",
 				Arguments: []string{"-c", "echo \"Hello World\""},
 				Cwd:       "/",
+				Shell:     "/bin/sh",
 			}).Return()
 
 			t.mockGrpcServer.On("Send", &services.WorkflowStreamResponse{

@@ -386,9 +386,14 @@ func (t *ProjectControl) ExecuteTool(name string, args []string) error {
 		return fmt.Errorf("service %s not found in project configuration", toolConfig.Service)
 	}
 
+	shell := t.soloCtx.Config.DefaultShell
+	if toolConfig.Shell != nil {
+		shell = *toolConfig.Shell
+	}
+
 	// Parse the initial command and args for a full path or
 	// shell and split into arguments
-	command, arguments := cmd.SplitCommand(toolConfig.Command + " " + strings.Join(args, " "))
+	command, arguments := cmd.SplitCommand(shell, toolConfig.Command+" "+strings.Join(args, " "))
 	workingDirectory := ""
 
 	// If a static working directory is specified, use it

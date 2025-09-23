@@ -15,6 +15,7 @@ const (
 	DefaultDockerBinary           = "docker"
 	DefaultDockerOrchestratorName = "docker"
 	DefaultShell                  = "/bin/sh"
+	DefaultStepShell              = "/bin/sh"
 )
 
 // nolint:gochecknoglobals
@@ -30,6 +31,7 @@ func NewConfig() config_types.Config {
 		GrpcServerPort:     DefaultGrpcServerPort,
 		ShellPriority:      DefaultShellPriority,
 		DefaultShell:       DefaultShell,
+		DefaultStepShell:   DefaultStepShell,
 
 		Entrypoint: config_types.Entrypoint{
 			HostEntrypointPath:      DefaultHostEntrypoint,

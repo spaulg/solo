@@ -1,8 +1,9 @@
 package wms
 
 import (
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 	"github.com/stretchr/testify/mock"
+
+	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
 type MockStep struct {
@@ -51,6 +52,15 @@ func (m *MockStep) GetArguments() []string {
 		return a
 	} else {
 		return []string{}
+	}
+}
+
+func (m *MockStep) GetShell() string {
+	args := m.Called()
+	if c, ok := args.Get(0).(string); ok {
+		return c
+	} else {
+		return ""
 	}
 }
 

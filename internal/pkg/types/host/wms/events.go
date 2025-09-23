@@ -21,6 +21,7 @@ type WorkflowStepStartedEvent struct {
 	Command   string
 	Arguments []string
 	Cwd       string
+	Shell     string
 }
 
 type WorkflowStepOutputEvent struct {
@@ -36,6 +37,7 @@ type WorkflowStepCompleteEvent struct {
 	Command   string
 	Arguments []string
 	Cwd       string
+	Shell     string
 	ExitCode  uint8
 }
 

@@ -129,7 +129,7 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 		},
 	})
 
-	workflow, err := t.workflowFactory.Make(t.soloCtx.Project, t.orchestrator, serviceName, workflowName)
+	workflow, err := t.workflowFactory.Make(t.soloCtx, t.orchestrator, serviceName, workflowName)
 	if err != nil {
 		return false, fmt.Errorf("failed to create workflow: %w", err)
 	}
@@ -149,6 +149,7 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 					Command:   step.GetCommand(),
 					Arguments: step.GetArguments(),
 					Cwd:       step.GetWorkingDirectory(),
+					Shell:     step.GetShell(),
 				})
 
 				return server.Send(&services.WorkflowStreamResponse{
@@ -203,6 +204,7 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 					Command:   step.GetCommand(),
 					Arguments: step.GetArguments(),
 					Cwd:       step.GetWorkingDirectory(),
+					Shell:     step.GetShell(),
 				})
 
 				if exitCode != 0 {
