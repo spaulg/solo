@@ -24,4 +24,5 @@ type Config struct {
 	Orchestrators           map[string]OrchestratorConfig `mapstructure:"orchestrators" yaml:"orchestrators"`
 	ShellPriority           []string                      `mapstructure:"shell_priority" yaml:"shell_priority"`
 	DefaultShell            string                        `mapstructure:"default_shell" yaml:"default_shell"`
+	DefaultStepShell        string                        `mapstructure:"default_step_shell" yaml:"default_step_shell"`
 }

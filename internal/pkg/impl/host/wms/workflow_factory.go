@@ -2,8 +2,8 @@ package wms
 
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
+	context_types "github.com/spaulg/solo/internal/pkg/impl/host/context"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/project"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
@@ -14,12 +14,12 @@ func NewWorkflowFactory() wms_types.WorkflowFactory {
 }
 
 func (t *WorkflowFactory) Make(
-	project project_types.Project,
+	soloCtx *context_types.CliContext,
 	orchestrator container_types.Orchestrator,
 	serviceName string,
 	workflowName workflowcommon.WorkflowName,
 ) (wms_types.Orchestrator, error) {
-	service := project.Services().GetService(serviceName)
+	service := soloCtx.Project.Services().GetService(serviceName)
 	var err error
 
 	// Use project context to lookup the services working_directory option
@@ -34,6 +34,7 @@ func (t *WorkflowFactory) Make(
 	}
 
 	return NewOrchestrator(
+		soloCtx,
 		serviceWorkingDirectory,
 		service.GetServiceWorkflow(workflowName.String()),
 	), nil

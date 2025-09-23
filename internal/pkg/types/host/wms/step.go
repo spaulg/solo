@@ -10,5 +10,6 @@ type Step interface {
 	GetName() string
 	GetCommand() string
 	GetArguments() []string
+	GetShell() string
 	GetWorkingDirectory() string
 }

@@ -2,13 +2,13 @@ package cmd
 
 import "strings"
 
-func SplitCommand(command string) (string, []string) {
+func SplitCommand(shell string, command string) (string, []string) {
 	if []rune(command)[0] == '/' {
 		// Exec format
 		return extractExecCommandArgs(command)
 	} else {
 		// Shell format
-		return extractShellCommandArgs(command)
+		return extractShellCommandArgs(command, shell)
 	}
 }
 
@@ -58,6 +58,6 @@ func extractExecCommandArgs(command string) (string, []string) {
 	return extracted[0], extracted[1:]
 }
 
-func extractShellCommandArgs(command string) (string, []string) {
-	return "/bin/sh", []string{"-c", command}
+func extractShellCommandArgs(command string, shell string) (string, []string) {
+	return shell, []string{"-c", command}
 }

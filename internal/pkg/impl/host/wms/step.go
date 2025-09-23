@@ -11,10 +11,11 @@ type Step struct {
 	command          string
 	arguments        []string
 	workingDirectory string
+	shell            string
 }
 
-func NewStep(id string, name string, command string, workingDirectory string) wms_types.Step {
-	command, arguments := cmd.SplitCommand(command)
+func NewStep(id string, name string, command string, workingDirectory string, shell string) wms_types.Step {
+	command, arguments := cmd.SplitCommand(shell, command)
 
 	return &Step{
 		id:               id,
@@ -22,6 +23,7 @@ func NewStep(id string, name string, command string, workingDirectory string) wm
 		command:          command,
 		arguments:        arguments,
 		workingDirectory: workingDirectory,
+		shell:            shell,
 	}
 }
 
@@ -39,6 +41,10 @@ func (t *Step) GetCommand() string {
 
 func (t *Step) GetArguments() []string {
 	return t.arguments
+}
+
+func (t *Step) GetShell() string {
+	return t.shell
 }
 
 func (t *Step) GetWorkingDirectory() string {

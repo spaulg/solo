@@ -1,14 +1,20 @@
 package wms
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
+	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/context"
+	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
+	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/container"
+	"github.com/spaulg/solo/test/mocks/host/logging"
 	"github.com/spaulg/solo/test/mocks/host/project"
 	"github.com/spaulg/solo/test/mocks/host/project/compose"
 )
@@ -20,13 +26,29 @@ func TestWorkflowFactoryTestSuite(t *testing.T) {
 type WorkflowFactoryTestSuite struct {
 	suite.Suite
 
+	soloCtx          *cli_context.CliContext
 	mockProject      *project.MockProject
 	mockOrchestrator *container.MockOrchestrator
+	mockLogHandler   *logging.MockHandler
 }
 
 func (t *WorkflowFactoryTestSuite) SetupTest() {
 	t.mockProject = &project.MockProject{}
 	t.mockOrchestrator = &container.MockOrchestrator{}
+
+	t.mockLogHandler = &logging.MockHandler{}
+	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
+
+	t.soloCtx = &cli_context.CliContext{
+		Project: t.mockProject,
+		Logger:  slog.New(t.mockLogHandler),
+		Config: &config_types.Config{
+			Entrypoint: config_types.Entrypoint{
+				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
+			},
+			GrpcServerPort: 0,
+		},
+	}
 }
 
 func (t *WorkflowFactoryTestSuite) TestBuild() {
@@ -48,7 +70,7 @@ func (t *WorkflowFactoryTestSuite) TestBuild() {
 	t.mockOrchestrator.On("ResolveImageWorkingDirectory", serviceName).Return("/", nil)
 
 	workflowFactory := NewWorkflowFactory()
-	workflow, err := workflowFactory.Make(t.mockProject, t.mockOrchestrator, serviceName, workflowName)
+	workflow, err := workflowFactory.Make(t.soloCtx, t.mockOrchestrator, serviceName, workflowName)
 
 	t.NotNil(workflow)
 	t.NoError(err)

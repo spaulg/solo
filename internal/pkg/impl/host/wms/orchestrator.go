@@ -7,28 +7,32 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
+	context_types "github.com/spaulg/solo/internal/pkg/impl/host/context"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
 type Orchestrator struct {
+	soloCtx                 *context_types.CliContext
 	serviceWorkingDirectory string
-	steps                   []compose_types.WorkflowStep
+	workflow                compose_types.ServiceWorkflowConfig
 }
 
 func NewOrchestrator(
+	soloCtx *context_types.CliContext,
 	serviceWorkingDirectory string,
 	workflow compose_types.ServiceWorkflowConfig,
 ) wms_types.Orchestrator {
 	return &Orchestrator{
+		soloCtx:                 soloCtx,
 		serviceWorkingDirectory: serviceWorkingDirectory,
-		steps:                   workflow.Steps,
+		workflow:                workflow,
 	}
 }
 
 func (t *Orchestrator) StepIterator() iter.Seq[wms_types.Step] {
 	stepNumber := 0
-	stepCount := len(t.steps)
+	stepCount := len(t.workflow.Steps)
 
 	return func(yield func(wms_types.Step) bool) {
 		entropy := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -37,11 +41,25 @@ func (t *Orchestrator) StepIterator() iter.Seq[wms_types.Step] {
 			id := ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
 
 			workingDirectory := t.serviceWorkingDirectory
-			if t.steps[stepNumber].WorkingDirectory != nil {
-				workingDirectory = *t.steps[stepNumber].WorkingDirectory
+			if t.workflow.Steps[stepNumber].WorkingDirectory != nil {
+				workingDirectory = *t.workflow.Steps[stepNumber].WorkingDirectory
 			}
 
-			step := NewStep(id.String(), t.steps[stepNumber].Name, t.steps[stepNumber].Run, workingDirectory)
+			shell := t.soloCtx.Config.DefaultStepShell
+			if t.workflow.Steps[stepNumber].Shell != nil {
+				shell = *t.workflow.Steps[stepNumber].Shell
+			} else if t.workflow.Shell != nil {
+				shell = *t.workflow.Shell
+			}
+
+			step := NewStep(
+				id.String(),
+				t.workflow.Steps[stepNumber].Name,
+				t.workflow.Steps[stepNumber].Run,
+				workingDirectory,
+				shell,
+			)
+
 			if !yield(step) {
 				return
 			}

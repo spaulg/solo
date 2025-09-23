@@ -1,11 +1,18 @@
 package wms
 
 import (
+	"log/slog"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/context"
+	config_types "github.com/spaulg/solo/internal/pkg/types/host/config"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/project/compose"
+	"github.com/spaulg/solo/test"
+	"github.com/spaulg/solo/test/mocks/host/logging"
+	"github.com/spaulg/solo/test/mocks/host/project"
 )
 
 func TestOrchestratorTestSuite(t *testing.T) {
@@ -22,12 +29,32 @@ type expectedStep struct {
 type OrchestratorTestSuite struct {
 	suite.Suite
 
+	soloCtx        *cli_context.CliContext
+	mockProject    *project.MockProject
+	mockLogHandler *logging.MockHandler
+
 	expectedSteps []expectedStep
 	config        compose_types.ServiceWorkflowConfig
 }
 
 func (t *OrchestratorTestSuite) SetupTest() {
 	cwd := "/"
+
+	t.mockProject = &project.MockProject{}
+
+	t.mockLogHandler = &logging.MockHandler{}
+	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
+
+	t.soloCtx = &cli_context.CliContext{
+		Project: t.mockProject,
+		Logger:  slog.New(t.mockLogHandler),
+		Config: &config_types.Config{
+			Entrypoint: config_types.Entrypoint{
+				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
+			},
+			GrpcServerPort: 0,
+		},
+	}
 
 	t.expectedSteps = []expectedStep{
 		{
@@ -72,7 +99,7 @@ func (t *OrchestratorTestSuite) SetupTest() {
 }
 
 func (t *OrchestratorTestSuite) TestIteration() {
-	orchestrator := NewOrchestrator("/", t.config)
+	orchestrator := NewOrchestrator(t.soloCtx, "/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {
@@ -86,7 +113,7 @@ func (t *OrchestratorTestSuite) TestIteration() {
 }
 
 func (t *OrchestratorTestSuite) TestIterationWithEarlyBreak() {
-	orchestrator := NewOrchestrator("/", t.config)
+	orchestrator := NewOrchestrator(t.soloCtx, "/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {
