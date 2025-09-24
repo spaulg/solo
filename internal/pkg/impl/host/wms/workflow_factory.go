@@ -18,7 +18,7 @@ func (t *WorkflowFactory) Make(
 	orchestrator container_types.Orchestrator,
 	serviceName string,
 	workflowName workflowcommon.WorkflowName,
-) (wms_types.Orchestrator, error) {
+) (wms_types.Workflow, error) {
 	service := soloCtx.Project.Services().GetService(serviceName)
 	var err error
 
@@ -33,7 +33,7 @@ func (t *WorkflowFactory) Make(
 		}
 	}
 
-	return NewOrchestrator(
+	return NewWorkflow(
 		soloCtx,
 		serviceWorkingDirectory,
 		service.GetServiceWorkflow(workflowName.String()),

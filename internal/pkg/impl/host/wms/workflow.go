@@ -12,25 +12,25 @@ import (
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
-type Orchestrator struct {
+type Workflow struct {
 	soloCtx                 *context_types.CliContext
 	serviceWorkingDirectory string
 	workflow                compose_types.ServiceWorkflowConfig
 }
 
-func NewOrchestrator(
+func NewWorkflow(
 	soloCtx *context_types.CliContext,
 	serviceWorkingDirectory string,
 	workflow compose_types.ServiceWorkflowConfig,
-) wms_types.Orchestrator {
-	return &Orchestrator{
+) wms_types.Workflow {
+	return &Workflow{
 		soloCtx:                 soloCtx,
 		serviceWorkingDirectory: serviceWorkingDirectory,
 		workflow:                workflow,
 	}
 }
 
-func (t *Orchestrator) StepIterator() iter.Seq[wms_types.Step] {
+func (t *Workflow) StepIterator() iter.Seq[wms_types.Step] {
 	stepNumber := 0
 	stepCount := len(t.workflow.Steps)
 

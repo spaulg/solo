@@ -99,7 +99,7 @@ func (t *OrchestratorTestSuite) SetupTest() {
 }
 
 func (t *OrchestratorTestSuite) TestIteration() {
-	orchestrator := NewOrchestrator(t.soloCtx, "/", t.config)
+	orchestrator := NewWorkflow(t.soloCtx, "/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {
@@ -113,7 +113,7 @@ func (t *OrchestratorTestSuite) TestIteration() {
 }
 
 func (t *OrchestratorTestSuite) TestIterationWithEarlyBreak() {
-	orchestrator := NewOrchestrator(t.soloCtx, "/", t.config)
+	orchestrator := NewWorkflow(t.soloCtx, "/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {

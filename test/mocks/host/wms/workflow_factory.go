@@ -18,9 +18,9 @@ func (m *MockWorkflowFactory) Make(
 	orchestrator container_types.Orchestrator,
 	service string,
 	workflowName workflowcommon.WorkflowName,
-) (wms_types.Orchestrator, error) {
+) (wms_types.Workflow, error) {
 	args := m.Called(soloCtx, orchestrator, service, workflowName)
-	if o, ok := args.Get(0).(wms_types.Orchestrator); ok {
+	if o, ok := args.Get(0).(wms_types.Workflow); ok {
 		return o, args.Error(1)
 	} else {
 		return nil, args.Error(1)

@@ -35,7 +35,7 @@ type WorkflowTestSuite struct {
 	mockProject              *project.MockProject
 	mockLogHandler           *logging.MockHandler
 	mockEventManager         *events.MockEventManager
-	mockWorkflowOrchestrator *wms.MockOrchestrator
+	mockWorkflowOrchestrator *wms.MockWorkflow
 	mockWorkflowFactory      *wms.MockWorkflowFactory
 	mockOrchestrator         *container.MockOrchestrator
 	mockGrpcServer           *grpc.MockBidiStreamingServer[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse]
@@ -43,7 +43,7 @@ type WorkflowTestSuite struct {
 
 func (t *WorkflowTestSuite) SetupTest() {
 	t.mockEventManager = &events.MockEventManager{}
-	t.mockWorkflowOrchestrator = &wms.MockOrchestrator{}
+	t.mockWorkflowOrchestrator = &wms.MockWorkflow{}
 	t.mockWorkflowFactory = &wms.MockWorkflowFactory{}
 	t.mockProject = &project.MockProject{}
 	t.mockOrchestrator = &container.MockOrchestrator{}

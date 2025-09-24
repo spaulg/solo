@@ -12,5 +12,5 @@ type WorkflowFactory interface {
 		orchestrator container_types.Orchestrator,
 		service string,
 		workflowName workflowcommon.WorkflowName,
-	) (Orchestrator, error)
+	) (Workflow, error)
 }
