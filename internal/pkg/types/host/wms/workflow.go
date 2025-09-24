@@ -2,6 +2,6 @@ package wms
 
 import "iter"
 
-type Orchestrator interface {
+type Workflow interface {
 	StepIterator() iter.Seq[Step]
 }
