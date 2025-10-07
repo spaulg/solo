@@ -69,6 +69,7 @@ func (t WorkflowServerImpl) workflowStream(
 		return fmt.Errorf("unauthorized")
 	}
 
+	// Extract container name
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
 	containerName, ok := server.Context().Value(containerNameContextValueName).(string)
 	if !ok {
@@ -76,27 +77,15 @@ func (t WorkflowServerImpl) workflowStream(
 		return fmt.Errorf("unauthorized")
 	}
 
-	isFirstExecution := true
-	var err error
-
-	if workflowName.IsServiceWorkflow() {
-		isFirstExecution, err = t.workflowExecTracker.MarkExecuted(serviceName, workflowName)
-		if err != nil {
-			return fmt.Errorf("failed to mark service workflow as executed: %w", err)
-		}
+	// Handle previously run once-only workflows
+	hasServiceWorkflowRun, err := t.HasServiceWorkflowRun(serviceName, workflowName)
+	if err != nil {
+		return fmt.Errorf("failed to check if service workflow has run: %w", err)
 	}
 
-	// First pre start complete
-	firstPreStartCompleteContextValueName := interceptors.FirstPreStartComplete(interceptors.FirstPreStartContainerCompleteContextValueName)
-	firstPreStartComplete, firstPreStartok := server.Context().Value(firstPreStartCompleteContextValueName).(string)
+	hasFirstContainerWorkflowRun := t.HasFirstContainerWorkflowRun(workflowName, server)
 
-	// First post start complete
-	firstPostStartCompleteContextValueName := interceptors.FirstPostStartComplete(interceptors.FirstPostStartContainerCompleteContextValueName)
-	firstPostStartComplete, firstPostStartok := server.Context().Value(firstPostStartCompleteContextValueName).(string)
-
-	if !isFirstExecution ||
-		(workflowName == commonworkflow.FirstPreStartContainer && (firstPreStartok || firstPreStartComplete == "true")) ||
-		(workflowName == commonworkflow.FirstPostStartContainer && (firstPostStartok || firstPostStartComplete == "true")) {
+	if hasServiceWorkflowRun || hasFirstContainerWorkflowRun {
 		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
 			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
 				ServiceName:   serviceName,
@@ -244,4 +233,34 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 	}
 
 	return workflowSuccess, nil
+}
+
+func (t WorkflowServerImpl) HasServiceWorkflowRun(
+	serviceName string,
+	workflowName commonworkflow.WorkflowName,
+) (bool, error) {
+	if !workflowName.IsServiceWorkflow() {
+		return false, nil
+	}
+
+	isFirstExecution, err := t.workflowExecTracker.MarkExecuted(serviceName, workflowName)
+	if err != nil {
+		return false, fmt.Errorf("failed to mark service workflow as executed: %w", err)
+	}
+
+	return !isFirstExecution, nil
+}
+
+func (t WorkflowServerImpl) HasFirstContainerWorkflowRun(
+	workflowName commonworkflow.WorkflowName,
+	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
+) bool {
+	if !workflowName.IsFirstContainerWorkflow() {
+		return false
+	}
+
+	firstWorkflowCompleteContextValueName := interceptors.FirstWorkflowComplete(workflowName)
+	firstWorkflowComplete, firstWorkflowOk := server.Context().Value(firstWorkflowCompleteContextValueName).(string)
+
+	return firstWorkflowOk && firstWorkflowComplete == "true"
 }

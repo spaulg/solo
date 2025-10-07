@@ -7,16 +7,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 )
 
-const FirstPreStartContainerCompleteMetadataKey = "first_pre_start_container_complete"
-const FirstPostStartContainerCompleteMetadataKey = "first_post_start_container_complete"
-const FirstPreStartContainerCompleteContextValueName = "FirstPreStartComplete"
-const FirstPostStartContainerCompleteContextValueName = "FirstPostStartComplete"
-
-type FirstPreStartComplete string
-type FirstPostStartComplete string
+type FirstWorkflowComplete workflowcommon.WorkflowName
 
 type FirstPreStartCompleteInterceptor struct {
 	orchestrator container_types.Orchestrator
@@ -39,14 +34,13 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteUnaryInterceptor
 		return nil, fmt.Errorf("failed to load metadata from incoming context")
 	}
 
-	firstPreStartComplete := md.Get(FirstPreStartContainerCompleteMetadataKey)
-	if len(firstPreStartComplete) > 0 {
-		ctx = context.WithValue(ctx, FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName), firstPreStartComplete[0])
-	}
-
-	firstPostStartComplete := md.Get(FirstPostStartContainerCompleteMetadataKey)
-	if len(firstPostStartComplete) > 0 {
-		ctx = context.WithValue(ctx, FirstPostStartComplete(FirstPostStartContainerCompleteContextValueName), firstPostStartComplete[0])
+	for _, workflow := range workflowcommon.WorkflowNames {
+		if workflow.IsFirstContainerWorkflow() {
+			firstWorkflowComplete := md.Get(workflow.String() + "_complete")
+			if len(firstWorkflowComplete) > 0 {
+				ctx = context.WithValue(ctx, FirstWorkflowComplete(workflow), firstWorkflowComplete[0])
+			}
+		}
 	}
 
 	return handler(ctx, req)
@@ -64,14 +58,13 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteStreamIntercepto
 		return fmt.Errorf("failed to load metadata from incoming context")
 	}
 
-	firstPreStartComplete := md.Get(FirstPreStartContainerCompleteMetadataKey)
-	if len(firstPreStartComplete) > 0 {
-		ctx = context.WithValue(ctx, FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName), firstPreStartComplete[0])
-	}
-
-	firstPostStartComplete := md.Get(FirstPostStartContainerCompleteMetadataKey)
-	if len(firstPostStartComplete) > 0 {
-		ctx = context.WithValue(ctx, FirstPostStartComplete(FirstPostStartContainerCompleteContextValueName), firstPostStartComplete[0])
+	for _, workflow := range workflowcommon.WorkflowNames {
+		if workflow.IsFirstContainerWorkflow() {
+			firstWorkflowComplete := md.Get(workflow.String() + "_complete")
+			if len(firstWorkflowComplete) > 0 {
+				ctx = context.WithValue(ctx, FirstWorkflowComplete(workflow), firstWorkflowComplete[0])
+			}
+		}
 	}
 
 	streamWrapper := NewServerStreamWrapper(ss, ctx)

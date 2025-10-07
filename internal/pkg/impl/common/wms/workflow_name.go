@@ -92,3 +92,12 @@ func (c WorkflowName) IsServiceWorkflow() bool {
 		return false
 	}
 }
+
+func (c WorkflowName) IsFirstContainerWorkflow() bool {
+	switch c {
+	case FirstPreStartContainer, FirstPostStartContainer:
+		return true
+	default:
+		return false
+	}
+}

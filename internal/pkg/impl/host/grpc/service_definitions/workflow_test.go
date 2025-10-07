@@ -210,7 +210,7 @@ func (t *WorkflowTestSuite) TestNilWorkflowFromFactory() {
 func (t *WorkflowTestSuite) TestFirstPreStartSkippedWorkflowStepTrigger() {
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstPreStartCompleteContextValueName := interceptors.FirstPreStartComplete(interceptors.FirstPreStartContainerCompleteContextValueName)
+	firstPreStartCompleteContextValueName := interceptors.FirstWorkflowComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")

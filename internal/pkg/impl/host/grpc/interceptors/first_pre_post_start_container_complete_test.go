@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	grpc_mock "github.com/spaulg/solo/test/mocks/grpc"
 	"github.com/spaulg/solo/test/mocks/host/container"
 )
@@ -29,7 +30,7 @@ func (t *FirstPreStartCompleteTestSuite) SetupTest() {
 func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnaryInterceptor() {
 	expectedFirstPreStartComplete := "true"
 	md := metadata.MD{}
-	md.Set(FirstPreStartContainerCompleteMetadataKey, expectedFirstPreStartComplete)
+	md.Set(workflowcommon.FirstPreStartContainer.String()+"_complete", expectedFirstPreStartComplete)
 	ctx := metadata.NewIncomingContext(context.Background(), md)
 
 	info := &grpc.UnaryServerInfo{}
@@ -38,7 +39,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnar
 
 	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
 	result, err := interceptor.FirstPreStartCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
-		firstPreStartComplete, ok := ctx.Value(FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName)).(string)
+		firstPreStartComplete, ok := ctx.Value(FirstWorkflowComplete(workflowcommon.FirstPreStartContainer)).(string)
 
 		t.True(ok)
 		t.Equal(expectedFirstPreStartComplete, firstPreStartComplete)
@@ -70,7 +71,7 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteUnaryIntercept
 func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStreamInterceptor() {
 	expectedFirstPreStartComplete := "true"
 	md := metadata.MD{}
-	md.Set(FirstPreStartContainerCompleteMetadataKey, expectedFirstPreStartComplete)
+	md.Set(workflowcommon.FirstPreStartContainer.String()+"_complete", expectedFirstPreStartComplete)
 	ctx := metadata.NewIncomingContext(context.Background(), md)
 
 	info := &grpc.StreamServerInfo{}
@@ -81,7 +82,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStre
 
 	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
 	err := interceptor.FirstPreStartCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
-		firstPreStartComplete, ok := stream.Context().Value(FirstPreStartComplete(FirstPreStartContainerCompleteContextValueName)).(string)
+		firstPreStartComplete, ok := stream.Context().Value(FirstWorkflowComplete(workflowcommon.FirstPreStartContainer)).(string)
 
 		t.True(ok)
 		t.Equal(expectedFirstPreStartComplete, firstPreStartComplete)
