@@ -45,7 +45,7 @@ func (t *Workflow) StepIterator() iter.Seq[wms_types.Step] {
 				workingDirectory = *t.workflow.Steps[stepNumber].WorkingDirectory
 			}
 
-			shell := t.soloCtx.Config.DefaultStepShell
+			shell := t.soloCtx.Config.Workflow.DefaultStepShell
 			if t.workflow.Steps[stepNumber].Shell != nil {
 				shell = *t.workflow.Steps[stepNumber].Shell
 			} else if t.workflow.Shell != nil {

@@ -6,7 +6,7 @@ type LoggingConfig struct {
 	Handler string `mapstructure:"handler" yaml:"handler"`
 }
 
-type Entrypoint struct {
+type EntrypointConfig struct {
 	HostEntrypointPath      string `mapstructure:"host_entrypoint_path" yaml:"host_entrypoint_path"`
 	ContainerEntrypointPath string `mapstructure:"container_entrypoint_path" yaml:"container_entrypoint_path"`
 }
@@ -15,14 +15,30 @@ type OrchestratorConfig struct {
 	Binary string `mapstructure:"binary" yaml:"binary"`
 }
 
+type OrchestrationConfig struct {
+	SearchOrder   []string                      `mapstructure:"search_order" yaml:"search_order"`
+	Orchestrators map[string]OrchestratorConfig `mapstructure:"orchestrators" yaml:"orchestrators"`
+}
+
+type GrpcConfig struct {
+	ServerPort int `mapstructure:"server_port" yaml:"server_port"`
+}
+
+type WorkflowConfig struct {
+	Grpc             GrpcConfig `mapstructure:"grpc" yaml:"grpc"`
+	DefaultStepShell string     `mapstructure:"default_step_shell" yaml:"default_step_shell"`
+}
+
+type ShellConfig struct {
+	ShellPriority []string `mapstructure:"shell_priority" yaml:"shell_priority"`
+	DefaultShell  string   `mapstructure:"default_shell" yaml:"default_shell"`
+}
+
 type Config struct {
-	Entrypoint              Entrypoint                    `mapstructure:"entrypoint" yaml:"entrypoint"`
-	Logging                 LoggingConfig                 `mapstructure:"logging" yaml:"logging"`
-	StateDirectoryName      string                        `mapstructure:"state_directory_name" yaml:"state_directory_name"`
-	GrpcServerPort          int                           `mapstructure:"grpc_server_port" yaml:"grpc_server_port"`
-	OrchestratorSearchOrder []string                      `mapstructure:"orchestrator_search_order" yaml:"orchestrator_search_order"`
-	Orchestrators           map[string]OrchestratorConfig `mapstructure:"orchestrators" yaml:"orchestrators"`
-	ShellPriority           []string                      `mapstructure:"shell_priority" yaml:"shell_priority"`
-	DefaultShell            string                        `mapstructure:"default_shell" yaml:"default_shell"`
-	DefaultStepShell        string                        `mapstructure:"default_step_shell" yaml:"default_step_shell"`
+	StateDirectoryName string              `mapstructure:"state_directory_name" yaml:"state_directory_name"`
+	Logging            LoggingConfig       `mapstructure:"logging" yaml:"logging"`
+	Entrypoint         EntrypointConfig    `mapstructure:"entrypoint" yaml:"entrypoint"`
+	Orchestration      OrchestrationConfig `mapstructure:"orchestration" yaml:"orchestration"`
+	Workflow           WorkflowConfig      `mapstructure:"workflow" yaml:"workflow"`
+	Shell              ShellConfig         `mapstructure:"shell" yaml:"shell"`
 }

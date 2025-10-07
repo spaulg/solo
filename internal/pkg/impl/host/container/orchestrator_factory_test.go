@@ -28,10 +28,12 @@ func (t *OrchestratorFactoryTestSuite) SetupTest() {
 
 func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 	loadedConfig := &config_types.Config{
-		OrchestratorSearchOrder: []string{"docker"},
-		Orchestrators: map[string]config_types.OrchestratorConfig{
-			"docker": {
-				Binary: "docker",
+		Orchestration: config_types.OrchestrationConfig{
+			SearchOrder: []string{"docker"},
+			Orchestrators: map[string]config_types.OrchestratorConfig{
+				"docker": {
+					Binary: "docker",
+				},
 			},
 		},
 	}
@@ -56,7 +58,9 @@ func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 
 func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactoryFailure() {
 	loadedConfig := &config_types.Config{
-		OrchestratorSearchOrder: []string{},
+		Orchestration: config_types.OrchestrationConfig{
+			SearchOrder: []string{},
+		},
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")

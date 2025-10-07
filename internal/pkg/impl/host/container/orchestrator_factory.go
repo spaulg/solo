@@ -41,8 +41,8 @@ func (t *OrchestratorFactory) Build() (container_types.Orchestrator, error) {
 }
 
 func (t *OrchestratorFactory) findOrchestrator() (string, string, error) {
-	for _, orchestrator := range t.soloCtx.Config.OrchestratorSearchOrder {
-		orchestratorConfig, ok := t.soloCtx.Config.Orchestrators[orchestrator]
+	for _, orchestrator := range t.soloCtx.Config.Orchestration.SearchOrder {
+		orchestratorConfig, ok := t.soloCtx.Config.Orchestration.Orchestrators[orchestrator]
 		if !ok {
 			continue
 		}

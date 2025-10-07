@@ -42,10 +42,14 @@ func (t *WorkflowGuardTestSuite) SetupTest() {
 		Project: t.mockProject,
 		Logger:  slog.New(t.mockLogHandler),
 		Config: &config_types.Config{
-			Entrypoint: config_types.Entrypoint{
+			Entrypoint: config_types.EntrypointConfig{
 				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
 			},
-			GrpcServerPort: 0,
+			Workflow: config_types.WorkflowConfig{
+				Grpc: config_types.GrpcConfig{
+					ServerPort: 0,
+				},
+			},
 		},
 	}
 }

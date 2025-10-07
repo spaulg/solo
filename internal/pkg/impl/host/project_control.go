@@ -80,7 +80,7 @@ func (t *ProjectControl) Start() error {
 		orchestrator,
 		workflowExecutionTracker,
 		t.soloCtx.Project,
-		t.soloCtx.Config.GrpcServerPort,
+		t.soloCtx.Config.Workflow.Grpc.ServerPort,
 	)
 
 	if err != nil {
@@ -204,7 +204,7 @@ func (t *ProjectControl) Stop() error {
 			orchestrator,
 			workflowExecutionTracker,
 			t.soloCtx.Project,
-			t.soloCtx.Config.GrpcServerPort,
+			t.soloCtx.Config.Workflow.Grpc.ServerPort,
 		)
 
 		if err != nil {
@@ -288,7 +288,7 @@ func (t *ProjectControl) Destroy() error {
 			orchestrator,
 			workflowExecutionTracker,
 			t.soloCtx.Project,
-			t.soloCtx.Config.GrpcServerPort,
+			t.soloCtx.Config.Workflow.Grpc.ServerPort,
 		)
 
 		if err != nil {
@@ -426,7 +426,7 @@ func (t *ProjectControl) ExecuteTool(name string, args []string) error {
 		return fmt.Errorf("service %s not found in project configuration", toolConfig.Service)
 	}
 
-	shell := t.soloCtx.Config.DefaultShell
+	shell := t.soloCtx.Config.Shell.DefaultShell
 	if toolConfig.Shell != nil {
 		shell = *toolConfig.Shell
 	}
@@ -496,7 +496,7 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 				shellmap[shellFile] = append(shellmap[shellFile], shellPath)
 			}
 
-			for _, priorityShell := range t.soloCtx.Config.ShellPriority {
+			for _, priorityShell := range t.soloCtx.Config.Shell.ShellPriority {
 				if shellList, ok := shellmap[priorityShell]; ok && len(shellList) > 0 {
 					shell = path.Join(shellList[len(shellList)-1], priorityShell)
 					break
@@ -509,7 +509,7 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 				shell = shellList[0]
 			}
 		} else {
-			shell = t.soloCtx.Config.DefaultShell
+			shell = t.soloCtx.Config.Shell.DefaultShell
 		}
 	}
 
