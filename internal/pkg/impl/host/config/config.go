@@ -5,15 +5,15 @@ import (
 )
 
 const (
-	DefaultHostEntrypoint         = "/usr/local/bin/solo-entrypoint"
-	DefaultContainerEntrypoint    = "/usr/local/sbin/solo"
 	DefaultStateDirectoryName     = "./.solo"
-	DefaultGrpcServerPort         = 0
 	DefaultLoggingEnabled         = true
 	DefaultLoggingLevel           = "warning"
 	DefaultLoggingHandler         = "text"
+	DefaultHostEntrypoint         = "/usr/local/bin/solo-entrypoint"
+	DefaultContainerEntrypoint    = "/usr/local/sbin/solo"
 	DefaultDockerBinary           = "docker"
 	DefaultDockerOrchestratorName = "docker"
+	DefaultGrpcServerPort         = 0
 	DefaultShell                  = "/bin/sh"
 	DefaultStepShell              = "/bin/sh"
 )
@@ -28,15 +28,6 @@ var DefaultShellPriority = []string{
 func NewConfig() config_types.Config {
 	return config_types.Config{
 		StateDirectoryName: DefaultStateDirectoryName,
-		GrpcServerPort:     DefaultGrpcServerPort,
-		ShellPriority:      DefaultShellPriority,
-		DefaultShell:       DefaultShell,
-		DefaultStepShell:   DefaultStepShell,
-
-		Entrypoint: config_types.Entrypoint{
-			HostEntrypointPath:      DefaultHostEntrypoint,
-			ContainerEntrypointPath: DefaultContainerEntrypoint,
-		},
 
 		Logging: config_types.LoggingConfig{
 			Enabled: DefaultLoggingEnabled,
@@ -44,11 +35,31 @@ func NewConfig() config_types.Config {
 			Handler: DefaultLoggingHandler,
 		},
 
-		OrchestratorSearchOrder: []string{DefaultDockerOrchestratorName},
-		Orchestrators: map[string]config_types.OrchestratorConfig{
-			DefaultDockerOrchestratorName: {
-				Binary: DefaultDockerBinary,
+		Entrypoint: config_types.EntrypointConfig{
+			HostEntrypointPath:      DefaultHostEntrypoint,
+			ContainerEntrypointPath: DefaultContainerEntrypoint,
+		},
+
+		Orchestration: config_types.OrchestrationConfig{
+			SearchOrder: []string{DefaultDockerOrchestratorName},
+			Orchestrators: map[string]config_types.OrchestratorConfig{
+				DefaultDockerOrchestratorName: {
+					Binary: DefaultDockerBinary,
+				},
 			},
+		},
+
+		Workflow: config_types.WorkflowConfig{
+			Grpc: config_types.GrpcConfig{
+				ServerPort: DefaultGrpcServerPort,
+			},
+
+			DefaultStepShell: DefaultStepShell,
+		},
+
+		Shell: config_types.ShellConfig{
+			ShellPriority: DefaultShellPriority,
+			DefaultShell:  DefaultShell,
 		},
 	}
 }
