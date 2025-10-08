@@ -229,6 +229,11 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 
 				return workflowSuccess, err
 			}
+
+			// If the step failed, skip the remaining steps
+			if !workflowSuccess {
+				return workflowSuccess, nil
+			}
 		}
 	}
 

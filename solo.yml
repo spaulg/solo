@@ -64,16 +64,23 @@ services:
 
         steps:
           - name: Download composer setup
+            working_dir: /tmp
             run: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 
           - name: Setup composer
+            working_dir: /tmp
             run: php composer-setup.php
 
           - name: Remove setup script
+            working_dir: /tmp
             run: php -r "unlink('composer-setup.php');"
 
           - name: Move composer.phar
+            working_dir: /tmp
             run: mv composer.phar /usr/local/bin/composer
+
+          - name: Clear project cache
+            run: rm -rf var/cache/*
 
           - name: composer install
             run: composer install

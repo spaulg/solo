@@ -1,12 +1,7 @@
-#state_directory_name: ".solo"
-#orchestrator: "docker"
-#grpc_server_port: 0
+logging:
+  # Enable debugging during development
+  level: "debug"
 
 entrypoint:
+  # Override entrypoint to use wrapper script for running via go run
   host_entrypoint_path: "./cmd/solo-entrypoint/solo-entrypoint-wrapper.sh"
-  #container_entrypoint_path: "/usr/local/sbin/solo"
-
-logging:
-  #enabled: true
-  level: "debug"
-  #handler: text
