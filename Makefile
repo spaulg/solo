@@ -1,3 +1,14 @@
+
+# Version variables
+VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || echo "dev-$(shell git rev-parse --short HEAD)")
+GIT_COMMIT ?= $(shell git rev-parse HEAD)
+BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Go build flags
+LDFLAGS := -X 'github.com/spaulg/solo/internal/pkg/impl/common/version.Version=$(VERSION)' \
+           -X 'github.com/spaulg/solo/internal/pkg/impl/common/version.GitCommit=$(GIT_COMMIT)' \
+           -X 'github.com/spaulg/solo/internal/pkg/impl/common/version.BuildDate=$(BUILD_DATE)'
+
 GOCMD := go
 GOBUILD := $(GOCMD) build
 GOTEST := $(GOCMD) test
@@ -31,10 +42,10 @@ protos:
 		protoc --experimental_allow_proto3_optional --proto_path=$(SRC_DIR) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 $(NATIVE_SERVICES): protos
-	cd $(SRC_DIR)/cmd/$@ && CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
+	cd $(SRC_DIR)/cmd/$@ && CGO_ENABLED=0 $(GOBUILD) -ldflags="$(LDFLAGS) -s -w" -o $(BUILD_DIR)/$@
 
 $(LINUX_SERVICES): protos
-	cd $(SRC_DIR)/cmd/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="-s -w" -o $(BUILD_DIR)/$@
+	cd $(SRC_DIR)/cmd/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="$(LDFLAGS) -s -w" -o $(BUILD_DIR)/$@
 
 build: protos $(NATIVE_SERVICES) $(LINUX_SERVICES) ## Build files
 
