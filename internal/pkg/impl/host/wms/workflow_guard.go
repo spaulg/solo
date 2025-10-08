@@ -18,6 +18,7 @@ type WorkflowGuard struct {
 	soloCtx                   *context.CliContext
 	containers                []string
 	workflowContainerChannels map[workflowcommon.WorkflowName]map[string]chan int
+	workflowContainerStatus   map[workflowcommon.WorkflowName]map[string]bool
 }
 
 func NewWorkflowGuard(
@@ -26,11 +27,15 @@ func NewWorkflowGuard(
 	containers []string,
 ) wms_types.WorkflowGuard {
 	workflowContainerChannels := make(map[workflowcommon.WorkflowName]map[string]chan int)
+	workflowContainerStatus := make(map[workflowcommon.WorkflowName]map[string]bool)
 
 	for _, workflow := range workflows {
 		workflowContainerChannels[workflow] = make(map[string]chan int)
+		workflowContainerStatus[workflow] = make(map[string]bool)
+
 		for _, container := range containers {
 			workflowContainerChannels[workflow][container] = make(chan int)
+			workflowContainerStatus[workflow][container] = true
 		}
 	}
 
@@ -38,12 +43,14 @@ func NewWorkflowGuard(
 		soloCtx:                   soloCtx,
 		containers:                containers,
 		workflowContainerChannels: workflowContainerChannels,
+		workflowContainerStatus:   workflowContainerStatus,
 	}
 }
 
 func (t *WorkflowGuard) Publish(event events_types.Event) {
 	var workflowName workflowcommon.WorkflowName
 	var containerName string
+	var workflowSuccessful = true
 
 	switch e := event.(type) {
 	case *wms_types.WorkflowSkippedEvent:
@@ -57,6 +64,7 @@ func (t *WorkflowGuard) Publish(event events_types.Event) {
 		containerName = e.ContainerName
 
 		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event completed for workflow %s for container %s", workflowName, containerName))
+		workflowSuccessful = e.Successful
 
 	default:
 		return
@@ -78,6 +86,10 @@ func (t *WorkflowGuard) Publish(event events_types.Event) {
 	}
 
 	t.soloCtx.Logger.Debug(fmt.Sprintf("Closing channel for workflow %s and container %s", workflowName, containerName))
+
+	currentStatus := t.workflowContainerStatus[workflowName][containerName]
+	t.workflowContainerStatus[workflowName][containerName] = currentStatus && workflowSuccessful
+
 	close(t.workflowContainerChannels[workflowName][containerName])
 }
 
@@ -134,6 +146,12 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 					t.soloCtx.Logger.Info(fmt.Sprintf("%s completed workflow %s before timeout", container, workflowName))
 					timer.Stop()
 					atomic.StoreInt32(&stopped, 1)
+
+					status, ok := t.workflowContainerStatus[workflowName][container]
+					if !ok || !status {
+						return fmt.Errorf("workflow %s for container %s did not complete successfully", workflowName, container)
+					}
+
 					return nil
 				}
 			})
