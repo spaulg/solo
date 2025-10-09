@@ -1,10 +1,8 @@
-package wms
+package audit
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -13,6 +11,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
+	logging2 "github.com/spaulg/solo/internal/pkg/types/host/wms/logging"
 )
 
 const workflowLogsPath = "workflow_logs"
@@ -24,16 +23,7 @@ type WorkflowLogWriter struct {
 	outputDirectory string
 }
 
-type StepLogMeta struct {
-	ExitCode         uint8    `json:"exit_code"`
-	Command          string   `json:"command"`
-	Arguments        []string `json:"arguments"`
-	WorkingDirectory string   `json:"working_directory"`
-}
-
-type WorkflowMeta map[string][]string
-
-func NewWorkflowLogWriter(soloCtx *context.CliContext) wms_types.WorkflowLogWriter {
+func NewWorkflowLogWriter(soloCtx *context.CliContext) logging2.WorkflowLogWriter {
 	outputDirectory := path.Join(
 		soloCtx.Project.GetStateDirectoryRoot(),
 		workflowLogsPath,
@@ -165,126 +155,48 @@ func (t *WorkflowLogWriter) writeStepResult(e *wms_types.WorkflowStepCompleteEve
 		}
 	}
 
+	// Workflow step meta file
 	metaPath := path.Join(outputDirectory, e.StepID+".meta.json")
-	metaJSON := StepLogMeta{
-		ExitCode:         e.ExitCode,
-		Command:          e.Command,
-		Arguments:        e.Arguments,
-		WorkingDirectory: e.Cwd,
-	}
-
-	metaData, err := json.MarshalIndent(metaJSON, "", "  ")
-	if err != nil {
+	metaJSON := NewStepLogMeta(e.ExitCode, e.Command, e.Arguments, e.Cwd)
+	if err := metaJSON.Persist(metaPath); err != nil {
 		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write step result to log file: failed to marshal json file: %v",
-			err,
-		))
-
-		return
-	}
-
-	metaFile, err := os.OpenFile(metaPath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write step result to log file: failed to open metadata file: %s: %v",
-			metaPath,
-			err,
-		))
-
-		return
-	}
-
-	defer func(metaFile *os.File) {
-		if err = metaFile.Close(); err != nil {
-			t.soloCtx.Logger.Error(fmt.Sprintf(
-				"Failed to close step meta file: %v",
-				err,
-			))
-		}
-	}(metaFile)
-
-	if n, err := metaFile.Write(metaData); err != nil || n != len(metaData) {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write complete step meta output to file: %s: %v",
+			"Failed to write step result to log file: failed to persist meta file: %s: %v",
 			metaPath,
 			err,
 		))
 	}
 
+	// Add workflow step to workflow meta file
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	workflowMetaPath := path.Join(outputDirectory, e.WorkflowName.String()+".meta.json")
-
-	workflowMetaFile, err := os.OpenFile(workflowMetaPath, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0600)
+	workflowMeta, err := LoadWorkflowMeta(workflowMetaPath)
 	if err != nil {
 		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write step result to log file: failed to open workflow file: %s: %v",
-			workflowMetaPath,
+			"Failed to write step result to log file: failed to load meta file: %s: %v",
+			metaPath,
 			err,
 		))
 
 		return
 	}
 
-	defer func(workflowMetaFile *os.File) {
-		if err = workflowMetaFile.Close(); err != nil {
+	defer (func() {
+		if err = workflowMeta.Close(); err != nil {
 			t.soloCtx.Logger.Error(fmt.Sprintf(
-				"Failed to close workflow meta file: %v",
+				"Failed to write step result to log file: failed to persist meta file: %s: %v",
+				metaPath,
 				err,
 			))
 		}
-	}(workflowMetaFile)
+	})()
 
-	workflowMetaData, err := io.ReadAll(workflowMetaFile)
-	if err != nil {
+	workflowMeta.AppendStep(e.ContainerName, e.StepID)
+
+	if err = workflowMeta.Persist(); err != nil {
 		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write step result to log file: failed to read workflow file: %s: %v",
-			workflowMetaPath,
-			err,
-		))
-
-		return
-	}
-
-	workflowMeta := make(WorkflowMeta)
-
-	if len(workflowMetaData) > 0 {
-		if err := json.Unmarshal(workflowMetaData, &workflowMeta); err != nil {
-			t.soloCtx.Logger.Error(fmt.Sprintf(
-				"Failed to write step result to log file: failed to unmarshal json: %v",
-				err,
-			))
-
-			return
-		}
-	}
-
-	workflowMeta[e.ContainerName] = append(workflowMeta[e.ContainerName], e.StepID)
-
-	workflowMetaData, err = json.MarshalIndent(workflowMeta, "", "  ")
-	if err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write step result to log file: failed to marshal json: %v",
-			err,
-		))
-
-		return
-	}
-
-	_, err = workflowMetaFile.Seek(0, 0)
-	if err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write step result to log file: failed to seek open meta file: %v",
-			err,
-		))
-
-		return
-	}
-
-	if n, err := workflowMetaFile.Write(workflowMetaData); err != nil || n != len(workflowMetaData) {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
-			"Failed to write workflow step meta output to file: %s: %v",
+			"Failed to write step result to log file: failed to persist meta file: %s: %v",
 			metaPath,
 			err,
 		))

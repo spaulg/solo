@@ -35,6 +35,7 @@ func Execute() {
 	rootCmd.AddCommand(NewCleanSubCommand(soloCtx))
 
 	// Tooling
+	rootCmd.AddCommand(NewWorkflowLogSubCommand(soloCtx))
 	rootCmd.AddCommand(NewShCommand(soloCtx))
 	rootCmd.AddCommand(NewLogsCommand(soloCtx))
 	rootCmd.AddCommand(NewToolCommands(soloCtx)...)

@@ -1,4 +1,4 @@
-package wms
+package logging
 
 import events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 

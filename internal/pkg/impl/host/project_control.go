@@ -18,6 +18,7 @@ import (
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/grpc"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
+	"github.com/spaulg/solo/internal/pkg/types/host/wms/logging"
 )
 
 const workflowExecTrackerFile = "workflow_exec_tracker.json"
@@ -28,7 +29,7 @@ type ProjectControl struct {
 	orchestratorFactory  container_types.OrchestratorFactory
 	grpcServerFactory    grpc_types.ServerFactory
 	workflowGuardFactory wms_types.WorkflowGuardFactory
-	workflowLogWriter    wms_types.WorkflowLogWriter
+	workflowLogWriter    logging.WorkflowLogWriter
 }
 
 func NewProjectControl(
@@ -37,7 +38,7 @@ func NewProjectControl(
 	orchestratorFactory container_types.OrchestratorFactory,
 	grpcServerFactory grpc_types.ServerFactory,
 	workflowGuardFactory wms_types.WorkflowGuardFactory,
-	workflowLogWriter wms_types.WorkflowLogWriter,
+	workflowLogWriter logging.WorkflowLogWriter,
 ) *ProjectControl {
 	return &ProjectControl{
 		soloCtx:              soloCtx,
