@@ -37,9 +37,9 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnar
 	req := new(interface{})
 	expectedResult := new(interface{})
 
-	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
-	result, err := interceptor.FirstPreStartCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
-		firstPreStartComplete, ok := ctx.Value(FirstWorkflowComplete(workflowcommon.FirstPreStartContainer)).(string)
+	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	result, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
+		firstPreStartComplete, ok := ctx.Value(FirstContainerComplete(workflowcommon.FirstPreStartContainer)).(string)
 
 		t.True(ok)
 		t.Equal(expectedFirstPreStartComplete, firstPreStartComplete)
@@ -59,8 +59,8 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteUnaryIntercept
 	req := new(interface{})
 	expectedResult := new(interface{})
 
-	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
-	_, err := interceptor.FirstPreStartCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	_, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -80,9 +80,9 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStre
 	ss := &grpc_mock.MockServerStream{}
 	ss.On("Context").Return(ctx)
 
-	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
-	err := interceptor.FirstPreStartCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
-		firstPreStartComplete, ok := stream.Context().Value(FirstWorkflowComplete(workflowcommon.FirstPreStartContainer)).(string)
+	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+		firstPreStartComplete, ok := stream.Context().Value(FirstContainerComplete(workflowcommon.FirstPreStartContainer)).(string)
 
 		t.True(ok)
 		t.Equal(expectedFirstPreStartComplete, firstPreStartComplete)
@@ -104,8 +104,8 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteStreamIntercep
 	ss := &grpc_mock.MockServerStream{}
 	ss.On("Context").Return(ctx)
 
-	interceptor := NewFirstPreStartCompleteInterceptor(t.mockOrchestrator)
-	err := interceptor.FirstPreStartCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
 		return nil
 	})
 

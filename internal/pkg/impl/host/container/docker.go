@@ -388,11 +388,11 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Con
 	return compose.MarshalYAML()
 }
 
-func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (string, error) {
+func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (string, string, error) {
 	containerNames := md.Get("hostname")
 
 	if len(containerNames) == 0 {
-		return "", fmt.Errorf("unable to resolve container name")
+		return "", "", fmt.Errorf("unable to resolve container name")
 	}
 
 	return t.resolveContainerNameFromIdOrName(containerNames[0])
@@ -429,7 +429,7 @@ func (t *DockerOrchestrator) ResolveImageWorkingDirectory(serviceName string) (s
 	return workingDirectory, nil
 }
 
-func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName string, index int) (string, error) {
+func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName string, index int) (string, string, error) {
 	service := t.soloCtx.Project.Services().GetService(serviceName).GetConfig()
 	replicas := 1
 
@@ -447,16 +447,19 @@ func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName str
 	return t.resolveContainerNameFromIdOrName(containerName)
 }
 
-func (t *DockerOrchestrator) resolveContainerNameFromIdOrName(containerNameOrId string) (string, error) {
+func (t *DockerOrchestrator) resolveContainerNameFromIdOrName(containerNameOrId string) (string, string, error) {
 	inspect, err := t.dockerInspect("container", containerNameOrId)
 	if err != nil {
-		return "", fmt.Errorf("failed to inspect container %s: %w", containerNameOrId, err)
+		return "", "", fmt.Errorf("failed to inspect container %s: %w", containerNameOrId, err)
 	}
 
-	containerName := inspect.Name
-	containerName = strings.TrimLeft(containerName, "/")
+	projectName := t.soloCtx.Project.Name()
 
-	return containerName, nil
+	fullContainerName := inspect.Name
+	fullContainerName = strings.TrimLeft(fullContainerName, "/")
+	containerName := strings.TrimPrefix(fullContainerName, projectName+"-")
+
+	return fullContainerName, containerName, nil
 }
 
 func (t *DockerOrchestrator) dockerInspect(artifactName string, nameOrId string) (*DockerInspect, error) {

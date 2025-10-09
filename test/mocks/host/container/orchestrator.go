@@ -75,14 +75,14 @@ func (m *MockOrchestrator) ExportComposeConfiguration(config *config_types.Confi
 	}
 }
 
-func (m *MockOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (string, error) {
+func (m *MockOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (string, string, error) {
 	args := m.Called(md)
-	return args.String(0), args.Error(1)
+	return args.String(0), args.String(1), args.Error(2)
 }
 
-func (m *MockOrchestrator) ResolveContainerNameFromServiceName(serviceName string, index int) (string, error) {
+func (m *MockOrchestrator) ResolveContainerNameFromServiceName(serviceName string, index int) (string, string, error) {
 	args := m.Called(serviceName, index)
-	return args.String(0), args.Error(1)
+	return args.String(0), args.String(1), args.Error(2)
 }
 
 func (m *MockOrchestrator) ResolveImageWorkingDirectory(service string) (string, error) {

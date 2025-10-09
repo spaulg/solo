@@ -464,7 +464,7 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 	workingDirectory := t.soloCtx.Project.Services().GetService(serviceName).ResolveContainerWorkingDirectory(cwd)
 
 	// Get the desired container name
-	containerName, err := orchestrator.ResolveContainerNameFromServiceName(serviceName, index)
+	fullContainerName, _, err := orchestrator.ResolveContainerNameFromServiceName(serviceName, index)
 	if err != nil {
 		return fmt.Errorf("failed to resolve container name for service %s: %w", serviceName, err)
 	}
@@ -473,7 +473,7 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 		// List the shells in the container
 		catShellsCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "cat-shells"}
 
-		output, err := orchestrator.RunCommand(containerName, catShellsCommand)
+		output, err := orchestrator.RunCommand(fullContainerName, catShellsCommand)
 		if err != nil {
 			return err
 		}
@@ -513,7 +513,7 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 		}
 	}
 
-	return orchestrator.ForkAndExecute(containerName, shell, nil, workingDirectory)
+	return orchestrator.ForkAndExecute(fullContainerName, shell, nil, workingDirectory)
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {

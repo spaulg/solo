@@ -11,6 +11,7 @@ import (
 )
 
 const ContainerNameContextValueName = "ContainerName"
+const FullContainerNameContextValueName = "FullContainerName"
 
 type ContainerName string
 
@@ -35,12 +36,14 @@ func (t *ContainerNameInterceptor) ContainerNameUnaryInterceptor(
 		return nil, fmt.Errorf("failed to load metadata from incoming context")
 	}
 
-	containerName, err := t.orchestrator.ResolveContainerNameFromMetadata(md)
+	fullContainerName, containerName, err := t.orchestrator.ResolveContainerNameFromMetadata(md)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve container name from metadata: %w", err)
 	}
 
 	ctx = context.WithValue(ctx, ContainerName(ContainerNameContextValueName), containerName)
+	ctx = context.WithValue(ctx, ContainerName(FullContainerNameContextValueName), fullContainerName)
+
 	return handler(ctx, req)
 }
 
@@ -56,11 +59,14 @@ func (t *ContainerNameInterceptor) ContainerNameStreamInterceptor(
 		return fmt.Errorf("failed to load metadata from incoming context")
 	}
 
-	containerName, err := t.orchestrator.ResolveContainerNameFromMetadata(md)
+	fullContainerName, containerName, err := t.orchestrator.ResolveContainerNameFromMetadata(md)
 	if err != nil {
 		return fmt.Errorf("failed to resolve container name from metadata: %w", err)
 	}
 
-	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ContainerName(ContainerNameContextValueName), containerName))
+	ctx = context.WithValue(ctx, ContainerName(ContainerNameContextValueName), containerName)
+	ctx = context.WithValue(ctx, ContainerName(FullContainerNameContextValueName), fullContainerName)
+
+	streamWrapper := NewServerStreamWrapper(ss, ctx)
 	return handler(srv, streamWrapper)
 }
