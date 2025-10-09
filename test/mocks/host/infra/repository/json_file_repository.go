@@ -1,11 +1,23 @@
 package repository
 
 import (
+	"iter"
+
 	"github.com/stretchr/testify/mock"
 )
 
 type MockJSONFileRepository[T any] struct {
 	mock.Mock
+}
+
+func (m *MockJSONFileRepository[T]) Walk(filePath string, filename string) iter.Seq2[string, T] {
+	args := m.Called(filePath, filename)
+	return args.Get(0).(iter.Seq2[string, T])
+}
+
+func (m *MockJSONFileRepository[T]) ReverseWalk(filePath string, filename string) iter.Seq2[string, T] {
+	args := m.Called(filePath, filename)
+	return args.Get(0).(iter.Seq2[string, T])
 }
 
 func (m *MockJSONFileRepository[T]) Save(filePath string, entity T) error {
