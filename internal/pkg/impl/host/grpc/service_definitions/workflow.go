@@ -1,6 +1,7 @@
 package service_definitions
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -8,7 +9,7 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/common/grpc/services"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/grpc/interceptors"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
@@ -16,7 +17,7 @@ import (
 )
 
 type WorkflowServerImpl struct {
-	soloCtx *context.CliContext
+	soloCtx *solo_context.CliContext
 	services.UnimplementedWorkflowServer
 	eventManager        events_types.Manager
 	orchestrator        container_types.Orchestrator
@@ -24,8 +25,14 @@ type WorkflowServerImpl struct {
 	workflowExecTracker wms_types.WorkflowExecTracker
 }
 
+type serviceContainerDetails struct {
+	serviceName       string
+	containerName     string
+	fullContainerName string
+}
+
 func NewWorkflowService(
-	soloCtx *context.CliContext,
+	soloCtx *solo_context.CliContext,
 	eventManager events_types.Manager,
 	orchestrator container_types.Orchestrator,
 	workflowFactory wms_types.WorkflowFactory,
@@ -61,24 +68,14 @@ func (t WorkflowServerImpl) workflowStream(
 	workflowName commonworkflow.WorkflowName,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
 ) error {
-	// Extract service name
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	serviceName, ok := server.Context().Value(serviceNameContextValueName).(string)
-	if !ok {
-		t.soloCtx.Logger.Error("Service name not found")
-		return fmt.Errorf("unauthorized")
-	}
-
-	// Extract container name
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	containerName, ok := server.Context().Value(containerNameContextValueName).(string)
-	if !ok {
-		t.soloCtx.Logger.Error("Container name not found")
-		return fmt.Errorf("unauthorized")
+	// Lookup container/service details
+	containerDetails, err := t.lookupContainerDetails(server.Context())
+	if err != nil {
+		return fmt.Errorf("failed to lookup container details: %w", err)
 	}
 
 	// Handle previously run once-only workflows
-	hasServiceWorkflowRun, err := t.HasServiceWorkflowRun(serviceName, workflowName)
+	hasServiceWorkflowRun, err := t.HasServiceWorkflowRun(containerDetails.serviceName, workflowName)
 	if err != nil {
 		return fmt.Errorf("failed to check if service workflow has run: %w", err)
 	}
@@ -88,14 +85,19 @@ func (t WorkflowServerImpl) workflowStream(
 	if hasServiceWorkflowRun || hasFirstContainerWorkflowRun {
 		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
 			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-				ServiceName:   serviceName,
-				ContainerName: containerName,
-				WorkflowName:  workflowName,
+				ServiceName:       containerDetails.serviceName,
+				ContainerName:     containerDetails.containerName,
+				FullContainerName: containerDetails.fullContainerName,
+				WorkflowName:      workflowName,
 			},
 			Successful: true,
 		})
 	} else {
-		workflowSuccess, err := t.applyWorkflowStream(workflowName, server, serviceName, containerName)
+		workflowSuccess, err := t.applyWorkflowStream(
+			workflowName,
+			server,
+			containerDetails,
+		)
 
 		if err != nil {
 			return err
@@ -103,9 +105,10 @@ func (t WorkflowServerImpl) workflowStream(
 
 		t.eventManager.Publish(&wms_types.WorkflowCompleteEvent{
 			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-				ServiceName:   serviceName,
-				ContainerName: containerName,
-				WorkflowName:  workflowName,
+				ServiceName:       containerDetails.serviceName,
+				ContainerName:     containerDetails.containerName,
+				FullContainerName: containerDetails.fullContainerName,
+				WorkflowName:      workflowName,
 			},
 			Successful: workflowSuccess,
 		})
@@ -119,20 +122,20 @@ func (t WorkflowServerImpl) workflowStream(
 func (t WorkflowServerImpl) applyWorkflowStream(
 	workflowName commonworkflow.WorkflowName,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-	serviceName string,
-	containerName string,
+	containerDetails *serviceContainerDetails,
 ) (bool, error) {
 	workflowSuccess := true
 
 	t.eventManager.Publish(&wms_types.WorkflowStartedEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   serviceName,
-			ContainerName: containerName,
-			WorkflowName:  workflowName,
+			ServiceName:       containerDetails.serviceName,
+			ContainerName:     containerDetails.containerName,
+			FullContainerName: containerDetails.fullContainerName,
+			WorkflowName:      workflowName,
 		},
 	})
 
-	workflow, err := t.workflowFactory.Make(t.soloCtx, t.orchestrator, serviceName, workflowName)
+	workflow, err := t.workflowFactory.Make(t.soloCtx, t.orchestrator, containerDetails.serviceName, workflowName)
 	if err != nil {
 		return false, fmt.Errorf("failed to create workflow: %w", err)
 	}
@@ -143,9 +146,10 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 				// Trigger callback
 				t.eventManager.Publish(&wms_types.WorkflowStepStartedEvent{
 					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-						ServiceName:   serviceName,
-						ContainerName: containerName,
-						WorkflowName:  workflowName,
+						ServiceName:       containerDetails.serviceName,
+						ContainerName:     containerDetails.containerName,
+						FullContainerName: containerDetails.fullContainerName,
+						WorkflowName:      workflowName,
 					},
 					StepId:    step.GetId(),
 					Name:      step.GetName(),
@@ -181,9 +185,10 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 
 					t.eventManager.Publish(&wms_types.WorkflowStepOutputEvent{
 						BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-							ServiceName:   serviceName,
-							ContainerName: containerName,
-							WorkflowName:  workflowName,
+							ServiceName:       containerDetails.serviceName,
+							ContainerName:     containerDetails.containerName,
+							FullContainerName: containerDetails.fullContainerName,
+							WorkflowName:      workflowName,
 						},
 						StepId: step.GetId(),
 						Stdout: result.RunCommandResult.Stdout,
@@ -198,9 +203,10 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 				// Completion callback
 				t.eventManager.Publish(&wms_types.WorkflowStepCompleteEvent{
 					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-						ServiceName:   serviceName,
-						ContainerName: containerName,
-						WorkflowName:  workflowName,
+						ServiceName:       containerDetails.serviceName,
+						ContainerName:     containerDetails.containerName,
+						FullContainerName: containerDetails.fullContainerName,
+						WorkflowName:      workflowName,
 					},
 					StepId:    step.GetId(),
 					ExitCode:  exitCode,
@@ -220,9 +226,10 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 			if err != nil {
 				t.eventManager.Publish(&wms_types.WorkflowErrorEvent{
 					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-						ServiceName:   serviceName,
-						ContainerName: containerName,
-						WorkflowName:  workflowName,
+						ServiceName:       containerDetails.serviceName,
+						ContainerName:     containerDetails.containerName,
+						FullContainerName: containerDetails.fullContainerName,
+						WorkflowName:      workflowName,
 					},
 					Err: err,
 				})
@@ -264,8 +271,40 @@ func (t WorkflowServerImpl) HasFirstContainerWorkflowRun(
 		return false
 	}
 
-	firstWorkflowCompleteContextValueName := interceptors.FirstWorkflowComplete(workflowName)
+	firstWorkflowCompleteContextValueName := interceptors.FirstContainerComplete(workflowName)
 	firstWorkflowComplete, firstWorkflowOk := server.Context().Value(firstWorkflowCompleteContextValueName).(string)
 
 	return firstWorkflowOk && firstWorkflowComplete == "true"
+}
+
+func (t WorkflowServerImpl) lookupContainerDetails(ctx context.Context) (*serviceContainerDetails, error) {
+	// Extract service name
+	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
+	serviceName, ok := ctx.Value(serviceNameContextValueName).(string)
+	if !ok {
+		t.soloCtx.Logger.Error("Service name not found")
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	// Extract container name
+	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	containerName, ok := ctx.Value(containerNameContextValueName).(string)
+	if !ok {
+		t.soloCtx.Logger.Error("Container name not found")
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	// Extract full container name
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
+	fullContainerName, ok := ctx.Value(fullContainerNameContextValueName).(string)
+	if !ok {
+		t.soloCtx.Logger.Error("Full container name not found")
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	return &serviceContainerDetails{
+		serviceName:       serviceName,
+		containerName:     containerName,
+		fullContainerName: fullContainerName,
+	}, nil
 }

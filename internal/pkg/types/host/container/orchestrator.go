@@ -18,7 +18,7 @@ type Orchestrator interface {
 	GetHostGatewayHostname() string
 	ServicesStatus(serviceNames []string) (*ServiceStatus, error)
 	ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error)
-	ResolveContainerNameFromMetadata(md metadata.MD) (string, error)
-	ResolveContainerNameFromServiceName(serviceName string, index int) (string, error)
+	ResolveContainerNameFromMetadata(md metadata.MD) (string, string, error)
+	ResolveContainerNameFromServiceName(serviceName string, index int) (string, string, error)
 	ResolveImageWorkingDirectory(serviceName string) (string, error)
 }

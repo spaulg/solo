@@ -76,18 +76,18 @@ func (t *AsynchronousServer) Start() error {
 
 		serviceNameInterceptor := interceptors.NewServiceNameInterceptor()
 		containerNameInterceptor := interceptors.NewContainerNameInterceptor(t.orchestrator)
-		firstPreStartCompleteInterceptor := interceptors.NewFirstPreStartCompleteInterceptor(t.orchestrator)
+		firstPreStartCompleteInterceptor := interceptors.NewFirstContainerCompleteInterceptor(t.orchestrator)
 
 		t.server = grpc.NewServer(
 			grpc.Creds(t.transportCredentials),
 			grpc.ChainUnaryInterceptor(
 				serviceNameInterceptor.ServiceNameUnaryInterceptor,
-				firstPreStartCompleteInterceptor.FirstPreStartCompleteUnaryInterceptor,
+				firstPreStartCompleteInterceptor.FirstContainerCompleteUnaryInterceptor,
 				containerNameInterceptor.ContainerNameUnaryInterceptor,
 			),
 			grpc.ChainStreamInterceptor(
 				serviceNameInterceptor.ServiceNameStreamInterceptor,
-				firstPreStartCompleteInterceptor.FirstPreStartCompleteStreamInterceptor,
+				firstPreStartCompleteInterceptor.FirstContainerCompleteStreamInterceptor,
 				containerNameInterceptor.ContainerNameStreamInterceptor,
 			),
 		)

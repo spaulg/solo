@@ -63,6 +63,12 @@ services:
         timeout: 180s
 
         steps:
+          - name: Update apt
+            run: apt update -y
+
+          - name: Install vim
+            run: apt install -y vim
+
           - name: Download composer setup
             working_dir: /tmp
             run: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
@@ -79,17 +85,13 @@ services:
             working_dir: /tmp
             run: mv composer.phar /usr/local/bin/composer
 
+      first_pre_start_service:
+        steps:
           - name: Clear project cache
             run: rm -rf var/cache/*
 
           - name: composer install
             run: composer install
-
-          - name: Update apt
-            run: apt update -y
-
-          - name: Install vim
-            run: apt install -y vim
 
   mail:
     profiles: ["mail"]

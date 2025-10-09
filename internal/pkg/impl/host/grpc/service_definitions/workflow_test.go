@@ -112,9 +112,11 @@ func (t *WorkflowTestSuite) TestMissingServiceName() {
 
 func (t *WorkflowTestSuite) TestMissingContainerName() {
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
+	ctx = context.WithValue(ctx, fullContainerNameContextValueName, "test_service-1")
 
 	t.mockGrpcServer.On("Context").Return(ctx)
 
@@ -149,21 +151,65 @@ func (t *WorkflowTestSuite) TestMissingContainerName() {
 	t.mockGrpcServer.AssertExpectations(t.T())
 }
 
-func (t *WorkflowTestSuite) TestNilWorkflowFromFactory() {
+func (t *WorkflowTestSuite) TestMissingFullContainerName() {
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
-	ctx = context.WithValue(ctx, containerNameContextValueName, "test_service-1")
+	ctx = context.WithValue(ctx, containerNameContextValueName, "service-1")
+
+	t.mockGrpcServer.On("Context").Return(ctx)
+
+	t.mockGrpcServer.On("Recv").Return(&services.RunWorkflowStreamRequest{
+		Request: &services.RunWorkflowStreamRequest_RunRequest{
+			RunRequest: &services.WorkflowRunRequest{
+				WorkflowName: commonworkflow.FirstPreStartContainer.String(),
+			},
+		},
+	}, nil).Once()
+
+	t.mockLogHandler.On("Handle", mock.Anything, mock.MatchedBy(func(record slog.Record) bool {
+		return record.Message == "Full container name not found"
+	})).Return(nil)
+
+	workflowService := NewWorkflowService(
+		t.soloCtx,
+		t.mockEventManager,
+		t.mockOrchestrator,
+		t.mockWorkflowFactory,
+		t.mockWorkflowExecTracker,
+	)
+
+	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
+
+	t.Error(err, "unauthorized")
+
+	t.mockLogHandler.AssertExpectations(t.T())
+	t.mockEventManager.AssertExpectations(t.T())
+	t.mockWorkflowFactory.AssertExpectations(t.T())
+	t.mockWorkflowOrchestrator.AssertExpectations(t.T())
+	t.mockGrpcServer.AssertExpectations(t.T())
+}
+
+func (t *WorkflowTestSuite) TestNilWorkflowFromFactory() {
+	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
+	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
+	ctx = context.WithValue(ctx, containerNameContextValueName, "service-1")
+	ctx = context.WithValue(ctx, fullContainerNameContextValueName, "test_service-1")
 
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowStartedEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  commonworkflow.PreStartContainer,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      commonworkflow.PreStartContainer,
 		},
 	}).Return()
 
@@ -179,9 +225,10 @@ func (t *WorkflowTestSuite) TestNilWorkflowFromFactory() {
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowCompleteEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  commonworkflow.PreStartContainer,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      commonworkflow.PreStartContainer,
 		},
 		Successful: true,
 	}).Return()
@@ -210,11 +257,13 @@ func (t *WorkflowTestSuite) TestNilWorkflowFromFactory() {
 func (t *WorkflowTestSuite) TestFirstPreStartSkippedWorkflowStepTrigger() {
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstPreStartCompleteContextValueName := interceptors.FirstWorkflowComplete(commonworkflow.FirstPreStartContainer)
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
+	firstPreStartCompleteContextValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
-	ctx = context.WithValue(ctx, containerNameContextValueName, "test_service-1")
+	ctx = context.WithValue(ctx, containerNameContextValueName, "service-1")
+	ctx = context.WithValue(ctx, fullContainerNameContextValueName, "test_service-1")
 	ctx = context.WithValue(ctx, firstPreStartCompleteContextValueName, "true")
 
 	t.mockGrpcServer.On("Context").Return(ctx)
@@ -229,9 +278,10 @@ func (t *WorkflowTestSuite) TestFirstPreStartSkippedWorkflowStepTrigger() {
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowSkippedEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  commonworkflow.FirstPreStartContainer,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      commonworkflow.FirstPreStartContainer,
 		},
 		Successful: true,
 	}).Return()
@@ -640,18 +690,21 @@ func (t *WorkflowTestSuite) TestPreDestroyNonZeroWorkflowStepTrigger() {
 func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.WorkflowName, exitCode uint32) {
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
-	ctx = context.WithValue(ctx, containerNameContextValueName, "test_service-1")
+	ctx = context.WithValue(ctx, containerNameContextValueName, "service-1")
+	ctx = context.WithValue(ctx, fullContainerNameContextValueName, "test_service-1")
 
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowStartedEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  workflow,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      workflow,
 		},
 	}).Return()
 
@@ -683,9 +736,10 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 			// trigger
 			t.mockEventManager.On("Publish", &wms_types.WorkflowStepStartedEvent{
 				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-					ServiceName:   "test_service",
-					ContainerName: "test_service-1",
-					WorkflowName:  workflow,
+					ServiceName:       "test_service",
+					ContainerName:     "service-1",
+					FullContainerName: "test_service-1",
+					WorkflowName:      workflow,
 				},
 				StepId:    "12345",
 				Name:      "test",
@@ -724,9 +778,10 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 
 			t.mockEventManager.On("Publish", &wms_types.WorkflowStepOutputEvent{
 				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-					ServiceName:   "test_service",
-					ContainerName: "test_service-1",
-					WorkflowName:  workflow,
+					ServiceName:       "test_service",
+					ContainerName:     "service-1",
+					FullContainerName: "test_service-1",
+					WorkflowName:      workflow,
 				},
 				StepId: "12345",
 				Stdout: "Hello World",
@@ -740,9 +795,10 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 			// completion
 			t.mockEventManager.On("Publish", &wms_types.WorkflowStepCompleteEvent{
 				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-					ServiceName:   "test_service",
-					ContainerName: "test_service-1",
-					WorkflowName:  workflow,
+					ServiceName:       "test_service",
+					ContainerName:     "service-1",
+					FullContainerName: "test_service-1",
+					WorkflowName:      workflow,
 				},
 				StepId:    "12345",
 				Command:   "/bin/sh",
@@ -762,9 +818,10 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowCompleteEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  workflow,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      workflow,
 		},
 		Successful: exitCode == 0,
 	}).Return()
@@ -778,18 +835,21 @@ func (t *WorkflowTestSuite) testWorkflowExecFor(workflow commonworkflow.Workflow
 func (t *WorkflowTestSuite) testServerRecvErrorFor(workflow commonworkflow.WorkflowName) {
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
-	ctx = context.WithValue(ctx, containerNameContextValueName, "test_service-1")
+	ctx = context.WithValue(ctx, containerNameContextValueName, "service-1")
+	ctx = context.WithValue(ctx, fullContainerNameContextValueName, "test_service-1")
 
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowStartedEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  workflow,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      workflow,
 		},
 	}).Return()
 
@@ -821,9 +881,10 @@ func (t *WorkflowTestSuite) testServerRecvErrorFor(workflow commonworkflow.Workf
 			// trigger
 			t.mockEventManager.On("Publish", &wms_types.WorkflowStepStartedEvent{
 				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-					ServiceName:   "test_service",
-					ContainerName: "test_service-1",
-					WorkflowName:  workflow,
+					ServiceName:       "test_service",
+					ContainerName:     "service-1",
+					FullContainerName: "test_service-1",
+					WorkflowName:      workflow,
 				},
 				StepId:    "12345",
 				Name:      "test",
@@ -859,9 +920,10 @@ func (t *WorkflowTestSuite) testServerRecvErrorFor(workflow commonworkflow.Workf
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowErrorEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  workflow,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      workflow,
 		},
 		Err: errors.New("mock recv error"),
 	}).Return()
@@ -870,18 +932,21 @@ func (t *WorkflowTestSuite) testServerRecvErrorFor(workflow commonworkflow.Workf
 func (t *WorkflowTestSuite) testUnknownWorkflowResult(workflow commonworkflow.WorkflowName) {
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
-	ctx = context.WithValue(ctx, containerNameContextValueName, "test_service-1")
+	ctx = context.WithValue(ctx, containerNameContextValueName, "service-1")
+	ctx = context.WithValue(ctx, fullContainerNameContextValueName, "test_service-1")
 
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowStartedEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  workflow,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      workflow,
 		},
 	}).Return()
 
@@ -913,9 +978,10 @@ func (t *WorkflowTestSuite) testUnknownWorkflowResult(workflow commonworkflow.Wo
 			// trigger
 			t.mockEventManager.On("Publish", &wms_types.WorkflowStepStartedEvent{
 				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-					ServiceName:   "test_service",
-					ContainerName: "test_service-1",
-					WorkflowName:  workflow,
+					ServiceName:       "test_service",
+					ContainerName:     "service-1",
+					FullContainerName: "test_service-1",
+					WorkflowName:      workflow,
 				},
 				StepId:    "12345",
 				Name:      "test",
@@ -963,9 +1029,10 @@ func (t *WorkflowTestSuite) testUnknownWorkflowResult(workflow commonworkflow.Wo
 
 	t.mockEventManager.On("Publish", &wms_types.WorkflowErrorEvent{
 		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:   "test_service",
-			ContainerName: "test_service-1",
-			WorkflowName:  workflow,
+			ServiceName:       "test_service",
+			ContainerName:     "service-1",
+			FullContainerName: "test_service-1",
+			WorkflowName:      workflow,
 		},
 		Err: errors.New("unknown result"),
 	}).Return()

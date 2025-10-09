@@ -11,19 +11,19 @@ import (
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 )
 
-type FirstWorkflowComplete workflowcommon.WorkflowName
+type FirstContainerComplete workflowcommon.WorkflowName
 
-type FirstPreStartCompleteInterceptor struct {
+type FirstContainerCompleteInterceptor struct {
 	orchestrator container_types.Orchestrator
 }
 
-func NewFirstPreStartCompleteInterceptor(orchestrator container_types.Orchestrator) *FirstPreStartCompleteInterceptor {
-	return &FirstPreStartCompleteInterceptor{
+func NewFirstContainerCompleteInterceptor(orchestrator container_types.Orchestrator) *FirstContainerCompleteInterceptor {
+	return &FirstContainerCompleteInterceptor{
 		orchestrator: orchestrator,
 	}
 }
 
-func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteUnaryInterceptor(
+func (t *FirstContainerCompleteInterceptor) FirstContainerCompleteUnaryInterceptor(
 	ctx context.Context,
 	req interface{},
 	_ *grpc.UnaryServerInfo,
@@ -36,9 +36,9 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteUnaryInterceptor
 
 	for _, workflow := range workflowcommon.WorkflowNames {
 		if workflow.IsFirstContainerWorkflow() {
-			firstWorkflowComplete := md.Get(workflow.String() + "_complete")
-			if len(firstWorkflowComplete) > 0 {
-				ctx = context.WithValue(ctx, FirstWorkflowComplete(workflow), firstWorkflowComplete[0])
+			firstContainerComplete := md.Get(workflow.String() + "_complete")
+			if len(firstContainerComplete) > 0 {
+				ctx = context.WithValue(ctx, FirstContainerComplete(workflow), firstContainerComplete[0])
 			}
 		}
 	}
@@ -46,7 +46,7 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteUnaryInterceptor
 	return handler(ctx, req)
 }
 
-func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteStreamInterceptor(
+func (t *FirstContainerCompleteInterceptor) FirstContainerCompleteStreamInterceptor(
 	srv interface{},
 	ss grpc.ServerStream,
 	_ *grpc.StreamServerInfo,
@@ -60,9 +60,9 @@ func (t *FirstPreStartCompleteInterceptor) FirstPreStartCompleteStreamIntercepto
 
 	for _, workflow := range workflowcommon.WorkflowNames {
 		if workflow.IsFirstContainerWorkflow() {
-			firstWorkflowComplete := md.Get(workflow.String() + "_complete")
-			if len(firstWorkflowComplete) > 0 {
-				ctx = context.WithValue(ctx, FirstWorkflowComplete(workflow), firstWorkflowComplete[0])
+			firstContainerComplete := md.Get(workflow.String() + "_complete")
+			if len(firstContainerComplete) > 0 {
+				ctx = context.WithValue(ctx, FirstContainerComplete(workflow), firstContainerComplete[0])
 			}
 		}
 	}

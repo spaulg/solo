@@ -55,13 +55,13 @@ func (t *WorkflowGuard) Publish(event events_types.Event) {
 	switch e := event.(type) {
 	case *wms_types.WorkflowSkippedEvent:
 		workflowName = e.WorkflowName
-		containerName = e.ContainerName
+		containerName = e.FullContainerName
 
 		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event skipped for workflow %s for container %s", workflowName, containerName))
 
 	case *wms_types.WorkflowCompleteEvent:
 		workflowName = e.WorkflowName
-		containerName = e.ContainerName
+		containerName = e.FullContainerName
 
 		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event completed for workflow %s for container %s", workflowName, containerName))
 		workflowSuccessful = e.Successful
