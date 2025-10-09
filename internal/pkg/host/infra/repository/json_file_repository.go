@@ -4,14 +4,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type JSONFileRepository[T any] struct{}
 
 func NewJSONFileRepository[T any]() *JSONFileRepository[T] {
 	return &JSONFileRepository[T]{}
+}
+
+func (t *JSONFileRepository[T]) Walk(filePath string, filename string) iter.Seq2[string, T] {
+	return t.walk(filePath, filename, false)
+}
+
+func (t *JSONFileRepository[T]) ReverseWalk(filePath string, filename string) iter.Seq2[string, T] {
+	return t.walk(filePath, filename, true)
 }
 
 func (t *JSONFileRepository[T]) Save(filePath string, entity T) error {
@@ -81,4 +91,33 @@ func (t *JSONFileRepository[T]) Load(filePath string) (T, error) {
 	}
 
 	return entity, nil
+}
+
+func (t *JSONFileRepository[T]) walk(filePath string, filename string, reverse bool) iter.Seq2[string, T] {
+	return func(yield func(string, T) bool) {
+		entries, err := os.ReadDir(filePath)
+		if err != nil {
+			return
+		}
+
+		if reverse {
+			for i, j := 0, len(entries)-1; i < j; i, j = i+1, j-1 {
+				entries[i], entries[j] = entries[j], entries[i]
+			}
+		}
+
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+
+			executionEventPath := filepath.Join(filePath, entry.Name(), filename)
+			eventData, err := t.Load(executionEventPath)
+			if err != nil {
+				return
+			}
+
+			yield(entry.Name(), eventData)
+		}
+	}
 }

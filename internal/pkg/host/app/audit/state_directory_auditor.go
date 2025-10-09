@@ -24,7 +24,7 @@ type StateDirectoryAuditor struct {
 	mu                            sync.Mutex
 	outputDirectory               string
 	executionEventRepository      domain.ExecutionEventRepository
-	workflowLogMetaRepository     domain.WorkflowLogMetaRepository
+	containerStepMapRepository    domain.ContainerStepMapRepository
 	workflowStepLogMetaRepository domain.WorkflowStepLogMetaRepository
 	logWriter                     domain.LogWriter
 }
@@ -35,7 +35,7 @@ func NewAuditor(
 	config *domain.Config,
 	project domain.Project,
 	executionEventRepository domain.ExecutionEventRepository,
-	workflowLogMetaRepository domain.WorkflowLogMetaRepository,
+	containerStepMapRepository domain.ContainerStepMapRepository,
 	workflowStepLogMetaRepository domain.WorkflowStepLogMetaRepository,
 	logWriter domain.LogWriter,
 ) *StateDirectoryAuditor {
@@ -52,7 +52,7 @@ func NewAuditor(
 		project:                       project,
 		outputDirectory:               outputDirectory,
 		executionEventRepository:      executionEventRepository,
-		workflowLogMetaRepository:     workflowLogMetaRepository,
+		containerStepMapRepository:    containerStepMapRepository,
 		workflowStepLogMetaRepository: workflowStepLogMetaRepository,
 		logWriter:                     logWriter,
 	}
@@ -200,8 +200,8 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 		))
 	}
 
-	workflowMetaPath := path.Join(outputDirectory, e.WorkflowName.String()+".meta.json")
-	workflowMeta, err := t.workflowLogMetaRepository.Load(workflowMetaPath)
+	workflowMetaPath := path.Join(outputDirectory, "container_step_map.meta.json")
+	workflowMeta, err := t.containerStepMapRepository.Load(workflowMetaPath)
 	if err != nil {
 		t.logger.Error(fmt.Sprintf(
 			"Failed to load workflow meta file: failed to load meta file: %s: %v",
@@ -213,12 +213,12 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	}
 
 	if workflowMeta == nil {
-		workflowMeta = domain.NewWorkflowLogMeta()
+		workflowMeta = domain.NewWorkflowContainerStepMap()
 	}
 
 	workflowMeta.AppendStep(e.ContainerName, e.StepID)
 
-	if err = t.workflowLogMetaRepository.Save(workflowMetaPath, workflowMeta); err != nil {
+	if err = t.containerStepMapRepository.Save(workflowMetaPath, workflowMeta); err != nil {
 		t.logger.Error(fmt.Sprintf(
 			"Failed to write workflow meta file: failed to save meta file: %s: %v",
 			workflowMetaPath,
