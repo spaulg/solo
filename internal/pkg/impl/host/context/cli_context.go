@@ -23,12 +23,19 @@ const lockFileName = "locking_file"
 type CliContext struct {
 	configReader config_types.ConfigReader
 
-	Project         project_types.Project
-	Config          *config_types.Config
-	ProjectLoadErr  error
-	ConfigLoadErr   error
-	Logger          *slog.Logger
-	lockFile        *flock.Flock
+	Project        project_types.Project
+	ProjectLoadErr error
+
+	Config        *config_types.Config
+	ConfigLoadErr error
+
+	Logger *slog.Logger
+
+	lockFile *flock.Flock
+
+	CommandPath string
+	CommandArgs []string
+
 	TriggerDateTime time.Time
 }
 

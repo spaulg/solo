@@ -23,10 +23,11 @@ const workflowExecTrackerFile = "workflow_exec_tracker.json"
 
 type ProjectControl struct {
 	soloCtx              *context.CliContext
-	workflowManager      events_types.Manager
+	eventManager         events_types.Manager
 	orchestratorFactory  container_types.OrchestratorFactory
 	grpcServerFactory    grpc_types.ServerFactory
 	workflowGuardFactory wms_types.WorkflowGuardFactory
+	workflowLogWriter    wms_types.WorkflowLogWriter
 }
 
 func NewProjectControl(
@@ -35,376 +36,69 @@ func NewProjectControl(
 	orchestratorFactory container_types.OrchestratorFactory,
 	grpcServerFactory grpc_types.ServerFactory,
 	workflowGuardFactory wms_types.WorkflowGuardFactory,
+	workflowLogWriter wms_types.WorkflowLogWriter,
 ) *ProjectControl {
 	return &ProjectControl{
 		soloCtx:              soloCtx,
-		workflowManager:      workflowManager,
+		eventManager:         workflowManager,
 		orchestratorFactory:  orchestratorFactory,
 		grpcServerFactory:    grpcServerFactory,
 		workflowGuardFactory: workflowGuardFactory,
+		workflowLogWriter:    workflowLogWriter,
 	}
 }
 
 func (t *ProjectControl) Start() error {
-	orchestrator, err := t.orchestratorFactory.Build()
-	if err != nil {
-		return fmt.Errorf("failed to build orchestrator: %w", err)
-	}
-
-	// Write compose file
-	if exists, _ := t.composeFileExists(); !exists {
-		t.soloCtx.Logger.Info("Generating compose file")
-		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
-		if err := t.exportComposeFile(composeYml); err != nil {
-			return err
-		}
-	}
-
-	serviceStatus, err := orchestrator.ServicesStatus(nil)
-	if err != nil {
-		return fmt.Errorf("failed to check service status: %w", err)
-	}
-
-	if len(serviceStatus.NotRunningServices) == 0 {
-		t.soloCtx.Logger.Info("All required services already running")
-		return nil
-	}
-
-	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile))
-	if err != nil {
-		return fmt.Errorf("failed to load workflow execution tracker: %w", err)
-	}
-
-	// Start GRPC services
-	grpcServer, err := t.grpcServerFactory.Build(
-		orchestrator,
-		workflowExecutionTracker,
-		t.soloCtx.Project,
-		t.soloCtx.Config.Workflow.Grpc.ServerPort,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to build GRPC server: %w", err)
-	}
-
-	if err := grpcServer.Start(); err != nil {
-		return fmt.Errorf("failed to start GRPC server: %w", err)
-	}
-
-	defer grpcServer.Stop()
-
-	if err := t.copyEntrypointToState(); err != nil {
-		return fmt.Errorf("failed to copy entrypoint to state directory: %w", err)
-	}
-
-	// Populate a list of container names that will be started
-	containerNames, err := t.soloCtx.Project.Services().ContainerNames(serviceStatus.NotRunningServices)
-	if err != nil {
-		return fmt.Errorf("failed to convert service names to container names: %w", err)
-	}
-
-	workflowNames := []workflowcommon.WorkflowName{
-		workflowcommon.FirstPreStartContainer,
-		workflowcommon.FirstPreStartService,
-		workflowcommon.PreStartContainer,
-		workflowcommon.PreStartService,
-		workflowcommon.PostStartContainer,
-		workflowcommon.PostStartService,
-		workflowcommon.FirstPostStartContainer,
-		workflowcommon.FirstPostStartService,
-	}
-
-	guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
-	t.workflowManager.Subscribe(guard)
-	defer t.workflowManager.Unsubscribe(guard)
-
-	// Start compose services
-	if err := orchestrator.ComposeUp(t.soloCtx.Project.Services().ServiceNames()); err != nil {
-		return fmt.Errorf("failed to start services: %w", err)
-	}
-
-	if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
-		if err := guardCallback(workflowcommon.FirstPreStartContainer); err != nil {
-			return err
-		}
-
-		if err := guardCallback(workflowcommon.FirstPreStartService); err != nil {
-			return err
-		}
-
-		if err := guardCallback(workflowcommon.PreStartContainer); err != nil {
-			return err
-		}
-
-		if err := guardCallback(workflowcommon.PreStartService); err != nil {
-			return err
-		}
-
-		// Exec post start commands
-		postStartEvents := []workflowcommon.WorkflowName{
-			workflowcommon.PostStartContainer,
-			workflowcommon.PostStartService,
-			workflowcommon.FirstPostStartContainer,
-			workflowcommon.FirstPostStartService,
-		}
-
-		for _, event := range postStartEvents {
-			postStartCommand := []string{
-				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
-				"trigger-event",
-				event.String(),
-			}
-
-			if err := orchestrator.StartCommand(container, postStartCommand); err != nil {
-				return fmt.Errorf("error running compose: %w", err)
-			}
-
-			if err := guardCallback(event); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error waiting for services to complete workflows: %w", err)
-	}
-
-	// Wait for all events to be delivered
-	t.soloCtx.Logger.Debug("Waiting for all remaining events to be delivered")
-	t.workflowManager.Wait()
-
-	t.soloCtx.Logger.Debug("Finished starting all services successfully")
-	return nil
+	return t.workflowLogWriter.RecordEvent(func() error {
+		return t.internalStart()
+	})
 }
 
 func (t *ProjectControl) Stop() error {
-	if exists, err := t.composeFileExists(); !exists || err != nil {
-		return err
-	}
-
-	// Build orchestrator
-	orchestrator, err := t.orchestratorFactory.Build()
-	if err != nil {
-		return fmt.Errorf("failed to build orchestrator: %w", err)
-	}
-
-	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus(nil)
-	if err != nil {
-		return fmt.Errorf("failed to check service status: %w", err)
-	}
-
-	if len(serviceStatus.RunningServices) > 0 {
-		workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile))
-		if err != nil {
-			return fmt.Errorf("failed to load workflow execution tracker: %w", err)
-		}
-
-		grpcServer, err := t.grpcServerFactory.Build(
-			orchestrator,
-			workflowExecutionTracker,
-			t.soloCtx.Project,
-			t.soloCtx.Config.Workflow.Grpc.ServerPort,
-		)
-
-		if err != nil {
-			return fmt.Errorf("failed to build GRPC server: %w", err)
-		}
-
-		// Start GRPC services
-		if err := grpcServer.Start(); err != nil {
-			return fmt.Errorf("failed to start GRPC server: %w", err)
-		}
-
-		defer grpcServer.Stop()
-
-		// Populate a list of container names that will be stopped
-		servicesToStop := serviceStatus.RunningServices
-		containerNames, err := t.soloCtx.Project.Services().ContainerNames(servicesToStop)
-		if err != nil {
-			return fmt.Errorf("failed to convert service names to container names: %w", err)
-		}
-
-		workflowNames := []workflowcommon.WorkflowName{
-			workflowcommon.PreStopContainer,
-		}
-
-		guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
-		t.workflowManager.Subscribe(guard)
-		defer t.workflowManager.Unsubscribe(guard)
-
-		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
-			// Exec pre stop commands
-			preStopCommand := []string{
-				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
-				"trigger-event",
-				workflowcommon.PreStopContainer.String(),
-			}
-
-			if err := orchestrator.StartCommand(container, preStopCommand); err != nil {
-				return fmt.Errorf("error running compose: %w", err)
-			}
-
-			return nil
-		}); err != nil {
-			return fmt.Errorf("error waiting for services to complete workflows: %w", err)
-		}
-	}
-
-	if err := orchestrator.ComposeStop(t.soloCtx.Project.Services().ExclusiveServiceNames()); err != nil {
-		return fmt.Errorf("failed to stop services: %w", err)
-	}
-
-	// Wait for all events to be delivered
-	t.workflowManager.Wait()
-
-	return nil
+	return t.workflowLogWriter.RecordEvent(func() error {
+		return t.internalStop()
+	})
 }
 
-func (t *ProjectControl) Destroy() error {
-	if exists, err := t.composeFileExists(); !exists || err != nil {
-		return nil
-	}
-
-	// Build orchestrator
-	orchestrator, err := t.orchestratorFactory.Build()
-	if err != nil {
-		return fmt.Errorf("failed to build orchestrator: %w", err)
-	}
-
-	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus(nil)
-	if err != nil {
-		return fmt.Errorf("failed to check service status: %w", err)
-	}
-
-	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile))
-	if err != nil {
-		return fmt.Errorf("failed to load workflow execution tracker: %w", err)
-	}
-
-	if len(serviceStatus.RunningServices) > 0 {
-		grpcServer, err := t.grpcServerFactory.Build(
-			orchestrator,
-			workflowExecutionTracker,
-			t.soloCtx.Project,
-			t.soloCtx.Config.Workflow.Grpc.ServerPort,
-		)
-
-		if err != nil {
-			return fmt.Errorf("failed to build GRPC server: %w", err)
+func (t *ProjectControl) Restart() error {
+	return t.workflowLogWriter.RecordEvent(func() error {
+		res := t.internalStop()
+		if res != nil {
+			return res
 		}
 
-		// Start GRPC services
-		if err := grpcServer.Start(); err != nil {
-			return fmt.Errorf("failed to start GRPC server: %w", err)
-		}
-
-		defer grpcServer.Stop()
-
-		// Populate a list of container names that will be destroyed
-		servicesToDestroy := serviceStatus.RunningServices
-		containerNames, err := t.soloCtx.Project.Services().ContainerNames(servicesToDestroy)
-		if err != nil {
-			return fmt.Errorf("failed to convert service names to container names: %w", err)
-		}
-
-		workflowNames := []workflowcommon.WorkflowName{
-			workflowcommon.PreDestroyContainer,
-		}
-
-		guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
-		t.workflowManager.Subscribe(guard)
-		defer t.workflowManager.Unsubscribe(guard)
-
-		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
-			// Exec pre destroy commands
-			preDestroyCommand := []string{
-				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
-				"trigger-event",
-				workflowcommon.PreDestroyContainer.String(),
-			}
-
-			if err := orchestrator.StartCommand(container, preDestroyCommand); err != nil {
-				return fmt.Errorf("error running compose: %w", err)
-			}
-
-			return nil
-		}); err != nil {
-			return fmt.Errorf("error waiting for services to complete workflows: %w", err)
-		}
-	}
-
-	if err := orchestrator.ComposeDown(t.soloCtx.Project.Services().ExclusiveServiceNames()); err != nil {
-		return fmt.Errorf("failed to destroy services: %w", err)
-	}
-
-	// Wait for all events to be delivered
-	t.workflowManager.Wait()
-
-	// Reset service workflow status for affected services
-	if err := workflowExecutionTracker.Clear(serviceStatus.RunningServices, workflowcommon.WorkflowNames); err != nil {
-		return fmt.Errorf("failed to clear workflow execution tracker: %w", err)
-	}
-
-	return nil
-}
-
-func (t *ProjectControl) Clean(purgeStateDirectory bool) error {
-	var purgeDirectoryList []string
-
-	if purgeStateDirectory {
-		// Purge the entire state directory
-		purgeDirectoryList = []string{t.soloCtx.Project.GetStateDirectoryRoot()}
-	} else {
-		// Purge only certain sub folders
-		purgeDirectoryList = []string{
-			t.soloCtx.Project.GetGeneratedComposeFilePath(),
-			t.soloCtx.Project.GetAllServicesStateDirectory(),
-			t.soloCtx.Project.GetServiceStateDirectoryRoot(),
-		}
-	}
-
-	for _, purgeDirectory := range purgeDirectoryList {
-		if err := os.RemoveAll(purgeDirectory); err != nil {
-			return fmt.Errorf("failed to remove state directory %s: %w", purgeDirectory, err)
-		}
-	}
-
-	return nil
+		return t.internalStart()
+	})
 }
 
 func (t *ProjectControl) Rebuild() error {
-	// Build orchestrator
-	orchestrator, err := t.orchestratorFactory.Build()
-	if err != nil {
-		return fmt.Errorf("failed to build orchestrator: %w", err)
-	}
+	return t.workflowLogWriter.RecordEvent(func() error {
+		return t.internalRebuild()
+	})
+}
 
-	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus(nil)
-	if err != nil {
-		return fmt.Errorf("failed to check service status: %w", err)
-	}
+func (t *ProjectControl) Destroy() error {
+	return t.workflowLogWriter.RecordEvent(func() error {
+		res := t.internalDestroy()
+		if res != nil {
+			return res
+		}
 
-	profiles, err := t.soloCtx.Project.Services().ProfilesOfServices(serviceStatus.RunningServices)
-	if err != nil {
-		return fmt.Errorf("failed to get profiles of services: %w", err)
-	}
+		profiles := t.soloCtx.Project.Profiles()
+		if len(profiles) == 1 && profiles[0] == "*" {
+			res = t.internalClean(false)
+		}
 
-	if err := t.Destroy(); err != nil {
+		return res
+	})
+}
+
+func (t *ProjectControl) Clean(purgeStateDirectory bool) error {
+	if err := t.internalDestroy(); err != nil {
 		return err
 	}
 
-	if err := t.Clean(false); err != nil {
-		return err
-	}
-
-	if err := t.soloCtx.Project.ReloadWithProfiles(profiles); err != nil {
-		return err
-	}
-
-	return t.Start()
+	return t.internalClean(purgeStateDirectory)
 }
 
 func (t *ProjectControl) ExecuteTool(name string, args []string) error {
@@ -514,6 +208,377 @@ func (t *ProjectControl) ExecuteShell(shell string, index int, serviceName strin
 	}
 
 	return orchestrator.ForkAndExecute(fullContainerName, shell, nil, workingDirectory)
+}
+
+func (t *ProjectControl) internalStart() error {
+	orchestrator, err := t.orchestratorFactory.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build orchestrator: %w", err)
+	}
+
+	// Write compose file
+	if exists, _ := t.composeFileExists(); !exists {
+		t.soloCtx.Logger.Info("Generating compose file")
+		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
+		if err := t.exportComposeFile(composeYml); err != nil {
+			return err
+		}
+	}
+
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
+	if err != nil {
+		return fmt.Errorf("failed to check service status: %w", err)
+	}
+
+	if len(serviceStatus.NotRunningServices) == 0 {
+		t.soloCtx.Logger.Info("All required services already running")
+		return nil
+	}
+
+	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(
+		t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to load workflow execution tracker: %w", err)
+	}
+
+	// Start GRPC services
+	grpcServer, err := t.grpcServerFactory.Build(
+		orchestrator,
+		workflowExecutionTracker,
+		t.soloCtx.Project,
+		t.soloCtx.Config.Workflow.Grpc.ServerPort,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to build GRPC server: %w", err)
+	}
+
+	if err := grpcServer.Start(); err != nil {
+		return fmt.Errorf("failed to start GRPC server: %w", err)
+	}
+
+	defer grpcServer.Stop()
+
+	if err := t.copyEntrypointToState(); err != nil {
+		return fmt.Errorf("failed to copy entrypoint to state directory: %w", err)
+	}
+
+	// Populate a list of container names that will be started
+	containerNames, err := t.soloCtx.Project.Services().ContainerNames(serviceStatus.NotRunningServices)
+	if err != nil {
+		return fmt.Errorf("failed to convert service names to container names: %w", err)
+	}
+
+	workflowNames := []workflowcommon.WorkflowName{
+		workflowcommon.FirstPreStartContainer,
+		workflowcommon.FirstPreStartService,
+		workflowcommon.PreStartContainer,
+		workflowcommon.PreStartService,
+		workflowcommon.PostStartContainer,
+		workflowcommon.PostStartService,
+		workflowcommon.FirstPostStartContainer,
+		workflowcommon.FirstPostStartService,
+	}
+
+	guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
+	t.eventManager.Subscribe(guard)
+	defer t.eventManager.Unsubscribe(guard)
+
+	// Start compose services
+	if err := orchestrator.ComposeUp(t.soloCtx.Project.Services().ServiceNames()); err != nil {
+		return fmt.Errorf("failed to start services: %w", err)
+	}
+
+	if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+		if err := guardCallback(workflowcommon.FirstPreStartContainer); err != nil {
+			return err
+		}
+
+		if err := guardCallback(workflowcommon.FirstPreStartService); err != nil {
+			return err
+		}
+
+		if err := guardCallback(workflowcommon.PreStartContainer); err != nil {
+			return err
+		}
+
+		if err := guardCallback(workflowcommon.PreStartService); err != nil {
+			return err
+		}
+
+		// Exec post start commands
+		postStartEvents := []workflowcommon.WorkflowName{
+			workflowcommon.PostStartContainer,
+			workflowcommon.PostStartService,
+			workflowcommon.FirstPostStartContainer,
+			workflowcommon.FirstPostStartService,
+		}
+
+		for _, event := range postStartEvents {
+			postStartCommand := []string{
+				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
+				"trigger-event",
+				event.String(),
+			}
+
+			if err := orchestrator.StartCommand(container, postStartCommand); err != nil {
+				return fmt.Errorf("error running compose: %w", err)
+			}
+
+			if err := guardCallback(event); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("error waiting for services to complete workflows: %w", err)
+	}
+
+	// Wait for all events to be delivered
+	t.soloCtx.Logger.Debug("Waiting for all remaining events to be delivered")
+	t.eventManager.Wait()
+
+	t.soloCtx.Logger.Debug("Finished starting all services successfully")
+	return nil
+}
+
+func (t *ProjectControl) internalStop() error {
+	if exists, err := t.composeFileExists(); !exists || err != nil {
+		return err
+	}
+
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build orchestrator: %w", err)
+	}
+
+	// Build workflow service map
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
+	if err != nil {
+		return fmt.Errorf("failed to check service status: %w", err)
+	}
+
+	if len(serviceStatus.RunningServices) > 0 {
+		workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(
+			t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile),
+		)
+
+		if err != nil {
+			return fmt.Errorf("failed to load workflow execution tracker: %w", err)
+		}
+
+		grpcServer, err := t.grpcServerFactory.Build(
+			orchestrator,
+			workflowExecutionTracker,
+			t.soloCtx.Project,
+			t.soloCtx.Config.Workflow.Grpc.ServerPort,
+		)
+
+		if err != nil {
+			return fmt.Errorf("failed to build GRPC server: %w", err)
+		}
+
+		// Start GRPC services
+		if err := grpcServer.Start(); err != nil {
+			return fmt.Errorf("failed to start GRPC server: %w", err)
+		}
+
+		defer grpcServer.Stop()
+
+		// Populate a list of container names that will be stopped
+		servicesToStop := serviceStatus.RunningServices
+		containerNames, err := t.soloCtx.Project.Services().ContainerNames(servicesToStop)
+		if err != nil {
+			return fmt.Errorf("failed to convert service names to container names: %w", err)
+		}
+
+		workflowNames := []workflowcommon.WorkflowName{
+			workflowcommon.PreStopContainer,
+		}
+
+		guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
+		t.eventManager.Subscribe(guard)
+		defer t.eventManager.Unsubscribe(guard)
+
+		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+			// Exec pre stop commands
+			preStopCommand := []string{
+				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
+				"trigger-event",
+				workflowcommon.PreStopContainer.String(),
+			}
+
+			if err := orchestrator.StartCommand(container, preStopCommand); err != nil {
+				return fmt.Errorf("error running compose: %w", err)
+			}
+
+			return nil
+		}); err != nil {
+			return fmt.Errorf("error waiting for services to complete workflows: %w", err)
+		}
+	}
+
+	if err := orchestrator.ComposeStop(t.soloCtx.Project.Services().ExclusiveServiceNames()); err != nil {
+		return fmt.Errorf("failed to stop services: %w", err)
+	}
+
+	// Wait for all events to be delivered
+	t.eventManager.Wait()
+
+	return nil
+}
+
+func (t *ProjectControl) internalDestroy() error {
+	if exists, err := t.composeFileExists(); !exists || err != nil {
+		return nil
+	}
+
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build orchestrator: %w", err)
+	}
+
+	// Build workflow service map
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
+	if err != nil {
+		return fmt.Errorf("failed to check service status: %w", err)
+	}
+
+	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(
+		t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to load workflow execution tracker: %w", err)
+	}
+
+	if len(serviceStatus.RunningServices) > 0 {
+		grpcServer, err := t.grpcServerFactory.Build(
+			orchestrator,
+			workflowExecutionTracker,
+			t.soloCtx.Project,
+			t.soloCtx.Config.Workflow.Grpc.ServerPort,
+		)
+
+		if err != nil {
+			return fmt.Errorf("failed to build GRPC server: %w", err)
+		}
+
+		// Start GRPC services
+		if err := grpcServer.Start(); err != nil {
+			return fmt.Errorf("failed to start GRPC server: %w", err)
+		}
+
+		defer grpcServer.Stop()
+
+		// Populate a list of container names that will be destroyed
+		servicesToDestroy := serviceStatus.RunningServices
+		containerNames, err := t.soloCtx.Project.Services().ContainerNames(servicesToDestroy)
+		if err != nil {
+			return fmt.Errorf("failed to convert service names to container names: %w", err)
+		}
+
+		workflowNames := []workflowcommon.WorkflowName{
+			workflowcommon.PreDestroyContainer,
+		}
+
+		guard := t.workflowGuardFactory.Build(workflowNames, containerNames)
+		t.eventManager.Subscribe(guard)
+		defer t.eventManager.Unsubscribe(guard)
+
+		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+			// Exec pre destroy commands
+			preDestroyCommand := []string{
+				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
+				"trigger-event",
+				workflowcommon.PreDestroyContainer.String(),
+			}
+
+			if err := orchestrator.StartCommand(container, preDestroyCommand); err != nil {
+				return fmt.Errorf("error running compose: %w", err)
+			}
+
+			return nil
+		}); err != nil {
+			return fmt.Errorf("error waiting for services to complete workflows: %w", err)
+		}
+	}
+
+	if err := orchestrator.ComposeDown(t.soloCtx.Project.Services().ExclusiveServiceNames()); err != nil {
+		return fmt.Errorf("failed to destroy services: %w", err)
+	}
+
+	// Wait for all events to be delivered
+	t.eventManager.Wait()
+
+	// Reset service workflow status for affected services
+	if err := workflowExecutionTracker.Clear(serviceStatus.RunningServices, workflowcommon.WorkflowNames); err != nil {
+		return fmt.Errorf("failed to clear workflow execution tracker: %w", err)
+	}
+
+	return nil
+}
+
+func (t *ProjectControl) internalClean(purgeStateDirectory bool) error {
+	var purgeDirectoryList []string
+
+	if purgeStateDirectory {
+		// Purge the entire state directory
+		purgeDirectoryList = []string{t.soloCtx.Project.GetStateDirectoryRoot()}
+	} else {
+		// Purge only certain subfolders
+		purgeDirectoryList = []string{
+			t.soloCtx.Project.GetGeneratedComposeFilePath(),
+			t.soloCtx.Project.GetAllServicesStateDirectory(),
+			t.soloCtx.Project.GetServiceStateDirectoryRoot(),
+		}
+	}
+
+	for _, purgeDirectory := range purgeDirectoryList {
+		if err := os.RemoveAll(purgeDirectory); err != nil {
+			return fmt.Errorf("failed to remove state directory %s: %w", purgeDirectory, err)
+		}
+	}
+
+	return nil
+}
+
+func (t *ProjectControl) internalRebuild() error {
+	// Build orchestrator
+	orchestrator, err := t.orchestratorFactory.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build orchestrator: %w", err)
+	}
+
+	// Build workflow service map
+	serviceStatus, err := orchestrator.ServicesStatus(nil)
+	if err != nil {
+		return fmt.Errorf("failed to check service status: %w", err)
+	}
+
+	profiles, err := t.soloCtx.Project.Services().ProfilesOfServices(serviceStatus.RunningServices)
+	if err != nil {
+		return fmt.Errorf("failed to get profiles of services: %w", err)
+	}
+
+	if err := t.internalDestroy(); err != nil {
+		return err
+	}
+
+	if err := t.internalClean(false); err != nil {
+		return err
+	}
+
+	if err := t.soloCtx.Project.ReloadWithProfiles(profiles); err != nil {
+		return err
+	}
+
+	return t.internalStart()
 }
 
 func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
