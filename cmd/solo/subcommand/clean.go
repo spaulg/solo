@@ -52,10 +52,6 @@ func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 				return err
 			}
 
-			if err := projectControl.Destroy(); err != nil {
-				return err
-			}
-
 			return projectControl.Clean(true)
 		}),
 	}

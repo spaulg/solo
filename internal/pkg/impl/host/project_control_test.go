@@ -41,6 +41,7 @@ type ProjectControlTestSuite struct {
 	mockWorkflowGuard        *wms.MockWorkflowGuard
 	mockServices             *compose.MockServices
 	mockServiceConfig        *compose.MockServiceConfig
+	mockWorkflowLogWriter    *wms.MockWorkflowLogWriter
 }
 
 func (t *ProjectControlTestSuite) SetupTest() {
@@ -54,6 +55,9 @@ func (t *ProjectControlTestSuite) SetupTest() {
 	t.mockWorkflowGuard = &wms.MockWorkflowGuard{}
 	t.mockServices = &compose.MockServices{}
 	t.mockServiceConfig = &compose.MockServiceConfig{}
+	t.mockWorkflowLogWriter = &wms.MockWorkflowLogWriter{}
+
+	t.mockWorkflowLogWriter.On("RecordEvent", mock.AnythingOfType("func() error"))
 
 	t.mockLogHandler = &logging.MockHandler{}
 	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
@@ -83,6 +87,7 @@ func (t *ProjectControlTestSuite) TestStart_OrchestratorFactoryReturnsError() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -106,6 +111,7 @@ func (t *ProjectControlTestSuite) TestStart_ServiceStatusReturnsError() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -143,6 +149,7 @@ func (t *ProjectControlTestSuite) TestStart_AllServicesAlreadyRunning() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -180,6 +187,7 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToBuild() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -218,6 +226,7 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToStart() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -263,6 +272,7 @@ func (t *ProjectControlTestSuite) TestStart_EntrypointCopyFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -310,6 +320,7 @@ func (t *ProjectControlTestSuite) TestStart_ContainerNamesFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -368,6 +379,7 @@ func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -429,6 +441,7 @@ func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -500,6 +513,7 @@ func (t *ProjectControlTestSuite) TestStart_Succeeds() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Start()
@@ -532,6 +546,7 @@ func (t *ProjectControlTestSuite) TestStop_OrchestratorFactoryFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -563,6 +578,7 @@ func (t *ProjectControlTestSuite) TestStop_ServicesStatusFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -607,6 +623,7 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerBuildFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -652,6 +669,7 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerStartFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -702,6 +720,7 @@ func (t *ProjectControlTestSuite) TestStop_ContainerNamesFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -757,6 +776,7 @@ func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -819,6 +839,7 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -887,6 +908,7 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Stop()
@@ -920,6 +942,7 @@ func (t *ProjectControlTestSuite) TestDestroy_OrchestratorFactoryFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()
@@ -950,6 +973,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ServicesStatusFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()
@@ -992,6 +1016,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerBuildFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()
@@ -1036,6 +1061,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerStartFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()
@@ -1085,6 +1111,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ContainerNamesFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()
@@ -1138,6 +1165,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()
@@ -1201,6 +1229,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()
@@ -1228,6 +1257,8 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
+	allServicesState := tmpDir + "/all_services"
+	serviceStateDirRoot := tmpDir + "/services/foo"
 
 	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
 		t.Fail("Failed to copy compose file for test")
@@ -1238,6 +1269,9 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 	t.mockProject.On("Services").Return(t.mockServices)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
+	t.mockProject.On("Profiles").Return([]string{"*"})
+	t.mockProject.On("GetAllServicesStateDirectory").Return(allServicesState)
+	t.mockProject.On("GetServiceStateDirectoryRoot").Return(serviceStateDirRoot)
 	t.mockServices.On("ContainerNames", []string{"test_server"}).Return([]string{"test_server"}, nil)
 	t.mockServices.On("ExclusiveServiceNames").Return(serviceNames)
 
@@ -1268,6 +1302,7 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 		t.mockOrchestratorFactory,
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
+		t.mockWorkflowLogWriter,
 	)
 
 	err := projectControl.Destroy()

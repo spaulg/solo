@@ -3,6 +3,7 @@ package subcommand
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
 
@@ -73,6 +74,9 @@ func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
 				fmt.Println(soloCtx.ProjectLoadErr)
 				os.Exit(1)
 			}
+
+			soloCtx.CommandPath = strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], " ")
+			soloCtx.CommandArgs = os.Args[1:]
 
 			return nil
 		},

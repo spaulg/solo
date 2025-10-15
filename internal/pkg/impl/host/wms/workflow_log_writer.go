@@ -1,4 +1,4 @@
-package subscribers
+package wms
 
 import (
 	"encoding/json"
@@ -15,9 +15,13 @@ import (
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
-type LogWriterEventSubscriber struct {
-	soloCtx *context.CliContext
-	mu      sync.RWMutex
+const workflowLogsPath = "workflow_logs"
+const workflowEventMetaFile = "event.meta.json"
+
+type WorkflowLogWriter struct {
+	soloCtx         *context.CliContext
+	mu              sync.RWMutex
+	outputDirectory string
 }
 
 type StepLogMeta struct {
@@ -29,13 +33,37 @@ type StepLogMeta struct {
 
 type WorkflowMeta map[string][]string
 
-func NewLogWriterEventSubscriber(soloCtx *context.CliContext) events_types.Subscriber {
-	return &LogWriterEventSubscriber{
-		soloCtx: soloCtx,
+func NewWorkflowLogWriter(soloCtx *context.CliContext) wms_types.WorkflowLogWriter {
+	outputDirectory := path.Join(
+		soloCtx.Project.GetStateDirectoryRoot(),
+		workflowLogsPath,
+		soloCtx.TriggerDateTime.Format("2006-01-02T15-04-05.999999999Z"),
+	)
+
+	return &WorkflowLogWriter{
+		soloCtx:         soloCtx,
+		outputDirectory: outputDirectory,
 	}
 }
 
-func (t *LogWriterEventSubscriber) Publish(event events_types.Event) {
+func (t *WorkflowLogWriter) RecordEvent(callback func() error) error {
+	eventFile := path.Join(t.outputDirectory, workflowEventMetaFile)
+	workflowEvent := NewWorkflowEvent(eventFile, t.soloCtx.CommandPath, t.soloCtx.CommandArgs)
+	if err := workflowEvent.Persist(); err != nil {
+		return fmt.Errorf("failed to persist workflow event: %w", err)
+	}
+
+	res := callback()
+	workflowEvent.MarkComplete(res)
+
+	if err := workflowEvent.Persist(); err != nil {
+		return fmt.Errorf("failed to record workflow event complete: %w", err)
+	}
+
+	return res
+}
+
+func (t *WorkflowLogWriter) Publish(event events_types.Event) {
 	switch e := event.(type) {
 	case *wms_types.WorkflowStepOutputEvent:
 		t.writeStepOutput(e)
@@ -45,15 +73,13 @@ func (t *LogWriterEventSubscriber) Publish(event events_types.Event) {
 	}
 }
 
-func (t *LogWriterEventSubscriber) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
+func (t *WorkflowLogWriter) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
 	if e.Stderr == "" && e.Stdout == "" {
 		return
 	}
 
 	outputDirectory := path.Join(
-		t.soloCtx.Project.GetStateDirectoryRoot(),
-		"workflow-logs",
-		t.soloCtx.TriggerDateTime.Format("2006-01-02T15-04-05.999999999Z"),
+		t.outputDirectory,
 		e.WorkflowName.String(),
 	)
 
@@ -87,7 +113,7 @@ func (t *LogWriterEventSubscriber) writeStepOutput(e *wms_types.WorkflowStepOutp
 	}
 }
 
-func (t *LogWriterEventSubscriber) appendStepOutputFile(
+func (t *WorkflowLogWriter) appendStepOutputFile(
 	outputFilePath string,
 	output string,
 ) {
@@ -120,11 +146,9 @@ func (t *LogWriterEventSubscriber) appendStepOutputFile(
 	}
 }
 
-func (t *LogWriterEventSubscriber) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
+func (t *WorkflowLogWriter) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
 	outputDirectory := path.Join(
-		t.soloCtx.Project.GetStateDirectoryRoot(),
-		"workflow-logs",
-		t.soloCtx.TriggerDateTime.Format("2006-01-02T15-04-05.999999999Z"),
+		t.outputDirectory,
 		e.WorkflowName.String(),
 	)
 

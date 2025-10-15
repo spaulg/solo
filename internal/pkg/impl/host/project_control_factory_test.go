@@ -1,8 +1,8 @@
 package host
 
 import (
-	"testing"
 	"log/slog"
+	"testing"
 
 	"github.com/stretchr/testify/suite"
 
@@ -26,6 +26,9 @@ type ProjectControlFactoryTestSuite struct {
 
 func (t *ProjectControlFactoryTestSuite) SetupTest() {
 	t.mockProject = &project.MockProject{}
+
+	tmpDir := t.T().TempDir()
+	t.mockProject.On("GetStateDirectoryRoot").Return(tmpDir)
 
 	t.mockLogHandler = &logging.MockHandler{}
 	t.mockLogHandler.On("Enabled").Return(true)

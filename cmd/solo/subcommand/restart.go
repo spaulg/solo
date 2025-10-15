@@ -28,11 +28,7 @@ func NewRestartCommand(soloCtx *context.CliContext) *cobra.Command {
 				return err
 			}
 
-			if err := projectControl.Stop(); err != nil {
-				return err
-			}
-
-			return projectControl.Start()
+			return projectControl.Restart()
 		}),
 	}
 
