@@ -34,11 +34,13 @@ type Project struct {
 }
 
 func NewProject(projectFilePath string, config *config_types.Config, profiles []string) (project_types.Project, error) {
+	paths, isProjectFile := findComposeFiles(projectFilePath, config)
+
 	projectOptions, err := cli.NewProjectOptions(nil,
-		WithComposeFiles(projectFilePath, config),
+		WithComposeFiles(paths),
 		cli.WithLoadOptions(func(option *loader.Options) {
-			option.ResolvePaths = false     // Keep paths relative in case the user moves their project folder
-			option.SkipInterpolation = true // Disable interpolation to avoid issues with environment variables in the project file
+			option.ResolvePaths = false              // Keep paths relative in case the user moves their project folder
+			option.SkipInterpolation = isProjectFile // Disable interpolation on the project file
 		}),
 		cli.WithExtension(project_types.ServiceWorkflowExtensionName, NewServiceWorkflows()),
 		cli.WithExtension(project_types.ToolExtensionName, NewTools()),
@@ -178,45 +180,50 @@ func (t *Project) Tools() compose_types.Tools {
 	}
 }
 
-func WithComposeFiles(projectFilePath string, config *config_types.Config) func(o *cli.ProjectOptions) error {
-	return func(o *cli.ProjectOptions) error {
-		projectDirectory := filepath.Dir(projectFilePath)
+func findComposeFiles(projectFilePath string, config *config_types.Config) ([]string, bool) {
+	projectDirectory := filepath.Dir(projectFilePath)
+	var configPaths []string
 
-		// Look for generated compose yaml file in the state directory
-		// If found, use this, if not, find normal compose and override
-		candidates := findFiles([]string{"docker-compose.yml"}, projectDirectory+"/"+config.StateDirectoryName)
-		if len(candidates) == 1 {
-			o.ConfigPaths = append(o.ConfigPaths, candidates[0])
-			return nil
+	// Look for generated compose yaml file in the state directory
+	// If found, use this, if not, find normal compose and override
+	candidates := findFiles([]string{"docker-compose.yml"}, projectDirectory+"/"+config.StateDirectoryName)
+	if len(candidates) == 1 {
+		return []string{candidates[0]}, false
+	}
+
+	// Look for compose files in the project directory
+	candidates = findFiles(cli.DefaultFileNames, projectDirectory)
+
+	if len(candidates) > 0 {
+		winner := candidates[0]
+		if len(candidates) > 1 {
+			// todo: fix use of unsupported logger
+			logrus.Warnf("Found multiple config files with supported names: %s", strings.Join(candidates, ", "))
+			logrus.Warnf("Using %s", winner)
 		}
 
-		// Look for compose files in the project directory
-		candidates = findFiles(cli.DefaultFileNames, projectDirectory)
+		configPaths = append(configPaths, winner)
 
-		if len(candidates) > 0 {
-			winner := candidates[0]
-			if len(candidates) > 1 {
+		overrides := findFiles(cli.DefaultOverrideFileNames, projectDirectory)
+		if len(overrides) > 0 {
+			if len(overrides) > 1 {
 				// todo: fix use of unsupported logger
-				logrus.Warnf("Found multiple config files with supported names: %s", strings.Join(candidates, ", "))
-				logrus.Warnf("Using %s", winner)
+				logrus.Warnf("Found multiple override files with supported names: %s", strings.Join(overrides, ", "))
+				logrus.Warnf("Using %s", overrides[0])
 			}
 
-			o.ConfigPaths = append(o.ConfigPaths, winner)
-
-			overrides := findFiles(cli.DefaultOverrideFileNames, projectDirectory)
-			if len(overrides) > 0 {
-				if len(overrides) > 1 {
-					// todo: fix use of unsupported logger
-					logrus.Warnf("Found multiple override files with supported names: %s", strings.Join(overrides, ", "))
-					logrus.Warnf("Using %s", overrides[0])
-				}
-
-				o.ConfigPaths = append(o.ConfigPaths, overrides[0])
-			}
+			configPaths = append(configPaths, overrides[0])
 		}
+	}
 
-		o.ConfigPaths = append(o.ConfigPaths, projectFilePath)
+	configPaths = append(configPaths, projectFilePath)
 
+	return configPaths, true
+}
+
+func WithComposeFiles(configPaths []string) func(o *cli.ProjectOptions) error {
+	return func(o *cli.ProjectOptions) error {
+		o.ConfigPaths = append(o.ConfigPaths, configPaths...)
 		return nil
 	}
 }
