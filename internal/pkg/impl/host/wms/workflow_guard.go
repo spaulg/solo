@@ -16,6 +16,7 @@ import (
 
 type WorkflowGuard struct {
 	soloCtx                   *context.CliContext
+	channelLock               sync.Mutex
 	containers                []string
 	workflowContainerChannels map[workflowcommon.WorkflowName]map[string]chan int
 	workflowContainerStatus   map[workflowcommon.WorkflowName]map[string]bool
@@ -41,6 +42,7 @@ func NewWorkflowGuard(
 
 	return &WorkflowGuard{
 		soloCtx:                   soloCtx,
+		channelLock:               sync.Mutex{},
 		containers:                containers,
 		workflowContainerChannels: workflowContainerChannels,
 		workflowContainerStatus:   workflowContainerStatus,
@@ -74,6 +76,9 @@ func (t *WorkflowGuard) Publish(event events_types.Event) {
 		t.soloCtx.Logger.Warn(fmt.Sprintf("Workflow %s not registered for workflow guard", workflowName))
 		return
 	}
+
+	t.channelLock.Lock()
+	defer t.channelLock.Unlock()
 
 	if _, ok := t.workflowContainerChannels[workflowName][containerName]; !ok {
 		t.soloCtx.Logger.Warn(fmt.Sprintf("Container %s not registered for workflow guard or channel already closed", containerName))

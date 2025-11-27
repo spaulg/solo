@@ -12,6 +12,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/common/cmd"
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/project"
 	"github.com/spaulg/solo/internal/pkg/impl/host/wms"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/container"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
@@ -574,9 +575,14 @@ func (t *ProjectControl) internalRebuild() error {
 		return err
 	}
 
-	if err := t.soloCtx.Project.ReloadWithProfiles(profiles); err != nil {
+	// Re-scan for the project file and reload to prevent compounding
+	// config decoration on the same compose file when starting
+	reloadedProject, err := project.FindProject(t.soloCtx.Project.GetDirectory(), t.soloCtx.Config, profiles)
+	if err != nil {
 		return err
 	}
+
+	t.soloCtx.Project = reloadedProject
 
 	return t.internalStart()
 }

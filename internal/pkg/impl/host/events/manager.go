@@ -63,10 +63,7 @@ func (t *Manager) Publish(event events_types.Event) {
 
 	for _, ch := range t.subscribers {
 		t.wg.Add(1)
-
-		go func(ch chan events_types.Event) {
-			ch <- event
-		}(ch)
+		ch <- event
 	}
 }
 
