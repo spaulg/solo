@@ -224,6 +224,14 @@ func (t *ProjectControl) internalStart() error {
 		if err := t.exportComposeFile(composeYml); err != nil {
 			return err
 		}
+
+		// Reload project using generated compose file
+		reloadedProject, err := project.FindProject(t.soloCtx.Project.GetDirectory(), t.soloCtx.Config, t.soloCtx.Project.Profiles())
+		if err != nil {
+			return err
+		}
+
+		t.soloCtx.Project = reloadedProject
 	}
 
 	serviceStatus, err := orchestrator.ServicesStatus(nil)
