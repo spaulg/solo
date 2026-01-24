@@ -5,6 +5,16 @@ workflow commands for events like starting, stopping, and rebuilding containers,
 
 Inspired by [lando.dev](https://lando.dev).
 
+## Installation
+
+### Using Homebrew (MacOS or Linux)
+
+Install using my [Homebrew tap](https://github.com/spaulg/homebrew-tap) with the command:
+
+```shell
+brew install spaulg/tap/solo
+```
+
 ## Development Setup
 
 ### Using Homebrew (MacOS or Linux)
