@@ -1,22 +1,35 @@
-# Development Setup
+# Solo
 
-### Macos
+Solo simplifies the creation of containerized development environments by wrapping Docker Compose and executing 
+workflow commands for events like starting, stopping, and rebuilding containers, plus tooling support.
 
-`brew install go protobuf protoc-gen-go protoc-gen-go-grpc`
+Inspired by [lando.dev](https://lando.dev).
 
-### Linux
+## Development Setup
 
-_todo_
+### Using Homebrew (MacOS or Linux)
 
-### Manually
+```shell
+brew install go protobuf protoc-gen-go protoc-gen-go-grpc
+```
 
-_todo_
+### Debian Linux
 
-`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`
+```shell
+apt update && apt install unzip git make curl
+```
 
-`go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest`
+Install Go (see https://go.dev/doc/install)
 
-# Make commands
+Install protoc (see https://protobuf.dev/installation/)
+
+```shell
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+export PATH="$PATH:$HOME/go/bin"
+```
+
+## Make commands
 
 ### Building
 
