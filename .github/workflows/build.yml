@@ -48,5 +48,10 @@ jobs:
       - name: Test
         run: make test
 
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Lint
         uses: golangci/golangci-lint-action@v9
