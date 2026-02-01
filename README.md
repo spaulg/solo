@@ -1,5 +1,9 @@
 # Solo
 
+![Project status](https://img.shields.io/badge/project_status-alpha-orange)
+![Latest Version](https://img.shields.io/github/v/tag/spaulg/solo?label=latest%20version&color=green)
+![Codecov](https://img.shields.io/codecov/c/github/spaulg/solo)
+
 Solo simplifies the creation of containerized development environments by wrapping Docker Compose and executing 
 workflow commands for events like starting, stopping, and rebuilding containers, plus tooling support.
 
