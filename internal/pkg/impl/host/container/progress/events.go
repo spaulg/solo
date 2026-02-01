@@ -1,9 +1,11 @@
 package progress
 
-import progresscommon "github.com/spaulg/solo/internal/pkg/impl/common/container/progress"
+import (
+	progresscommon "github.com/spaulg/solo/internal/pkg/impl/common/container/progress"
+)
 
 type ComposeProgressEvent struct {
-	ContextId         string
+	ContextID         string
 	Action            progresscommon.ComposeProgressAction
 	EntityType        progresscommon.ProgressEntityTypeName
 	FullEntityName    string

@@ -11,18 +11,18 @@ func NewStartCommand(soloCtx *context.CliContext) *cobra.Command {
 	var profiles []string
 
 	startCmd := &cobra.Command{
-		Use:         "start",
-		GroupID:     "lifecycle",
-		Short:       "Starts your app",
-		Long:        "Starts your app",
+		Use:     "start",
+		GroupID: "lifecycle",
+		Short:   "Starts your app",
+		Long:    "Starts your app",
 		Annotations: map[string]string{
-			RequireConfigLoadSuccessAnnotation: "true",
+			RequireConfigLoadSuccessAnnotation:  "true",
 			RequireProjectLoadSuccessAnnotation: "true",
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			return soloCtx.Project.ReloadWithProfiles(profiles)
 		},
-		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
+		RunE: soloCtx.ProtectWithLock(func(_ *cobra.Command, _ []string) error {
 			projectControl, err := host.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err

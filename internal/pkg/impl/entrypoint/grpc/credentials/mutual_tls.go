@@ -42,6 +42,7 @@ func (t *MutualTLS) Build() (credentials.TransportCredentials, error) {
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{clientCert},
 		RootCAs:      certPool,
+		MinVersion:   tls.VersionTLS13,
 	}
 
 	// Create gRPC credentialss

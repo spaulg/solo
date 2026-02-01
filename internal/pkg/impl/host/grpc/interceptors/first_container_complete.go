@@ -67,6 +67,6 @@ func (t *FirstContainerCompleteInterceptor) FirstContainerCompleteStreamIntercep
 		}
 	}
 
-	streamWrapper := NewServerStreamWrapper(ss, ctx)
+	streamWrapper := NewServerStreamWrapper(ctx, ss)
 	return handler(srv, streamWrapper)
 }

@@ -18,7 +18,7 @@ func NewDumpConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 		Annotations: map[string]string{
 			RequireConfigLoadSuccessAnnotation: "true",
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			configYaml, err := yaml.Marshal(soloCtx.Config)
 			if err != nil {
 				return err

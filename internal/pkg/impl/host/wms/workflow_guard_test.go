@@ -84,7 +84,7 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 		Successful: true,
 	})
 
-	err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+	err := guard.Wait(func(_ string, guardCallback func(name workflowcommon.WorkflowName) error) error {
 		return guardCallback(workflowcommon.FirstPreStartContainer)
 	})
 
@@ -192,7 +192,7 @@ func (t *WorkflowGuardTestSuite) TestWaitWithUnrecognisedWorkflow() {
 		[]string{"test_container1"},
 	)
 
-	err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+	err := guard.Wait(func(_ string, guardCallback func(name workflowcommon.WorkflowName) error) error {
 		return guardCallback(workflowcommon.PreStartContainer)
 	})
 

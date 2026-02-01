@@ -19,56 +19,56 @@ func (m *MockStep) Trigger(
 	return args.Error(0)
 }
 
-func (m *MockStep) GetId() string {
+func (m *MockStep) GetID() string {
 	args := m.Called()
 	if s, ok := args.Get(0).(string); ok {
 		return s
-	} else {
-		return ""
 	}
+
+	return ""
 }
 
 func (m *MockStep) GetName() string {
 	args := m.Called()
 	if n, ok := args.Get(0).(string); ok {
 		return n
-	} else {
-		return ""
 	}
+
+	return ""
 }
 
 func (m *MockStep) GetCommand() string {
 	args := m.Called()
 	if c, ok := args.Get(0).(string); ok {
 		return c
-	} else {
-		return ""
 	}
+
+	return ""
 }
 
 func (m *MockStep) GetArguments() []string {
 	args := m.Called()
 	if a, ok := args.Get(0).([]string); ok {
 		return a
-	} else {
-		return []string{}
 	}
+
+	return []string{}
 }
 
 func (m *MockStep) GetShell() string {
 	args := m.Called()
 	if c, ok := args.Get(0).(string); ok {
 		return c
-	} else {
-		return ""
 	}
+
+	return ""
 }
 
 func (m *MockStep) GetWorkingDirectory() string {
 	args := m.Called()
 	if wd, ok := args.Get(0).(string); ok {
 		return wd
-	} else {
-		return ""
 	}
+
+	return ""
 }

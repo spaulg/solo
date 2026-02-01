@@ -19,54 +19,54 @@ func (m *MockProject) ReloadWithAllProfilesEnabled() (project_types.Project, err
 
 	if p, ok := args.Get(0).(project_types.Project); ok {
 		return p, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }
 
 func (m *MockProject) ResolveStateDirectory(relativePath string) string {
 	args := m.Called(relativePath)
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetAllServicesStateDirectory() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetServiceStateDirectoryRoot() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetServiceStateDirectory(serviceName string) string {
 	args := m.Called(serviceName)
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetServiceLogDirectory(serviceName string) string {
 	args := m.Called(serviceName)
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetServiceMountDirectory(serviceName string) string {
 	args := m.Called(serviceName)
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetStateDirectoryRoot() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetDirectory() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetFilePath() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetServiceWorkflow(serviceName string, eventName string) compose_types.ServiceWorkflowConfig {
@@ -76,7 +76,7 @@ func (m *MockProject) GetServiceWorkflow(serviceName string, eventName string) c
 
 func (m *MockProject) GetGeneratedComposeFilePath() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockProject) GetMaxWorkflowTimeout(eventName string) time.Duration {
@@ -89,9 +89,9 @@ func (m *MockProject) ContainerNames(serviceNames []string) ([]string, error) {
 
 	if s, ok := args.Get(0).([]string); ok {
 		return s, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }
 
 func (m *MockProject) ProfilesOfServices(serviceNames []string) ([]string, error) {
@@ -99,9 +99,9 @@ func (m *MockProject) ProfilesOfServices(serviceNames []string) ([]string, error
 
 	if s, ok := args.Get(0).([]string); ok {
 		return s, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }
 
 func (m *MockProject) ReloadWithProfiles(profiles []string) error {
@@ -113,18 +113,18 @@ func (m *MockProject) Tools() compose_types.Tools {
 	args := m.Called()
 	if t, ok := args.Get(0).(compose_types.Tools); ok {
 		return t
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (m *MockProject) Profiles() []string {
 	args := m.Called()
 	if s, ok := args.Get(0).([]string); ok {
 		return s
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (m *MockProject) GetCompose() *types.Project {
@@ -132,9 +132,9 @@ func (m *MockProject) GetCompose() *types.Project {
 
 	if c, ok := args.Get(0).(*types.Project); ok {
 		return c
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (m *MockProject) Services() compose_types.Services {
@@ -162,12 +162,12 @@ func (m *MockProject) MarshalYAML() ([]byte, error) {
 
 	if b, ok := args.Get(0).([]byte); ok {
 		return b, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }
 
 func (m *MockProject) Name() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }

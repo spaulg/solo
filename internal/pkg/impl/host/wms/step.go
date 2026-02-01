@@ -27,7 +27,7 @@ func NewStep(id string, name string, command string, workingDirectory string, sh
 	}
 }
 
-func (t *Step) GetId() string {
+func (t *Step) GetID() string {
 	return t.id
 }
 

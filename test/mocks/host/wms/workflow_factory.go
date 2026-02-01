@@ -22,7 +22,7 @@ func (m *MockWorkflowFactory) Make(
 	args := m.Called(soloCtx, orchestrator, service, workflowName)
 	if o, ok := args.Get(0).(wms_types.Workflow); ok {
 		return o, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }

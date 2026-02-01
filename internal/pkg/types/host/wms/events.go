@@ -17,7 +17,7 @@ type WorkflowStartedEvent struct {
 
 type WorkflowStepStartedEvent struct {
 	BaseWorkflowEvent
-	StepId    string
+	StepID    string
 	Name      string
 	Command   string
 	Arguments []string
@@ -27,14 +27,14 @@ type WorkflowStepStartedEvent struct {
 
 type WorkflowStepOutputEvent struct {
 	BaseWorkflowEvent
-	StepId string
+	StepID string
 	Stdout string
 	Stderr string
 }
 
 type WorkflowStepCompleteEvent struct {
 	BaseWorkflowEvent
-	StepId    string
+	StepID    string
 	Command   string
 	Arguments []string
 	Cwd       string

@@ -17,7 +17,7 @@ func (m *MockWorkflow) StepIterator() iter.Seq[wms_types.Step] {
 
 	if s, ok := args.Get(0).(func(yield func(wms_types.Step) bool)); ok {
 		return s
-	} else {
-		return nil
 	}
+
+	return nil
 }

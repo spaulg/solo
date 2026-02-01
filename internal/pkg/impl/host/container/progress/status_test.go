@@ -23,7 +23,7 @@ func (t *StatusTestSuite) TestEmptyIDAndStatus() {
 	}
 
 	event := progress.ToEvent("test_project")
-	var expected *ComposeProgressEvent = nil
+	var expected *ComposeProgressEvent
 
 	t.Equal(expected, event)
 }
@@ -35,7 +35,7 @@ func (t *StatusTestSuite) TestIDWithLessThan2Parts() {
 	}
 
 	event := progress.ToEvent("test_project")
-	var expected *ComposeProgressEvent = nil
+	var expected *ComposeProgressEvent
 
 	t.Equal(expected, event)
 }
@@ -49,7 +49,7 @@ func (t *StatusTestSuite) TestBuiltIDWithLessThan2Parts() {
 	event := progress.ToEvent("test_project")
 
 	expected := &ComposeProgressEvent{
-		ContextId:         event.ContextId,
+		ContextID:         event.ContextID,
 		Action:            progresscommon.Build,
 		EntityType:        progresscommon.Image,
 		FullEntityName:    "singlepart",
@@ -69,7 +69,7 @@ func (t *StatusTestSuite) TestIDWithMoreThan2Parts() {
 	event := progress.ToEvent("test_project")
 
 	expected := &ComposeProgressEvent{
-		ContextId:         event.ContextId,
+		ContextID:         event.ContextID,
 		Action:            progresscommon.Create,
 		EntityType:        progresscommon.Container,
 		FullEntityName:    "entity extra",
@@ -89,7 +89,7 @@ func (t *StatusTestSuite) TestValidIDAndStatusWithHyphen() {
 	event := progress.ToEvent("test_project")
 
 	expected := &ComposeProgressEvent{
-		ContextId:         event.ContextId,
+		ContextID:         event.ContextID,
 		Action:            progresscommon.Create,
 		EntityType:        progresscommon.Container,
 		FullEntityName:    "test_project-entity",
@@ -109,7 +109,7 @@ func (t *StatusTestSuite) TestValidIDAndStatusWithUnderscore() {
 	event := progress.ToEvent("test_project")
 
 	expected := &ComposeProgressEvent{
-		ContextId:         event.ContextId,
+		ContextID:         event.ContextID,
 		Action:            progresscommon.Create,
 		EntityType:        progresscommon.Container,
 		FullEntityName:    "test_project_entity",
@@ -129,7 +129,7 @@ func (t *StatusTestSuite) TestValidIDAndStatusWithQuotes() {
 	event := progress.ToEvent("test_project")
 
 	expected := &ComposeProgressEvent{
-		ContextId:         event.ContextId,
+		ContextID:         event.ContextID,
 		Action:            progresscommon.Create,
 		EntityType:        progresscommon.Container,
 		FullEntityName:    "test_project-entity",

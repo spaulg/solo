@@ -23,7 +23,7 @@ func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 			RequireConfigLoadSuccessAnnotation:  "true",
 			RequireProjectLoadSuccessAnnotation: "true",
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if err := soloCtx.Project.ReloadWithProfiles([]string{"*"}); err != nil {
 				return err
 			}
@@ -46,7 +46,7 @@ func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 
 			return nil
 		},
-		RunE: soloCtx.ProtectWithLock(func(cmd *cobra.Command, args []string) error {
+		RunE: soloCtx.ProtectWithLock(func(_ *cobra.Command, _ []string) error {
 			projectControl, err := host.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err

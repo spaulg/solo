@@ -15,7 +15,7 @@ func (m *MockWorkflowGuardFactory) Build(workflowNames []workflowcommon.Workflow
 
 	if g, ok := args.Get(0).(wms_types.WorkflowGuard); ok {
 		return g
-	} else {
-		return nil
 	}
+
+	return nil
 }

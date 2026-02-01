@@ -20,7 +20,7 @@ func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 			RequireConfigLoadSuccessAnnotation:  "true",
 			RequireProjectLoadSuccessAnnotation: "true",
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			eventManager := events.GetEventManagerInstance()
 			orchestrator, err := container.NewOrchestratorFactory(soloCtx, eventManager).Build()
 

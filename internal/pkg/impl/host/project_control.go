@@ -218,9 +218,18 @@ func (t *ProjectControl) internalStart() error {
 	}
 
 	// Write compose file
-	if exists, _ := t.composeFileExists(); !exists {
+	exists, err := t.composeFileExists()
+	if err != nil {
+		return fmt.Errorf("compose file does not exist: %w", err)
+	}
+
+	if !exists {
 		t.soloCtx.Logger.Info("Generating compose file")
-		composeYml, _ := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
+		composeYml, err := orchestrator.ExportComposeConfiguration(t.soloCtx.Config, t.soloCtx.Project)
+		if err != nil {
+			return fmt.Errorf("failed to export compose file: %w", err)
+		}
+
 		if err := t.exportComposeFile(composeYml); err != nil {
 			return err
 		}
@@ -413,7 +422,7 @@ func (t *ProjectControl) internalStop() error {
 		t.eventManager.Subscribe(guard)
 		defer t.eventManager.Unsubscribe(guard)
 
-		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+		if err := guard.Wait(func(container string, _ func(_ workflowcommon.WorkflowName) error) error {
 			// Exec pre stop commands
 			preStopCommand := []string{
 				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
@@ -500,7 +509,7 @@ func (t *ProjectControl) internalDestroy() error {
 		t.eventManager.Subscribe(guard)
 		defer t.eventManager.Unsubscribe(guard)
 
-		if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
+		if err := guard.Wait(func(container string, _ func(_ workflowcommon.WorkflowName) error) error {
 			// Exec pre destroy commands
 			preDestroyCommand := []string{
 				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
@@ -607,7 +616,7 @@ func (t *ProjectControl) exportComposeFile(composeYml []byte) error {
 		}
 	}
 
-	if err := os.WriteFile(t.soloCtx.Project.GetGeneratedComposeFilePath(), composeYml, 0640); err != nil {
+	if err := os.WriteFile(t.soloCtx.Project.GetGeneratedComposeFilePath(), composeYml, 0600); err != nil {
 		return fmt.Errorf("failed to write compose file: %w", err)
 	}
 
@@ -618,9 +627,9 @@ func (t *ProjectControl) composeFileExists() (bool, error) {
 	if _, err := os.Stat(t.soloCtx.Project.GetGeneratedComposeFilePath()); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
-		} else {
-			return false, fmt.Errorf("error looking for compose file: %w", err)
 		}
+
+		return false, fmt.Errorf("error looking for compose file: %w", err)
 	}
 
 	return true, nil

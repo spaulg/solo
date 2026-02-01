@@ -67,6 +67,6 @@ func (t *ContainerNameInterceptor) ContainerNameStreamInterceptor(
 	ctx = context.WithValue(ctx, ContainerName(ContainerNameContextValueName), containerName)
 	ctx = context.WithValue(ctx, ContainerName(FullContainerNameContextValueName), fullContainerName)
 
-	streamWrapper := NewServerStreamWrapper(ss, ctx)
+	streamWrapper := NewServerStreamWrapper(ctx, ss)
 	return handler(srv, streamWrapper)
 }

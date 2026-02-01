@@ -18,7 +18,7 @@ func NewLogsCommand(_ *context.CliContext) *cobra.Command {
 			RequireConfigLoadSuccessAnnotation:  "true",
 			RequireProjectLoadSuccessAnnotation: "true",
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Println("logs called")
 		},
 	}

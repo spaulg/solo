@@ -6,15 +6,15 @@ import (
 	"strings"
 )
 
-const SHORT_SHA_LENGTH = 7
-const DEV_VERSION = "dev"
-const UNKNOWN_VERSION = "unknown"
+const shortSHALength = 7
+const devVersion = "dev"
+const unknownVersion = "unknown"
 
 // nolint:gochecknoglobals
 var (
-	Version   = DEV_VERSION
-	GitCommit = UNKNOWN_VERSION
-	BuildDate = UNKNOWN_VERSION
+	Version   = devVersion
+	GitCommit = unknownVersion
+	BuildDate = unknownVersion
 )
 
 type Info struct {
@@ -31,7 +31,7 @@ func Get() Info {
 	if ok && buildInfo != nil {
 		goVersion = strings.TrimPrefix(buildInfo.GoVersion, "go")
 	} else {
-		goVersion = UNKNOWN_VERSION
+		goVersion = unknownVersion
 	}
 
 	return Info{
@@ -47,7 +47,7 @@ func (i Info) String() string {
 }
 
 func getVersion() string {
-	if Version != DEV_VERSION {
+	if Version != devVersion {
 		return Version
 	}
 
@@ -55,11 +55,11 @@ func getVersion() string {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
 			if setting.Key == "vcs.revision" {
-				if len(setting.Value) >= SHORT_SHA_LENGTH {
-					return fmt.Sprintf("%s-%s", DEV_VERSION, setting.Value[:SHORT_SHA_LENGTH])
+				if len(setting.Value) >= shortSHALength {
+					return fmt.Sprintf("%s-%s", devVersion, setting.Value[:shortSHALength])
 				}
 
-				return fmt.Sprintf("%s-%s", DEV_VERSION, setting.Value)
+				return fmt.Sprintf("%s-%s", devVersion, setting.Value)
 			}
 		}
 	}

@@ -22,7 +22,7 @@ func NewToolCommands(soloCtx *context.CliContext) []*cobra.Command {
 					RequireConfigLoadSuccessAnnotation:  "true",
 					RequireProjectLoadSuccessAnnotation: "true",
 				},
-				RunE: func(cmd *cobra.Command, args []string) error {
+				RunE: func(_ *cobra.Command, args []string) error {
 					projectControl, err := host.ProjectControlFactory(soloCtx)
 					if err != nil {
 						return err

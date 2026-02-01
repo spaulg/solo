@@ -59,6 +59,7 @@ func NewDockerOrchestrator(
 }
 
 func (t *DockerOrchestrator) runComposeCommandWithProgress(arguments ...string) error {
+	// nolint:gosec
 	composeCmd := exec.Command(t.dockerCommandPath, append([]string{"compose"}, arguments...)...)
 
 	stderr, err := composeCmd.StderrPipe()
@@ -150,6 +151,7 @@ func (t *DockerOrchestrator) ComposeForkAndExecute(
 	argv = append(argv, serviceName, command)
 	argv = append(argv, arguments...)
 
+	// nolint:gosec
 	return syscall.Exec(t.dockerCommandPath, argv, os.Environ())
 }
 
@@ -171,10 +173,12 @@ func (t *DockerOrchestrator) ForkAndExecute(
 	argv = append(argv, containerName, command)
 	argv = append(argv, arguments...)
 
+	// nolint:gosec
 	return syscall.Exec(t.dockerCommandPath, argv, append(os.Environ(), "DOCKER_CLI_HINTS=false"))
 }
 
 func (t *DockerOrchestrator) StartCommand(containerName string, command []string) error {
+	// nolint:gosec
 	containerCmd := exec.Command(t.dockerCommandPath, append([]string{
 		"exec", "-d", containerName,
 	}, command...)...)
@@ -187,6 +191,7 @@ func (t *DockerOrchestrator) StartCommand(containerName string, command []string
 }
 
 func (t *DockerOrchestrator) RunCommand(containerName string, command []string) (string, error) {
+	// nolint:gosec
 	containerCmd := exec.Command(t.dockerCommandPath, append([]string{
 		"exec", "-t", containerName,
 	}, command...)...)
@@ -221,6 +226,7 @@ func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*container_t
 		arguments = append(arguments, serviceNames...)
 	}
 
+	// nolint:gosec
 	composeCmd := exec.Command(t.dockerCommandPath, arguments...)
 
 	var stdoutBuf bytes.Buffer
@@ -395,10 +401,11 @@ func (t *DockerOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (s
 		return "", "", fmt.Errorf("unable to resolve container name")
 	}
 
-	return t.resolveContainerNameFromIdOrName(containerNames[0])
+	return t.resolveContainerNameFromIDOrName(containerNames[0])
 }
 
 func (t *DockerOrchestrator) ResolveImageWorkingDirectory(serviceName string) (string, error) {
+	// nolint:gosec
 	composeCmd := exec.Command(t.dockerCommandPath,
 		"compose",
 		"-f", t.composeFile,
@@ -415,10 +422,10 @@ func (t *DockerOrchestrator) ResolveImageWorkingDirectory(serviceName string) (s
 		return "", fmt.Errorf("failed to lookup image from service %s: %w", serviceName, err)
 	}
 
-	imageNameOrId := strings.TrimSpace(stdoutBuf.String())
-	inspect, err := t.dockerInspect("image", imageNameOrId)
+	imageNameOrID := strings.TrimSpace(stdoutBuf.String())
+	inspect, err := t.dockerInspect("image", imageNameOrID)
 	if err != nil {
-		return "", fmt.Errorf("failed to inspect image %s: %w", imageNameOrId, err)
+		return "", fmt.Errorf("failed to inspect image %s: %w", imageNameOrID, err)
 	}
 
 	workingDirectory := "/"
@@ -444,13 +451,13 @@ func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName str
 		containerName = fmt.Sprintf("%s-%s-%d", t.soloCtx.Project.Name(), serviceName, index)
 	}
 
-	return t.resolveContainerNameFromIdOrName(containerName)
+	return t.resolveContainerNameFromIDOrName(containerName)
 }
 
-func (t *DockerOrchestrator) resolveContainerNameFromIdOrName(containerNameOrId string) (string, string, error) {
-	inspect, err := t.dockerInspect("container", containerNameOrId)
+func (t *DockerOrchestrator) resolveContainerNameFromIDOrName(containerNameOrID string) (string, string, error) {
+	inspect, err := t.dockerInspect("container", containerNameOrID)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to inspect container %s: %w", containerNameOrId, err)
+		return "", "", fmt.Errorf("failed to inspect container %s: %w", containerNameOrID, err)
 	}
 
 	projectName := t.soloCtx.Project.Name()
@@ -462,11 +469,12 @@ func (t *DockerOrchestrator) resolveContainerNameFromIdOrName(containerNameOrId 
 	return fullContainerName, containerName, nil
 }
 
-func (t *DockerOrchestrator) dockerInspect(artifactName string, nameOrId string) (*DockerInspect, error) {
+func (t *DockerOrchestrator) dockerInspect(artifactName string, nameOrID string) (*DockerInspect, error) {
+	// nolint:gosec
 	composeCmd := exec.Command(t.dockerCommandPath, "inspect",
 		"--format", "{{ json . }}",
 		"--type", artifactName,
-		nameOrId,
+		nameOrID,
 	)
 
 	var stdoutBuf bytes.Buffer

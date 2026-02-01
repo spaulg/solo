@@ -104,6 +104,7 @@ func (t *MutualTLSServerFactory) buildTransportCredentials(
 		Certificates: []tls.Certificate{*serverCert},
 		ClientCAs:    caChain,
 		ClientAuth:   tls.RequireAndVerifyClientCert,
+		MinVersion:   tls.VersionTLS13,
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
@@ -159,7 +160,12 @@ func (t *MutualTLSServerFactory) generateClientCertificate(project project_types
 
 		defer keyFile.Close()
 
-		privateKeyBytes, err := x509.MarshalECPrivateKey(clientCert.PrivateKey.(*ecdsa.PrivateKey))
+		privateKey, ok := clientCert.PrivateKey.(*ecdsa.PrivateKey)
+		if !ok {
+			return fmt.Errorf("private key is not of type *ecdsa.PrivateKey")
+		}
+
+		privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
 		if err != nil {
 			return err
 		}

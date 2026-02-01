@@ -22,14 +22,14 @@ func NewShCommand(soloCtx *context.CliContext) *cobra.Command {
 			RequireConfigLoadSuccessAnnotation:  "true",
 			RequireProjectLoadSuccessAnnotation: "true",
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("service name is required")
 			}
 
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			projectControl, err := host.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err

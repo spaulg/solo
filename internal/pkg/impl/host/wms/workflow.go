@@ -1,8 +1,8 @@
 package wms
 
 import (
+	"crypto/rand"
 	"iter"
-	"math/rand"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -35,10 +35,8 @@ func (t *Workflow) StepIterator() iter.Seq[wms_types.Step] {
 	stepCount := len(t.workflow.Steps)
 
 	return func(yield func(wms_types.Step) bool) {
-		entropy := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 		for stepNumber < stepCount {
-			id := ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
+			id := ulid.MustNew(ulid.Timestamp(time.Now()), rand.Reader)
 
 			workingDirectory := t.serviceWorkingDirectory
 			if t.workflow.Steps[stepNumber].WorkingDirectory != nil {

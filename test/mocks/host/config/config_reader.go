@@ -20,7 +20,7 @@ func (t *MockConfigReader) GetConfig() *config_types.Config {
 
 	if c, ok := config.(*config_types.Config); ok {
 		return c
-	} else {
-		return nil
 	}
+
+	return nil
 }

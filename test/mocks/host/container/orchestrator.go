@@ -45,12 +45,12 @@ func (m *MockOrchestrator) StartCommand(containerName string, command []string) 
 
 func (m *MockOrchestrator) RunCommand(containerName string, command []string) (string, error) {
 	args := m.Called(containerName, command)
-	return args.Get(0).(string), args.Error(1)
+	return args.String(0), args.Error(1)
 }
 
 func (m *MockOrchestrator) GetHostGatewayHostname() string {
 	args := m.Called()
-	return args.Get(0).(string)
+	return args.String(0)
 }
 
 func (m *MockOrchestrator) ServicesStatus(serviceNames []string) (*container_types.ServiceStatus, error) {
@@ -59,9 +59,9 @@ func (m *MockOrchestrator) ServicesStatus(serviceNames []string) (*container_typ
 
 	if s, ok := serviceStatus.(*container_types.ServiceStatus); ok {
 		return s, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }
 
 func (m *MockOrchestrator) ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error) {
@@ -70,9 +70,9 @@ func (m *MockOrchestrator) ExportComposeConfiguration(config *config_types.Confi
 
 	if b, ok := configBytes.([]byte); ok {
 		return b, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }
 
 func (m *MockOrchestrator) ResolveContainerNameFromMetadata(md metadata.MD) (string, string, error) {

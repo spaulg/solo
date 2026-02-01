@@ -151,7 +151,7 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 						FullContainerName: containerDetails.fullContainerName,
 						WorkflowName:      workflowName,
 					},
-					StepId:    step.GetId(),
+					StepID:    step.GetID(),
 					Name:      step.GetName(),
 					Command:   step.GetCommand(),
 					Arguments: step.GetArguments(),
@@ -179,7 +179,7 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 					var exitCode uint8
 
 					if result.RunCommandResult.ExitCode != nil {
-						exitCode = uint8(*result.RunCommandResult.ExitCode)
+						exitCode = uint8(*result.RunCommandResult.ExitCode) // nolint:gosec
 						exitCodePtr = &exitCode
 					}
 
@@ -190,15 +190,15 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 							FullContainerName: containerDetails.fullContainerName,
 							WorkflowName:      workflowName,
 						},
-						StepId: step.GetId(),
+						StepID: step.GetID(),
 						Stdout: result.RunCommandResult.Stdout,
 						Stderr: result.RunCommandResult.Stderr,
 					})
 
 					return exitCodePtr, nil
-				} else {
-					return nil, errors.New("unknown result")
 				}
+
+				return nil, errors.New("unknown result")
 			}, func(exitCode uint8) error {
 				// Completion callback
 				t.eventManager.Publish(&wms_types.WorkflowStepCompleteEvent{
@@ -208,7 +208,7 @@ func (t WorkflowServerImpl) applyWorkflowStream(
 						FullContainerName: containerDetails.fullContainerName,
 						WorkflowName:      workflowName,
 					},
-					StepId:    step.GetId(),
+					StepID:    step.GetID(),
 					ExitCode:  exitCode,
 					Command:   step.GetCommand(),
 					Arguments: step.GetArguments(),

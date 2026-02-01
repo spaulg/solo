@@ -15,7 +15,7 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 		Use:   "trigger-event [event]",
 		Short: "Trigger a provisioning event",
 		Long:  "Trigger a provisioning event",
-		Args: func(cmd *cobra.Command, args []string) error {
+		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires exactly one argument")
 			}
@@ -26,7 +26,7 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 
 			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			workflowRunner, err := entrypoint.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)

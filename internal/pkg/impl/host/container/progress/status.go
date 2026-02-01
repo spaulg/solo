@@ -3,8 +3,9 @@ package progress
 import (
 	"crypto/md5"
 	"encoding/hex"
-	progresscommon "github.com/spaulg/solo/internal/pkg/impl/common/container/progress"
 	"strings"
+
+	progresscommon "github.com/spaulg/solo/internal/pkg/impl/common/container/progress"
 )
 
 type ComposeProgress struct {
@@ -48,11 +49,11 @@ func (t *ComposeProgress) ToEvent(projectName string) *ComposeProgressEvent {
 	entityTypeEnum := progresscommon.EntityTypeNameFromString(entityType)
 
 	// Context id to represent the target across multiple event
-	hash := md5.Sum([]byte(action.String() + ":" + entityType + ":" + projectEntityName))
-	contextId := hex.EncodeToString(hash[:])
+	hash := md5.Sum([]byte(action.String() + ":" + entityType + ":" + projectEntityName)) // nolint:gosec
+	contextID := hex.EncodeToString(hash[:])
 
 	return &ComposeProgressEvent{
-		ContextId:         contextId,         // MD5 of the status, type and entity name triple
+		ContextID:         contextID,         // MD5 of the status, type and entity name triple
 		Action:            action,            // Start, Stop, Create, Remove, Build
 		EntityType:        entityTypeEnum,    // Volume, Network, Container, Image
 		FullEntityName:    fullEntityName,    // Full projectEntityName name in docker being actioned

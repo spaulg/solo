@@ -114,7 +114,7 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 					return fmt.Errorf("unrecognised workflow %s", workflowName)
 				}
 
-				var stopped int32 = 0
+				var stopped int32
 
 				duration := t.soloCtx.Project.GetMaxWorkflowTimeout(workflowName.String())
 				timer := time.NewTimer(duration)
@@ -180,9 +180,8 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 	if len(errs) > 0 {
 		t.soloCtx.Logger.Error(fmt.Sprintf("Encountered %d errors while waiting for containers: %v", len(errs), errs))
 		return fmt.Errorf("encountered errors while waiting for containers: %v", errs)
-	} else {
-		t.soloCtx.Logger.Info("All containers completed successfully")
 	}
 
+	t.soloCtx.Logger.Info("All containers completed successfully")
 	return nil
 }

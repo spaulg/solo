@@ -26,7 +26,7 @@ func (t *StreamWrapperTestSuite) SetupTest() {
 }
 
 func (t *StreamWrapperTestSuite) TestSetHeader() {
-	steamWrapper := NewServerStreamWrapper(t.mockStream, t.mockContext)
+	steamWrapper := NewServerStreamWrapper(t.mockContext, t.mockStream)
 
 	md := metadata.MD{"key": []string{"value"}}
 	t.mockStream.On("SetHeader", md).Return(nil)
@@ -36,7 +36,7 @@ func (t *StreamWrapperTestSuite) TestSetHeader() {
 }
 
 func (t *StreamWrapperTestSuite) TestSendHeader() {
-	steamWrapper := NewServerStreamWrapper(t.mockStream, t.mockContext)
+	steamWrapper := NewServerStreamWrapper(t.mockContext, t.mockStream)
 
 	md := metadata.MD{"key": []string{"value"}}
 	t.mockStream.On("SendHeader", md).Return(nil)
@@ -46,7 +46,7 @@ func (t *StreamWrapperTestSuite) TestSendHeader() {
 }
 
 func (t *StreamWrapperTestSuite) TestSetTrailer() {
-	steamWrapper := NewServerStreamWrapper(t.mockStream, t.mockContext)
+	steamWrapper := NewServerStreamWrapper(t.mockContext, t.mockStream)
 
 	md := metadata.MD{"key": []string{"value"}}
 	t.mockStream.On("SetTrailer", md).Return(nil)
@@ -55,7 +55,7 @@ func (t *StreamWrapperTestSuite) TestSetTrailer() {
 }
 
 func (t *StreamWrapperTestSuite) TestContext() {
-	steamWrapper := NewServerStreamWrapper(t.mockStream, t.mockContext)
+	steamWrapper := NewServerStreamWrapper(t.mockContext, t.mockStream)
 
 	t.mockStream.On("Context").Return(t.mockContext)
 
@@ -64,7 +64,7 @@ func (t *StreamWrapperTestSuite) TestContext() {
 }
 
 func (t *StreamWrapperTestSuite) TestSendMsg() {
-	steamWrapper := NewServerStreamWrapper(t.mockStream, t.mockContext)
+	steamWrapper := NewServerStreamWrapper(t.mockContext, t.mockStream)
 
 	t.mockStream.On("SendMsg", "message").Return(nil)
 
@@ -73,7 +73,7 @@ func (t *StreamWrapperTestSuite) TestSendMsg() {
 }
 
 func (t *StreamWrapperTestSuite) TestRecvMsg() {
-	steamWrapper := NewServerStreamWrapper(t.mockStream, t.mockContext)
+	steamWrapper := NewServerStreamWrapper(t.mockContext, t.mockStream)
 
 	t.mockStream.On("RecvMsg", "message").Return(nil)
 

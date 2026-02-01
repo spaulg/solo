@@ -175,9 +175,9 @@ func (t *Project) Services() compose_types.Services {
 func (t *Project) Tools() compose_types.Tools {
 	if t, ok := t.Extensions[project_types.ToolExtensionName].(compose_types.Tools); ok {
 		return t
-	} else {
-		return compose_types.Tools{}
 	}
+
+	return compose_types.Tools{}
 }
 
 func findComposeFiles(projectFilePath string, config *config_types.Config) ([]string, bool) {

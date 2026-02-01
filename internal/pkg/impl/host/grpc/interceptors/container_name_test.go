@@ -41,7 +41,7 @@ func (t *ContainerNameTestSuite) TestSuccessfulContainerNameUnaryInterceptor() {
 	t.mockOrchestrator.On("ResolveContainerNameFromMetadata", md).Return(expectedFullContainerName, expectedContainerName, nil)
 
 	interceptor := NewContainerNameInterceptor(t.mockOrchestrator)
-	result, err := interceptor.ContainerNameUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	result, err := interceptor.ContainerNameUnaryInterceptor(ctx, req, info, func(ctx context.Context, _ any) (any, error) {
 		containerName, ok := ctx.Value(ContainerName(ContainerNameContextValueName)).(string)
 
 		t.True(ok)
@@ -68,7 +68,7 @@ func (t *ContainerNameTestSuite) TestContainerNameUnaryInterceptorWithMetadataLo
 	expectedResult := new(interface{})
 
 	interceptor := NewContainerNameInterceptor(t.mockOrchestrator)
-	_, err := interceptor.ContainerNameUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	_, err := interceptor.ContainerNameUnaryInterceptor(ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -87,7 +87,7 @@ func (t *ContainerNameTestSuite) TestContainerNameUnaryInterceptorWithResolveFai
 	t.mockOrchestrator.On("ResolveContainerNameFromMetadata", md).Return("", "", errors.New("mock mockOrchestrator error"))
 
 	interceptor := NewContainerNameInterceptor(t.mockOrchestrator)
-	result, err := interceptor.ContainerNameUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	result, err := interceptor.ContainerNameUnaryInterceptor(ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return unexpectedResult, nil
 	})
 
@@ -113,7 +113,7 @@ func (t *ContainerNameTestSuite) TestSuccessfulContainerNameStreamInterceptor() 
 	t.mockOrchestrator.On("ResolveContainerNameFromMetadata", md).Return(expectedFullContainerName, expectedContainerName, nil)
 
 	interceptor := NewContainerNameInterceptor(t.mockOrchestrator)
-	err := interceptor.ContainerNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ContainerNameStreamInterceptor(srv, ss, info, func(_ any, stream grpc.ServerStream) error {
 		containerName, ok := stream.Context().Value(ContainerName(ContainerNameContextValueName)).(string)
 
 		t.True(ok)
@@ -142,7 +142,7 @@ func (t *ContainerNameTestSuite) TestContainerNameStreamInterceptorWithMetadataL
 	ss.On("Context").Return(ctx)
 
 	interceptor := NewContainerNameInterceptor(t.mockOrchestrator)
-	err := interceptor.ContainerNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ContainerNameStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 
@@ -164,7 +164,7 @@ func (t *ContainerNameTestSuite) TestContainerNameStreamInterceptorWithResolveFa
 	t.mockOrchestrator.On("ResolveContainerNameFromMetadata", md).Return("", "", errors.New("mock mockOrchestrator error"))
 
 	interceptor := NewContainerNameInterceptor(t.mockOrchestrator)
-	err := interceptor.ContainerNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ContainerNameStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 

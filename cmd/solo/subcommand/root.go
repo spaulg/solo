@@ -56,7 +56,7 @@ func NewRootCommand(soloCtx *context.CliContext) *cobra.Command {
 	return &cobra.Command{
 		Use:          "solo",
 		SilenceUsage: true,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Annotations == nil || cmd.Annotations[RequireConfigLoadSuccessAnnotation] != "true" {
 				return nil
 			}

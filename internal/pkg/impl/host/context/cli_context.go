@@ -109,9 +109,9 @@ func (t *CliContext) TryLock() error {
 	lockFile, err := os.OpenFile(lockFileName, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err
-	} else {
-		_ = lockFile.Close()
 	}
+
+	_ = lockFile.Close()
 
 	// Lock the locking file with an optimistic exclusive write lock
 	t.lockFile = flock.New(lockFileName)

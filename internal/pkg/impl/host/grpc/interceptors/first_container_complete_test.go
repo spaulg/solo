@@ -38,7 +38,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnar
 	expectedResult := new(interface{})
 
 	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
-	result, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	result, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, _ any) (any, error) {
 		firstPreStartComplete, ok := ctx.Value(FirstContainerComplete(workflowcommon.FirstPreStartContainer)).(string)
 
 		t.True(ok)
@@ -60,7 +60,7 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteUnaryIntercept
 	expectedResult := new(interface{})
 
 	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
-	_, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	_, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -81,7 +81,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStre
 	ss.On("Context").Return(ctx)
 
 	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
-	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(_ any, stream grpc.ServerStream) error {
 		firstPreStartComplete, ok := stream.Context().Value(FirstContainerComplete(workflowcommon.FirstPreStartContainer)).(string)
 
 		t.True(ok)
@@ -105,7 +105,7 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteStreamIntercep
 	ss.On("Context").Return(ctx)
 
 	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
-	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 
