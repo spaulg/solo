@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func ListShellsAsJson(shellsFilePath string) (string, error) {
+func ListShellsAsJSON(shellsFilePath string) (string, error) {
 	file, err := os.Open(shellsFilePath)
 	if err != nil {
 		return "", err

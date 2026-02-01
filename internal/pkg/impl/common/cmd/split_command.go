@@ -6,10 +6,10 @@ func SplitCommand(shell string, command string) (string, []string) {
 	if []rune(command)[0] == '/' {
 		// Exec format
 		return extractExecCommandArgs(command)
-	} else {
-		// Shell format
-		return extractShellCommandArgs(command, shell)
 	}
+
+	// Shell format
+	return extractShellCommandArgs(command, shell)
 }
 
 func extractExecCommandArgs(command string) (string, []string) {

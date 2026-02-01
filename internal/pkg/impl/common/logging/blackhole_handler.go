@@ -19,10 +19,10 @@ func (h *BlackHoleHandler) Handle(context.Context, slog.Record) error {
 	return nil
 }
 
-func (h *BlackHoleHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (h *BlackHoleHandler) WithAttrs([]slog.Attr) slog.Handler {
 	return h
 }
 
-func (h *BlackHoleHandler) WithGroup(name string) slog.Handler {
+func (h *BlackHoleHandler) WithGroup(string) slog.Handler {
 	return h
 }

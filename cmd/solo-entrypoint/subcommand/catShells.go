@@ -11,13 +11,13 @@ import (
 
 const shellsFilePath = "/etc/shells"
 
-func NewCatShellsCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {
+func NewCatShellsCommand(_ *context.EntrypointContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "cat-shells",
 		Short: "Cat available shells in json formatted output",
 		Long:  "Cat available shells in json formatted output",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			output, err := shells.ListShellsAsJson(shellsFilePath)
+		RunE: func(_ *cobra.Command, _ []string) error {
+			output, err := shells.ListShellsAsJSON(shellsFilePath)
 			if err != nil {
 				return err
 			}

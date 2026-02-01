@@ -24,7 +24,7 @@ func (m *MockGRPCServerFactory) Build(
 
 	if s, ok := server.(grpc_types.Server); ok {
 		return s, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }

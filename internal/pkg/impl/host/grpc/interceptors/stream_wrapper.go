@@ -8,14 +8,14 @@ import (
 )
 
 type ServerStreamWrapper struct {
-	wrappedStream  grpc.ServerStream
 	wrappedContext context.Context
+	wrappedStream  grpc.ServerStream
 }
 
-func NewServerStreamWrapper(wrappedStream grpc.ServerStream, wrappedContext context.Context) ServerStreamWrapper {
+func NewServerStreamWrapper(wrappedContext context.Context, wrappedStream grpc.ServerStream) ServerStreamWrapper {
 	return ServerStreamWrapper{
-		wrappedStream:  wrappedStream,
 		wrappedContext: wrappedContext,
+		wrappedStream:  wrappedStream,
 	}
 }
 

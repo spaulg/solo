@@ -22,9 +22,9 @@ func (m *MockServices) GetService(serviceName string) compose_types.ServiceConfi
 
 	if s, ok := args.Get(0).(compose_types.ServiceConfig); ok {
 		return s
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (m *MockServices) HasService(serviceName string) bool {
@@ -36,34 +36,34 @@ func (m *MockServices) ServiceNames() []string {
 	args := m.Called()
 	if names, ok := args.Get(0).([]string); ok {
 		return names
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (m *MockServices) ExclusiveServiceNames() []string {
 	args := m.Called()
 	if names, ok := args.Get(0).([]string); ok {
 		return names
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (m *MockServices) ContainerNames(serviceNames []string) ([]string, error) {
 	args := m.Called(serviceNames)
 	if names, ok := args.Get(0).([]string); ok {
 		return names, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }
 
 func (m *MockServices) ProfilesOfServices(serviceNames []string) ([]string, error) {
 	args := m.Called(serviceNames)
 	if profiles, ok := args.Get(0).([]string); ok {
 		return profiles, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }

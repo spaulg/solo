@@ -15,7 +15,7 @@ func (m *MockOrchestratorFactory) Build() (container_types.Orchestrator, error) 
 
 	if o, ok := orchestrator.(container_types.Orchestrator); ok {
 		return o, args.Error(1)
-	} else {
-		return nil, args.Error(1)
 	}
+
+	return nil, args.Error(1)
 }

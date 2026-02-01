@@ -21,7 +21,7 @@ func (m *MockServiceConfig) GetConfig() types.ServiceConfig {
 	return args.Get(0).(types.ServiceConfig)
 }
 
-func (t *MockServiceConfig) ResolveContainerWorkingDirectory(cwd string) string {
-	args := t.Called(cwd)
+func (m *MockServiceConfig) ResolveContainerWorkingDirectory(cwd string) string {
+	args := m.Called(cwd)
 	return args.String(0)
 }

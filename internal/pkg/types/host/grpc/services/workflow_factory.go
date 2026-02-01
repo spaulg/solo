@@ -1,4 +1,4 @@
-package service_definitions
+package services
 
 import (
 	"github.com/spaulg/solo/internal/pkg/impl/common/grpc/services"

@@ -1,10 +1,11 @@
 package workflow
 
 import (
-	"google.golang.org/grpc/metadata"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+
+	"google.golang.org/grpc/metadata"
+	"gopkg.in/yaml.v3"
 )
 
 type MetadataState struct {
@@ -86,7 +87,7 @@ func (t *MetadataState) SaveToFile() error {
 		return err
 	}
 
-	if err := os.WriteFile(t.filePath, data, 0644); err != nil {
+	if err := os.WriteFile(t.filePath, data, 0600); err != nil {
 		return err
 	}
 

@@ -1,8 +1,32 @@
 version: "2"
 linters:
   enable:
+    - staticcheck
+    - govet
+    - errcheck
+    - revive
+    - gosec
+    - gocyclo
+    - unused
+    - misspell
     - gochecknoglobals
     - gochecknoinits
+
+  settings:
+    gocyclo:
+      min-complexity: 25
+    gosec:
+      excludes:
+        - G501
+
+    revive:
+      rules:
+        - name: var-naming
+          disabled: true
+
+        - name: exported
+          disabled: true
+
   exclusions:
     generated: lax
     presets:
@@ -14,7 +38,11 @@ linters:
       - third_party$
       - builtin$
       - examples$
+
 formatters:
+  enable:
+    - goimports
+
   exclusions:
     generated: lax
     paths:

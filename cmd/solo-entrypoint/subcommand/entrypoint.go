@@ -20,7 +20,7 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 		Long:               "Container entrypoint",
 		DisableFlagParsing: true,
 		Args:               cobra.ArbitraryArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			workflowRunner, err := entrypoint.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)
@@ -59,14 +59,14 @@ func forkAndExecute(args []string) error {
 
 	if []rune(args[0])[0] == '/' {
 		// Full path of executable given
-		return syscall.Exec(args[0], args, os.Environ())
-	} else {
-		// Shell command
-		shellArgs := []string{"/bin/sh", "-c"}
-		shellArgs = append(shellArgs, strings.Join(args, " "))
-
-		return syscall.Exec("/bin/sh", shellArgs, os.Environ())
+		return syscall.Exec(args[0], args, os.Environ()) // nolint:gosec
 	}
+
+	// Shell command
+	shellArgs := []string{"/bin/sh", "-c"}
+	shellArgs = append(shellArgs, strings.Join(args, " "))
+
+	return syscall.Exec("/bin/sh", shellArgs, os.Environ()) // nolint:gosec
 }
 
 func isServiceBuilt() bool {

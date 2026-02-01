@@ -97,18 +97,18 @@ func (t *WorkflowLogWriter) writeStepOutput(e *wms_types.WorkflowStepOutputEvent
 	}
 
 	if e.Stderr != "" {
-		stderrPath := path.Join(outputDirectory, e.StepId+".stderr")
+		stderrPath := path.Join(outputDirectory, e.StepID+".stderr")
 		t.appendStepOutputFile(stderrPath, e.Stderr)
 
-		combinedOutputPath := path.Join(outputDirectory, e.StepId+".out")
+		combinedOutputPath := path.Join(outputDirectory, e.StepID+".out")
 		t.appendStepOutputFile(combinedOutputPath, e.Stderr)
 	}
 
 	if e.Stdout != "" {
-		stdoutPath := path.Join(outputDirectory, e.StepId+".stdout")
+		stdoutPath := path.Join(outputDirectory, e.StepID+".stdout")
 		t.appendStepOutputFile(stdoutPath, e.Stdout)
 
-		combinedOutputPath := path.Join(outputDirectory, e.StepId+".out")
+		combinedOutputPath := path.Join(outputDirectory, e.StepID+".out")
 		t.appendStepOutputFile(combinedOutputPath, e.Stdout)
 	}
 }
@@ -165,15 +165,15 @@ func (t *WorkflowLogWriter) writeStepResult(e *wms_types.WorkflowStepCompleteEve
 		}
 	}
 
-	metaPath := path.Join(outputDirectory, e.StepId+".meta.json")
-	metaJson := StepLogMeta{
+	metaPath := path.Join(outputDirectory, e.StepID+".meta.json")
+	metaJSON := StepLogMeta{
 		ExitCode:         e.ExitCode,
 		Command:          e.Command,
 		Arguments:        e.Arguments,
 		WorkingDirectory: e.Cwd,
 	}
 
-	metaData, err := json.MarshalIndent(metaJson, "", "  ")
+	metaData, err := json.MarshalIndent(metaJSON, "", "  ")
 	if err != nil {
 		t.soloCtx.Logger.Error(fmt.Sprintf(
 			"Failed to write step result to log file: failed to marshal json file: %v",
@@ -260,7 +260,7 @@ func (t *WorkflowLogWriter) writeStepResult(e *wms_types.WorkflowStepCompleteEve
 		}
 	}
 
-	workflowMeta[e.ContainerName] = append(workflowMeta[e.ContainerName], e.StepId)
+	workflowMeta[e.ContainerName] = append(workflowMeta[e.ContainerName], e.StepID)
 
 	workflowMetaData, err = json.MarshalIndent(workflowMeta, "", "  ")
 	if err != nil {

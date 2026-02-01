@@ -62,7 +62,7 @@ func (t *WorkflowExecTrackerTestSuite) TestSaveTracking() {
 func (t *WorkflowExecTrackerTestSuite) TestLoadTracking() {
 	trackingFile := t.T().TempDir() + "/workflow_exec_tracker.json"
 
-	err := os.WriteFile(trackingFile, []byte(`["service:first_pre_start_service","service:pre_start_service"]`), 0644)
+	err := os.WriteFile(trackingFile, []byte(`["service:first_pre_start_service","service:pre_start_service"]`), 0600)
 	t.NoError(err)
 
 	executionTracker, err := LoadWorkflowExecTracker(trackingFile)

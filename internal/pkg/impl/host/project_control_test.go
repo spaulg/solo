@@ -533,7 +533,7 @@ func (t *ProjectControlTestSuite) TestStop_OrchestratorFactoryFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -562,7 +562,7 @@ func (t *ProjectControlTestSuite) TestStop_ServicesStatusFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -603,7 +603,7 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerBuildFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -649,7 +649,7 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerStartFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -696,7 +696,7 @@ func (t *ProjectControlTestSuite) TestStop_ContainerNamesFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -747,7 +747,7 @@ func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -808,7 +808,7 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -871,7 +871,7 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -929,7 +929,7 @@ func (t *ProjectControlTestSuite) TestDestroy_OrchestratorFactoryFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -957,7 +957,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ServicesStatusFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -997,7 +997,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerBuildFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -1041,7 +1041,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerStartFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -1087,7 +1087,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ContainerNamesFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -1137,7 +1137,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -1194,7 +1194,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 	tmpDir := t.T().TempDir()
 	composePath := tmpDir + "/docker-compose.yml"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 
@@ -1260,7 +1260,7 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 	allServicesState := tmpDir + "/all_services"
 	serviceStateDirRoot := tmpDir + "/services/foo"
 
-	if err := os.WriteFile(composePath, []byte("version: '3'"), 0644); err != nil {
+	if err := os.WriteFile(composePath, []byte("version: '3'"), 0600); err != nil {
 		t.Fail("Failed to copy compose file for test")
 	}
 

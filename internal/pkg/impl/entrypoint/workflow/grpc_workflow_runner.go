@@ -242,5 +242,5 @@ func (t *GrpcWorkflowRunner) execute(
 	}
 
 	exitCode := cmd.ProcessState.ExitCode()
-	return uint32(exitCode), nil
+	return uint32(exitCode), nil // nolint:gosec
 }

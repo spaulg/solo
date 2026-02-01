@@ -3,12 +3,13 @@ package context
 import (
 	"errors"
 	"fmt"
-	"github.com/spaulg/solo/internal/pkg/impl/common/logging"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path"
 	"time"
+
+	"github.com/spaulg/solo/internal/pkg/impl/common/logging"
 )
 
 const initialHostnameFile = "/solo/container/data/initial_hostname"
@@ -64,17 +65,17 @@ func readInitialHostname() (string, error) {
 			return "", err
 		}
 
-		if err := os.WriteFile(initialHostnameFile, []byte(hostname), 0644); err != nil {
+		if err := os.WriteFile(initialHostnameFile, []byte(hostname), 0600); err != nil {
 			return "", err
 		}
 
 		return hostname, nil
-	} else {
-		hostnameBytes, err := os.ReadFile(initialHostnameFile)
-		if err != nil {
-			return "", err
-		}
-
-		return string(hostnameBytes), nil
 	}
+
+	hostnameBytes, err := os.ReadFile(initialHostnameFile)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hostnameBytes), nil
 }

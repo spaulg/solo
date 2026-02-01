@@ -50,7 +50,7 @@ func (t *ServiceNameTestSuite) TestSuccessfulServiceNameUnaryInterceptor() {
 	expectedResult := new(interface{})
 
 	interceptor := NewServiceNameInterceptor()
-	result, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	result, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -64,7 +64,7 @@ func (t *ServiceNameTestSuite) TestServiceNameUnaryInterceptorWithFailureToFindP
 	expectedResult := new(interface{})
 
 	interceptor := NewServiceNameInterceptor()
-	_, err := interceptor.ServiceNameUnaryInterceptor(context.Background(), req, info, func(ctx context.Context, req any) (any, error) {
+	_, err := interceptor.ServiceNameUnaryInterceptor(context.Background(), req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -80,7 +80,7 @@ func (t *ServiceNameTestSuite) TestServiceNameUnaryInterceptorWithFailureToCastT
 	t.p.AuthInfo = nil
 
 	interceptor := NewServiceNameInterceptor()
-	_, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	_, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -93,12 +93,14 @@ func (t *ServiceNameTestSuite) TestServiceNameUnaryInterceptorWithFailureToFindP
 	req := new(interface{})
 	expectedResult := new(interface{})
 
-	tlsInfo := t.p.AuthInfo.(credentials.TLSInfo)
+	tlsInfo, ok := t.p.AuthInfo.(credentials.TLSInfo)
+	t.True(ok)
+
 	tlsInfo.State.PeerCertificates = []*x509.Certificate{}
 	t.p.AuthInfo = tlsInfo
 
 	interceptor := NewServiceNameInterceptor()
-	_, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	_, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -128,7 +130,7 @@ func (t *ServiceNameTestSuite) TestServiceNameUnaryInterceptorWithInvalidCommonN
 	t.ctx = peer.NewContext(context.Background(), t.p)
 
 	interceptor := NewServiceNameInterceptor()
-	_, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(ctx context.Context, req any) (any, error) {
+	_, err := interceptor.ServiceNameUnaryInterceptor(t.ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
@@ -144,7 +146,7 @@ func (t *ServiceNameTestSuite) TestSuccessfulServiceNameStreamInterceptor() {
 	ss.On("Context").Return(t.ctx)
 
 	interceptor := NewServiceNameInterceptor()
-	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 
@@ -160,7 +162,7 @@ func (t *ServiceNameTestSuite) TestServiceNameStreamInterceptorWithFailureToFind
 	ss.On("Context").Return(context.Background())
 
 	interceptor := NewServiceNameInterceptor()
-	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 
@@ -179,7 +181,7 @@ func (t *ServiceNameTestSuite) TestServiceNameStreamInterceptorWithFailureToCast
 	t.p.AuthInfo = nil
 
 	interceptor := NewServiceNameInterceptor()
-	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 
@@ -200,7 +202,7 @@ func (t *ServiceNameTestSuite) TestServiceNameStreamInterceptorWithFailureToFind
 	t.p.AuthInfo = tlsInfo
 
 	interceptor := NewServiceNameInterceptor()
-	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 
@@ -233,7 +235,7 @@ func (t *ServiceNameTestSuite) TestServiceNameStreamInterceptorWithInvalidCommon
 	ss.On("Context").Return(t.ctx)
 
 	interceptor := NewServiceNameInterceptor()
-	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(srv any, stream grpc.ServerStream) error {
+	err := interceptor.ServiceNameStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 

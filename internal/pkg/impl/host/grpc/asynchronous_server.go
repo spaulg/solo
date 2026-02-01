@@ -39,7 +39,7 @@ func NewAsynchronousServer(
 ) grpc_types.Server {
 	return &AsynchronousServer{
 		orchestrator:         orchestrator,
-		port:                 uint32(port),
+		port:                 uint32(port), // nolint:gosec
 		stateDirectory:       stateDirectory,
 		transportCredentials: transportCredentials,
 		workflowService:      workflowService,

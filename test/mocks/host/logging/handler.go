@@ -13,7 +13,7 @@ type MockHandler struct {
 
 func (h *MockHandler) Enabled(ctx context.Context, record slog.Level) bool {
 	args := h.Called(ctx, record)
-	return args.Get(0).(bool)
+	return args.Bool(0)
 }
 
 func (h *MockHandler) Handle(ctx context.Context, record slog.Record) error {

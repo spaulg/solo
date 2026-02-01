@@ -30,9 +30,9 @@ func (m *MockServerStream) Context() context.Context {
 
 	if context, ok := args.Get(0).(context.Context); ok {
 		return context
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (m *MockServerStream) SendMsg(message any) error {

@@ -14,7 +14,7 @@ func NewVersionCommand(_ *context.CliContext) *cobra.Command {
 		Use:   "version",
 		Short: "Displays the solo version",
 		Long:  "Displays the solo version",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			info := version.Get()
 			fmt.Println(info.String())
 		},

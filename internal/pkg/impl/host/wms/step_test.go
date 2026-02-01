@@ -10,7 +10,7 @@ func TestStepTestSuite(t *testing.T) {
 	suite.Run(t, new(StepTestSuite))
 }
 
-const expectedStepId = "abcde12345"
+const expectedStepID = "abcde12345"
 const expectedStepName = "step name"
 const expectedStepCommand = "/path/to/file"
 const expectedWorkingDirectory = "/path/to/working/directory"
@@ -27,14 +27,14 @@ func (t *StepTestSuite) SetupTest() {
 }
 
 func (t *StepTestSuite) TestStepAccessors() {
-	step := NewStep(expectedStepId, expectedStepName, expectedStepCommand, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, expectedStepCommand, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedStepName, step.GetName())
 	t.Equal(expectedWorkingDirectory, step.GetWorkingDirectory())
 }
 
 func (t *StepTestSuite) TestExecWithoutArg() {
-	step := NewStep(expectedStepId, expectedStepName, expectedStepCommand, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, expectedStepCommand, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedStepName, step.GetName())
 	t.Equal(expectedStepCommand, step.GetCommand())
@@ -45,7 +45,7 @@ func (t *StepTestSuite) TestExecWithoutArg() {
 
 func (t *StepTestSuite) TestExecWithArg() {
 	command := "/bin/ls -lh"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh"}, step.GetArguments())
@@ -53,7 +53,7 @@ func (t *StepTestSuite) TestExecWithArg() {
 
 func (t *StepTestSuite) TestExecWithDoubleQuotedArg() {
 	command := "/bin/ls -lh \"/path with space\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path with space"}, step.GetArguments())
@@ -61,7 +61,7 @@ func (t *StepTestSuite) TestExecWithDoubleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithSingleQuotedArg() {
 	command := "/bin/ls -lh '/path with space'"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path with space"}, step.GetArguments())
@@ -69,7 +69,7 @@ func (t *StepTestSuite) TestExecWithSingleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithEscapedArg() {
 	command := "/bin/ls -lh /path\\ with\\ escaped\\ spaces"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path with escaped spaces"}, step.GetArguments())
@@ -77,7 +77,7 @@ func (t *StepTestSuite) TestExecWithEscapedArg() {
 
 func (t *StepTestSuite) TestExecWithEscapedAndDoubleQuotedArg() {
 	command := "/bin/ls -lh /path\\ with\\ escaped\\ spaces \"/path with space\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path with escaped spaces", "/path with space"}, step.GetArguments())
@@ -85,7 +85,7 @@ func (t *StepTestSuite) TestExecWithEscapedAndDoubleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithEscapedAndSingleQuotedArg() {
 	command := "/bin/ls -lh /path\\ with\\ escaped\\ spaces '/path with space'"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path with escaped spaces", "/path with space"}, step.GetArguments())
@@ -93,7 +93,7 @@ func (t *StepTestSuite) TestExecWithEscapedAndSingleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithEmptyDoubleQuotedArg() {
 	command := "/bin/ls -lh \"\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", ""}, step.GetArguments())
@@ -101,7 +101,7 @@ func (t *StepTestSuite) TestExecWithEmptyDoubleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithEmptySingleQuotedArg() {
 	command := "/bin/ls -lh ''"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", ""}, step.GetArguments())
@@ -109,7 +109,7 @@ func (t *StepTestSuite) TestExecWithEmptySingleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithDoubleEscapedArg() {
 	command := "/bin/ls -lh /path\\\\ with\\\\ escaped\\\\ spaces"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path\\", "with\\", "escaped\\", "spaces"}, step.GetArguments())
@@ -117,7 +117,7 @@ func (t *StepTestSuite) TestExecWithDoubleEscapedArg() {
 
 func (t *StepTestSuite) TestExecWithNestedEscapedDoubleQuotedArg() {
 	command := "/bin/ls -lh \"/path\\ with\\ space\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path\\ with\\ space"}, step.GetArguments())
@@ -125,7 +125,7 @@ func (t *StepTestSuite) TestExecWithNestedEscapedDoubleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithNestedEscapedSingleQuotedArg() {
 	command := "/bin/ls -lh '/path\\ with\\ space'"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "/path\\ with\\ space"}, step.GetArguments())
@@ -133,7 +133,7 @@ func (t *StepTestSuite) TestExecWithNestedEscapedSingleQuotedArg() {
 
 func (t *StepTestSuite) TestExecWithEscapedDoubleQuoteArg() {
 	command := "/bin/ls -lh \\\"\\\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "\"\""}, step.GetArguments())
@@ -141,7 +141,7 @@ func (t *StepTestSuite) TestExecWithEscapedDoubleQuoteArg() {
 
 func (t *StepTestSuite) TestExecWithEscapedSingleQuoteArg() {
 	command := "/bin/ls -lh \\'\\'"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "''"}, step.GetArguments())
@@ -149,7 +149,7 @@ func (t *StepTestSuite) TestExecWithEscapedSingleQuoteArg() {
 
 func (t *StepTestSuite) TestExecWithEscapedBackslashArg() {
 	command := "/bin/ls -lh \\\\"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "\\"}, step.GetArguments())
@@ -157,7 +157,7 @@ func (t *StepTestSuite) TestExecWithEscapedBackslashArg() {
 
 func (t *StepTestSuite) TestExecWithQuotedEscapedSingleQuoteArg() {
 	command := "/bin/ls -lh \"\\'\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal("/bin/ls", step.GetCommand())
 	t.Equal([]string{"-lh", "\\'"}, step.GetArguments())
@@ -165,7 +165,7 @@ func (t *StepTestSuite) TestExecWithQuotedEscapedSingleQuoteArg() {
 
 func (t *StepTestSuite) TestShellWithoutArg() {
 	command := "ls"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())
@@ -174,7 +174,7 @@ func (t *StepTestSuite) TestShellWithoutArg() {
 
 func (t *StepTestSuite) TestShellWithArg() {
 	command := "ls -lh"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())
@@ -183,7 +183,7 @@ func (t *StepTestSuite) TestShellWithArg() {
 
 func (t *StepTestSuite) TestShellWithDoubleQuotedArg() {
 	command := "ls -lh \"/path with space\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())
@@ -192,7 +192,7 @@ func (t *StepTestSuite) TestShellWithDoubleQuotedArg() {
 
 func (t *StepTestSuite) TestShellWithEscapedArg() {
 	command := "ls -lh /path\\ with\\ escaped\\ spaces"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())
@@ -201,7 +201,7 @@ func (t *StepTestSuite) TestShellWithEscapedArg() {
 
 func (t *StepTestSuite) TestShellWithEscapedAndDoubleQuotedArg() {
 	command := "ls -lh /path\\ with\\ escaped\\ spaces \"/path with space\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())
@@ -210,7 +210,7 @@ func (t *StepTestSuite) TestShellWithEscapedAndDoubleQuotedArg() {
 
 func (t *StepTestSuite) TestShellWithEmptyDoubleQuotedArg() {
 	command := "ls -lh \"\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())
@@ -219,7 +219,7 @@ func (t *StepTestSuite) TestShellWithEmptyDoubleQuotedArg() {
 
 func (t *StepTestSuite) TestShellWithDoubleEscapedArg() {
 	command := "ls -lh /path\\\\ with\\\\ escaped\\\\ spaces"
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())
@@ -228,7 +228,7 @@ func (t *StepTestSuite) TestShellWithDoubleEscapedArg() {
 
 func (t *StepTestSuite) TestShellWithNestedEscapedDoubleQuotedArg() {
 	command := "ls -lh \"/path\\ with\\ space\""
-	step := NewStep(expectedStepId, expectedStepName, command, t.localWorkingDirectory, expectedShell)
+	step := NewStep(expectedStepID, expectedStepName, command, t.localWorkingDirectory, expectedShell)
 
 	t.Equal(expectedShell, step.GetCommand())
 	t.Equal(expectedShell, step.GetShell())

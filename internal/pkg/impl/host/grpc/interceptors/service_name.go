@@ -47,7 +47,7 @@ func (t *ServiceNameInterceptor) ServiceNameStreamInterceptor(
 		return fmt.Errorf("failed to find service name: %w", err)
 	}
 
-	streamWrapper := NewServerStreamWrapper(ss, context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName))
+	streamWrapper := NewServerStreamWrapper(context.WithValue(ctx, ServiceName(ServiceNameContextValueName), serviceName), ss)
 	return handler(srv, streamWrapper)
 }
 
