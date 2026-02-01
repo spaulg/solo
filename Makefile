@@ -52,14 +52,14 @@ build: protos $(NATIVE_SERVICES) $(LINUX_SERVICES) ## Build files
 test: ## Run tests; pass the flag TEST_FLAGS="flags for go test" to override default test flags
 	@cd $(SRC_DIR) && $(GOTEST) \
 		$(TEST_FLAGS) \
-		-coverprofile=coverage.out \
+		-coverprofile=coverage.txt \
 		-coverpkg=$(shell $(FIND_IMPL_PACKAGES)) 2>&1 | \
 		sed -E 's/of statements in .*/of statements/; /warning: no packages being tested depend on matches for pattern.*/d'
-	@grep -Ev '.*\.pb\.go|.*_testsuite\.go' coverage.out > filtered.coverage.out
-	@go tool cover -func=filtered.coverage.out | tail -1 | awk '{print "Total:", $$3}'
+	@grep -Ev '.*\.pb\.go|.*_testsuite\.go' coverage.txt > filtered.coverage.txt
+	@go tool cover -func=filtered.coverage.txt | tail -1 | awk '{print "Total:", $$3}'
 
 cover: ## Open coverage report for the last test run
-	cd $(SRC_DIR) && $(GOCOVER) -html=filtered.coverage.out
+	cd $(SRC_DIR) && $(GOCOVER) -html=filtered.coverage.txt
 
 lint: ## Run linters
 	$(GOLINT) run
