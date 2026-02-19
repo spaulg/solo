@@ -1,0 +1,34 @@
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        branches:
+          - "!main"
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        branches:
+          - "!main"
+
+  individual_components:
+    - component_id: impl_common
+      name: common
+      paths:
+        - internal/pkg/impl/common/**
+
+    - component_id: impl_entrypoint
+      name: entrypoint
+      paths:
+        - internal/pkg/impl/entrypoint/**
+
+    - component_id: impl_host
+      name: host
+      paths:
+        - internal/pkg/impl/host/**
