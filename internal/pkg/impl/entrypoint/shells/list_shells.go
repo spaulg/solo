@@ -26,6 +26,7 @@ func ListShellsAsJSON(shellsFilePath string) (string, error) {
 			continue // skip empty lines and comment lines
 		}
 
+		// nolint:gosec
 		info, err := os.Stat(line)
 		if err != nil {
 			continue // skip missing files

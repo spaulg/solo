@@ -243,7 +243,7 @@ func (t *ProjectControl) internalStart() error {
 		t.soloCtx.Project = reloadedProject
 	}
 
-	serviceStatus, err := orchestrator.ServicesStatus(nil)
+	serviceStatus, err := orchestrator.ServicesStatus(t.soloCtx.Project.Services().ServiceNames())
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
@@ -375,7 +375,7 @@ func (t *ProjectControl) internalStop() error {
 	}
 
 	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus(nil)
+	serviceStatus, err := orchestrator.ServicesStatus(t.soloCtx.Project.Services().ServiceNames())
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
@@ -462,7 +462,7 @@ func (t *ProjectControl) internalDestroy() error {
 	}
 
 	// Build workflow service map
-	serviceStatus, err := orchestrator.ServicesStatus(nil)
+	serviceStatus, err := orchestrator.ServicesStatus(t.soloCtx.Project.Services().ServiceNames())
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
