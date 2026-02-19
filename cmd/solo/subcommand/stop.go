@@ -32,7 +32,7 @@ func NewStopCommand(soloCtx *context.CliContext) *cobra.Command {
 		}),
 	}
 
-	stopCmd.Flags().StringSliceVarP(&profiles, "profile", "", []string{"*"}, "Profiles to use for the command.")
+	stopCmd.Flags().StringSliceVarP(&profiles, "profile", "", nil, "Profiles to use for the command.")
 
 	return stopCmd
 }

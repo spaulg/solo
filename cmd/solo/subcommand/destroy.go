@@ -53,15 +53,7 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 				return err
 			}
 
-			if err := projectControl.Destroy(); err != nil {
-				return err
-			}
-
-			if len(profiles) == 1 && profiles[0] == "*" {
-				return projectControl.Clean(false)
-			}
-
-			return nil
+			return projectControl.Destroy()
 		}),
 	}
 

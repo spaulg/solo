@@ -32,7 +32,7 @@ func NewRestartCommand(soloCtx *context.CliContext) *cobra.Command {
 		}),
 	}
 
-	restartCmd.Flags().StringSliceVarP(&profiles, "profile", "", []string{"*"}, "Profiles to use for the command.")
+	restartCmd.Flags().StringSliceVarP(&profiles, "profile", "", nil, "Profiles to use for the command.")
 
 	return restartCmd
 }
