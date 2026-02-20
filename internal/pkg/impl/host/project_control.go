@@ -243,7 +243,8 @@ func (t *ProjectControl) internalStart() error {
 		t.soloCtx.Project = reloadedProject
 	}
 
-	serviceStatus, err := orchestrator.ServicesStatus(t.soloCtx.Project.Services().ServiceNames())
+	serviceNames := t.soloCtx.Project.Services().ServiceNames()
+	serviceStatus, err := orchestrator.ServicesStatus(serviceNames)
 	if err != nil {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
@@ -305,7 +306,7 @@ func (t *ProjectControl) internalStart() error {
 	defer t.eventManager.Unsubscribe(guard)
 
 	// Start compose services
-	if err := orchestrator.ComposeUp(t.soloCtx.Project.Services().ServiceNames()); err != nil {
+	if err := orchestrator.ComposeUp(serviceNames); err != nil {
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
