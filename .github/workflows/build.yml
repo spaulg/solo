@@ -53,15 +53,15 @@ jobs:
 
       - name: Test
         run: | 
-          make test
-          gocov convert coverage.txt | gocov-xml > junit.xml
+          make test 2>&1 | go-junit-report > junit.xml
+          gocov convert coverage.txt | gocov-xml > coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           disable_search: true
-          files: ./junit.xml
+          files: ./junit.xml, ./coverage.xml
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9

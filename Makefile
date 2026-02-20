@@ -52,6 +52,7 @@ build: protos $(NATIVE_SERVICES) $(LINUX_SERVICES) ## Build files
 test: ## Run tests; pass the flag TEST_FLAGS="flags for go test" to override default test flags
 	@cd $(SRC_DIR) && $(GOTEST) \
 		$(TEST_FLAGS) \
+		-v \
 		-coverprofile=coverage.txt \
 		-coverpkg=$(shell $(FIND_IMPL_PACKAGES))
 
