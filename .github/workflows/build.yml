@@ -60,7 +60,8 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: junit.xml
+          disable_search: true
+          files: ./junit.xml
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
