@@ -99,11 +99,13 @@ func (t *ProjectControlTestSuite) TestStart_OrchestratorFactoryReturnsError() {
 }
 
 func (t *ProjectControlTestSuite) TestStart_ServiceStatusReturnsError() {
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(nil, errors.New("mock services status error"))
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(nil, errors.New("mock services status error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -133,11 +135,13 @@ func (t *ProjectControlTestSuite) TestStart_AllServicesAlreadyRunning() {
 		NotRunningServices: make([]string, 0),
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 
 	t.mockLogHandler.On("Handle", mock.Anything, mock.MatchedBy(func(record slog.Record) bool {
 		return record.Message == "All required services already running"
@@ -171,12 +175,14 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToBuild() {
 		NotRunningServices: []string{"test_server"},
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(nil, errors.New("mock grpc server build error"))
@@ -210,12 +216,14 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToStart() {
 		NotRunningServices: []string{"test_server"},
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(errors.New("mock grpc server start error"))
@@ -250,12 +258,15 @@ func (t *ProjectControlTestSuite) TestStart_EntrypointCopyFails() {
 		NotRunningServices: []string{"test_server"},
 	}
 
+	t.mockProject.On("Services").Return(t.mockServices)
+
+	serviceNames := []string{"test_server"}
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 
@@ -297,15 +308,16 @@ func (t *ProjectControlTestSuite) TestStart_ContainerNamesFails() {
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
 
+	serviceNames := []string{"test_server"}
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("Services").Return(t.mockServices)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(t.T().TempDir())
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockProject.On("GetStateDirectoryRoot").Return(t.T().TempDir())
 	t.mockServices.On("ContainerNames", servicesStatus.NotRunningServices).Return(nil, errors.New("mock container names error"))
 
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 
@@ -355,9 +367,7 @@ func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
 	t.mockServices.On("ContainerNames", servicesStatus.NotRunningServices).Return([]string{"test_server"}, nil)
 	t.mockServices.On("ServiceNames").Return(serviceNames)
 
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 
@@ -416,9 +426,7 @@ func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
 	t.mockServices.On("ContainerNames", servicesStatus.NotRunningServices).Return([]string{"test_server"}, nil)
 	t.mockServices.On("ServiceNames").Return(serviceNames)
 
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 
@@ -478,9 +486,7 @@ func (t *ProjectControlTestSuite) TestStart_Succeeds() {
 	t.mockServices.On("ContainerNames", servicesStatus.NotRunningServices).Return([]string{"test_server"}, nil)
 	t.mockServices.On("ServiceNames").Return(serviceNames)
 
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 
@@ -566,11 +572,13 @@ func (t *ProjectControlTestSuite) TestStop_ServicesStatusFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(nil, errors.New("mock services status error"))
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(nil, errors.New("mock services status error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -607,12 +615,14 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerBuildFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(nil, errors.New("mock grpc server build error"))
@@ -653,12 +663,14 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerStartFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(errors.New("mock grpc server start error"))
@@ -700,15 +712,16 @@ func (t *ProjectControlTestSuite) TestStop_ContainerNamesFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("Services").Return(t.mockServices)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockServices.On("ContainerNames", []string{"test_server"}).Return(nil, errors.New("mock container names error"))
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -752,14 +765,16 @@ func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
 	}
 
 	t.mockProject.On("Services").Return(t.mockServices)
+
+	serviceNames := []string{"test_server"}
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockServices.On("ContainerNames", []string{"test_server"}).Return([]string{"test_server"}, nil)
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -817,11 +832,10 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockServices.On("ContainerNames", []string{"test_server"}).Return([]string{"test_server"}, nil)
 	t.mockServices.On("ExclusiveServiceNames").Return(serviceNames)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -881,10 +895,10 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 	t.mockServices.On("ExclusiveServiceNames").Return(serviceNames)
 	t.mockServices.On("ContainerNames", []string{"test_server"}).Return([]string{"test_server"}, nil)
 
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -961,11 +975,13 @@ func (t *ProjectControlTestSuite) TestDestroy_ServicesStatusFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(nil, errors.New("mock services status error"))
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(nil, errors.New("mock services status error"))
 
 	projectControl := NewProjectControl(
 		t.soloCtx,
@@ -1001,12 +1017,14 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerBuildFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(nil, errors.New("mock grpc server build error"))
 
@@ -1045,12 +1063,14 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerStartFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(errors.New("mock grpc server start error"))
@@ -1091,15 +1111,16 @@ func (t *ProjectControlTestSuite) TestDestroy_ContainerNamesFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
 	t.mockProject.On("Services").Return(t.mockServices)
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockServices.On("ContainerNames", []string{"test_server"}).Return(nil, errors.New("mock container names error"))
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -1141,15 +1162,16 @@ func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
 		t.Fail("Failed to copy compose file for test")
 	}
 
+	serviceNames := []string{"test_server"}
+	t.mockServices.On("ServiceNames").Return(serviceNames)
+
 	t.mockProject.On("Services").Return(t.mockServices)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
 	t.mockServices.On("ContainerNames", []string{"test_server"}).Return([]string{"test_server"}, nil)
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
@@ -1199,6 +1221,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 	}
 
 	serviceNames := []string{"test_server"}
+	t.mockServices.On("ServiceNames").Return(serviceNames)
 
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
 	t.mockProject.On("ResolveStateDirectory", "workflow_exec_tracker.json").Return(t.T().TempDir() + "/workflow_exec_tracker.json")
@@ -1212,9 +1235,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 
 	t.mockGrpcServer.On("Start").Return(nil)
 	t.mockGrpcServer.On("Stop").Return(nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 
 	t.mockWorkflowGuardFactory.On("Build", mock.Anything, mock.Anything).Return(t.mockWorkflowGuard)
 	t.mockWorkflowGuard.On("Wait", mock.Anything).Return(nil)
@@ -1265,6 +1286,7 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 	}
 
 	serviceNames := []string{"test_server"}
+	t.mockServices.On("ServiceNames").Return(serviceNames)
 
 	t.mockProject.On("Services").Return(t.mockServices)
 	t.mockProject.On("GetGeneratedComposeFilePath").Return(composePath)
@@ -1276,9 +1298,7 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 	t.mockServices.On("ExclusiveServiceNames").Return(serviceNames)
 
 	t.mockOrchestratorFactory.On("Build").Return(t.mockOrchestrator, nil)
-	t.mockOrchestrator.On("ServicesStatus", mock.MatchedBy(func(arg []string) bool {
-		return arg == nil
-	})).Return(servicesStatus, nil)
+	t.mockOrchestrator.On("ServicesStatus", serviceNames).Return(servicesStatus, nil)
 	t.mockGrpcServerFactory.On("Build", t.mockOrchestrator, mock.AnythingOfType("*wms.WorkflowExecTracker"), t.mockProject, 0).
 		Return(t.mockGrpcServer, nil)
 	t.mockGrpcServer.On("Start").Return(nil)
