@@ -6,16 +6,16 @@ coverage:
     project:
       default:
         target: auto
-        branches:
-          - "!main"
+    patch:
+      default:
+        target: auto
 
 component_management:
   default_rules:
+    carryforward: true
     statuses:
       - type: project
         target: auto
-        branches:
-          - "!main"
 
   individual_components:
     - component_id: impl_common
