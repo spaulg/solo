@@ -1,4 +1,4 @@
-package wms
+package audit
 
 import (
 	"github.com/stretchr/testify/mock"
@@ -6,15 +6,15 @@ import (
 	"github.com/spaulg/solo/internal/pkg/types/host/app/events"
 )
 
-type MockWorkflowLogWriter struct {
+type MockAuditor struct {
 	mock.Mock
 }
 
-func (m *MockWorkflowLogWriter) Publish(event events.Event) {
+func (m *MockAuditor) Publish(event events.Event) {
 	m.Called(event)
 }
 
-func (m *MockWorkflowLogWriter) RecordEvent(callback func() error) error {
+func (m *MockAuditor) RecordExecutionEvent(callback func() error) error {
 	_ = m.Called(callback)
 	return callback()
 }

@@ -8,7 +8,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/domain/project"
@@ -48,12 +49,12 @@ func (t *WorkflowTestSuite) SetupTest() {
 	t.soloCtx = &cli_context.CliContext{
 		Project: t.mockProject,
 		Logger:  slog.New(t.mockLogHandler),
-		Config: &config_types.Config{
-			Entrypoint: config_types.EntrypointConfig{
+		Config: &domain.Config{
+			Entrypoint: domain_config_types.EntrypointConfig{
 				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
 			},
-			Workflow: config_types.WorkflowConfig{
-				Grpc: config_types.GrpcConfig{
+			Workflow: domain_config_types.WorkflowConfig{
+				Grpc: domain_config_types.GrpcConfig{
 					ServerPort: 0,
 				},
 			},

@@ -1,11 +1,11 @@
-package wms
+package audit
 
 import (
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 )
 
-type WorkflowLogWriter interface {
+type Auditor interface {
 	events_types.Subscriber
 
-	RecordEvent(callback func() error) error
+	RecordExecutionEvent(callback func() error) error
 }

@@ -1,4 +1,4 @@
-package project
+package domain
 
 import (
 	"context"
@@ -15,8 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	compose_impl "github.com/spaulg/solo/internal/pkg/impl/host/domain/project/compose"
+	domain_project "github.com/spaulg/solo/internal/pkg/impl/host/domain/project"
+	domain_compose "github.com/spaulg/solo/internal/pkg/impl/host/domain/project/compose"
+	domain_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
 )
@@ -33,7 +34,7 @@ type Project struct {
 	filePath              string
 }
 
-func NewProject(projectFilePath string, config *config_types.Config, profiles []string) (project_types.Project, error) {
+func NewProject(projectFilePath string, config *Config, profiles []string) (domain_types.Project, error) {
 	paths, isProjectFile := findComposeFiles(projectFilePath, config)
 
 	projectOptions, err := cli.NewProjectOptions(nil,
@@ -42,8 +43,8 @@ func NewProject(projectFilePath string, config *config_types.Config, profiles []
 			option.ResolvePaths = false              // Keep paths relative in case the user moves their project folder
 			option.SkipInterpolation = isProjectFile // Disable interpolation on the project file
 		}),
-		cli.WithExtension(project_types.ServiceWorkflowExtensionName, NewServiceWorkflows()),
-		cli.WithExtension(project_types.ToolExtensionName, NewTools()),
+		cli.WithExtension(project_types.ServiceWorkflowExtensionName, domain_project.NewServiceWorkflows()),
+		cli.WithExtension(project_types.ToolExtensionName, domain_project.NewTools()),
 		cli.WithProfiles(profiles),
 	)
 
@@ -94,7 +95,7 @@ func (t *Project) ReloadWithProfiles(profiles []string) error {
 	return nil
 }
 
-func (t *Project) ReloadWithAllProfilesEnabled() (project_types.Project, error) {
+func (t *Project) ReloadWithAllProfilesEnabled() (domain_types.Project, error) {
 	compose, err := t.WithProfiles([]string{"*"})
 	if err != nil {
 		return nil, fmt.Errorf("error loading project: %w", err)
@@ -169,7 +170,7 @@ func (t *Project) Name() string {
 }
 
 func (t *Project) Services() compose_types.Services {
-	return compose_impl.NewServices(t, t.compose)
+	return domain_compose.NewServices(t, t.compose)
 }
 
 func (t *Project) Tools() compose_types.Tools {
@@ -180,7 +181,7 @@ func (t *Project) Tools() compose_types.Tools {
 	return compose_types.Tools{}
 }
 
-func findComposeFiles(projectFilePath string, config *config_types.Config) ([]string, bool) {
+func findComposeFiles(projectFilePath string, config *Config) ([]string, bool) {
 	projectDirectory := filepath.Dir(projectFilePath)
 	var configPaths []string
 
@@ -244,7 +245,7 @@ func (t *Project) loadServiceExtensionDefaults() {
 
 		v, ok := serviceConfig.Extensions[project_types.ServiceWorkflowExtensionName]
 		if !ok {
-			v = NewServiceWorkflows()
+			v = domain_project.NewServiceWorkflows()
 			serviceConfig.Extensions[project_types.ServiceWorkflowExtensionName] = v
 		}
 

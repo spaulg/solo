@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	certificate_types "github.com/spaulg/solo/internal/pkg/types/host/infra/certificate"
 )
 

@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/logging"
-	config_domain "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	"github.com/spaulg/solo/internal/pkg/impl/host/domain/project"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/project"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/config"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/infra/config"
 )
 
@@ -27,7 +27,7 @@ type CliContext struct {
 	Project        project_types.Project
 	ProjectLoadErr error
 
-	Config        *config_domain.Config
+	Config        *domain.Config
 	ConfigLoadErr error
 
 	Logger *slog.Logger

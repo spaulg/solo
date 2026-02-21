@@ -16,7 +16,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	certificate_types "github.com/spaulg/solo/internal/pkg/types/host/infra/certificate"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/infra/grpc"

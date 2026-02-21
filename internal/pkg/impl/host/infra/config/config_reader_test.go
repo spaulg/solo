@@ -5,8 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	config_domain "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/test"
 )
 
@@ -26,8 +25,8 @@ func (t *ConfigTestSuite) TestConfigLoading() {
 	config, err := NewConfigReader()
 
 	t.Nil(err, "Failed to load config without error: %v", err)
-	t.Equal(config_domain.DefaultHostEntrypoint, config.GetConfig().Entrypoint.HostEntrypointPath, "Entrypoint does not match default")
-	t.Equal(config_domain.DefaultStateDirectoryName, config.GetConfig().StateDirectoryName, "StateDirectoryName does not match default")
+	t.Equal(domain.DefaultHostEntrypoint, config.GetConfig().Entrypoint.HostEntrypointPath, "Entrypoint does not match default")
+	t.Equal(domain.DefaultStateDirectoryName, config.GetConfig().StateDirectoryName, "StateDirectoryName does not match default")
 
 	err = config.AddConfigPath("test/data/config")
 	t.NoError(err)
@@ -41,12 +40,12 @@ func (t *ConfigTestSuite) TestConfigPathNotFound() {
 
 	t.Nil(err, "Failed to load config without error: %v", err)
 
-	t.Equal(config_domain.DefaultHostEntrypoint, config.GetConfig().Entrypoint.HostEntrypointPath, "Entrypoint does not match default")
-	t.Equal(config_domain.DefaultStateDirectoryName, config.GetConfig().StateDirectoryName, "StateDirectoryName does not match default")
+	t.Equal(domain.DefaultHostEntrypoint, config.GetConfig().Entrypoint.HostEntrypointPath, "Entrypoint does not match default")
+	t.Equal(domain.DefaultStateDirectoryName, config.GetConfig().StateDirectoryName, "StateDirectoryName does not match default")
 
 	err = config.AddConfigPath("test/data/config/notfound")
 	t.NoError(err)
 
-	t.Equal(config_domain.DefaultHostEntrypoint, config.GetConfig().Entrypoint.HostEntrypointPath, "Entrypoint does not match default")
-	t.Equal(config_domain.DefaultStateDirectoryName, config.GetConfig().StateDirectoryName, "StateDirectoryName does not match default")
+	t.Equal(domain.DefaultHostEntrypoint, config.GetConfig().Entrypoint.HostEntrypointPath, "Entrypoint does not match default")
+	t.Equal(domain.DefaultStateDirectoryName, config.GetConfig().StateDirectoryName, "StateDirectoryName does not match default")
 }

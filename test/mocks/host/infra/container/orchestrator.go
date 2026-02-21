@@ -4,8 +4,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc/metadata"
 
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
