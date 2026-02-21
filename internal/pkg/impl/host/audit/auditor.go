@@ -1,4 +1,4 @@
-package wms
+package audit
 
 import (
 	"encoding/json"
@@ -11,44 +11,36 @@ import (
 	"sync"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	audit_types "github.com/spaulg/solo/internal/pkg/types/host/audit"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/wms"
 )
 
-const workflowLogsPath = "workflow_logs"
-const workflowEventMetaFile = "event.meta.json"
+const auditLogsPath = "audit_logs"
+const executionEventFile = "event.json"
 
-type WorkflowLogWriter struct {
+type Auditor struct {
 	soloCtx         *context.CliContext
 	mu              sync.RWMutex
 	outputDirectory string
 }
 
-type StepLogMeta struct {
-	ExitCode         uint8    `json:"exit_code"`
-	Command          string   `json:"command"`
-	Arguments        []string `json:"arguments"`
-	WorkingDirectory string   `json:"working_directory"`
-}
-
-type WorkflowMeta map[string][]string
-
-func NewWorkflowLogWriter(soloCtx *context.CliContext) wms_types.WorkflowLogWriter {
+func NewAuditor(soloCtx *context.CliContext) audit_types.Auditor {
 	outputDirectory := path.Join(
 		soloCtx.Project.GetStateDirectoryRoot(),
-		workflowLogsPath,
+		auditLogsPath,
 		soloCtx.TriggerDateTime.Format("2006-01-02T15-04-05.999999999Z"),
 	)
 
-	return &WorkflowLogWriter{
+	return &Auditor{
 		soloCtx:         soloCtx,
 		outputDirectory: outputDirectory,
 	}
 }
 
-func (t *WorkflowLogWriter) RecordEvent(callback func() error) error {
-	eventFile := path.Join(t.outputDirectory, workflowEventMetaFile)
-	workflowEvent := NewWorkflowEvent(eventFile, t.soloCtx.CommandPath, t.soloCtx.CommandArgs)
+func (t *Auditor) RecordExecutionEvent(callback func() error) error {
+	eventFile := path.Join(t.outputDirectory, executionEventFile)
+	workflowEvent := NewExecutionEvent(eventFile, t.soloCtx.CommandPath, t.soloCtx.CommandArgs)
 	if err := workflowEvent.Persist(); err != nil {
 		return fmt.Errorf("failed to persist workflow event: %w", err)
 	}
@@ -63,7 +55,7 @@ func (t *WorkflowLogWriter) RecordEvent(callback func() error) error {
 	return res
 }
 
-func (t *WorkflowLogWriter) Publish(event events_types.Event) {
+func (t *Auditor) Publish(event events_types.Event) {
 	switch e := event.(type) {
 	case *wms_types.WorkflowStepOutputEvent:
 		t.writeStepOutput(e)
@@ -73,7 +65,7 @@ func (t *WorkflowLogWriter) Publish(event events_types.Event) {
 	}
 }
 
-func (t *WorkflowLogWriter) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
+func (t *Auditor) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
 	if e.Stderr == "" && e.Stdout == "" {
 		return
 	}
@@ -113,7 +105,7 @@ func (t *WorkflowLogWriter) writeStepOutput(e *wms_types.WorkflowStepOutputEvent
 	}
 }
 
-func (t *WorkflowLogWriter) appendStepOutputFile(
+func (t *Auditor) appendStepOutputFile(
 	outputFilePath string,
 	output string,
 ) {
@@ -146,7 +138,7 @@ func (t *WorkflowLogWriter) appendStepOutputFile(
 	}
 }
 
-func (t *WorkflowLogWriter) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
+func (t *Auditor) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
 	outputDirectory := path.Join(
 		t.outputDirectory,
 		e.WorkflowName.String(),

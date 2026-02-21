@@ -3,6 +3,7 @@ package host
 import (
 	"fmt"
 
+	"github.com/spaulg/solo/internal/pkg/impl/host/audit"
 	"github.com/spaulg/solo/internal/pkg/impl/host/certificate"
 	"github.com/spaulg/solo/internal/pkg/impl/host/container"
 	"github.com/spaulg/solo/internal/pkg/impl/host/context"
@@ -12,11 +13,11 @@ import (
 )
 
 func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error) {
-	workflowLogWriter := wms.NewWorkflowLogWriter(soloCtx)
+	auditor := audit.NewAuditor(soloCtx)
 
 	// Event manager
 	eventManager := events.GetEventManagerInstance()
-	eventManager.Subscribe(workflowLogWriter)
+	eventManager.Subscribe(auditor)
 
 	// Container orchestrator factory
 	orchestratorFactory := container.NewOrchestratorFactory(soloCtx, eventManager)
@@ -33,7 +34,7 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	workflowGuardFactory := wms.NewWorkflowGuardFactory(soloCtx)
 
 	// Project control
-	projectControl := NewProjectControl(soloCtx, eventManager, orchestratorFactory, grpcServerFactory, workflowGuardFactory, workflowLogWriter)
+	projectControl := NewProjectControl(soloCtx, eventManager, orchestratorFactory, grpcServerFactory, workflowGuardFactory, auditor)
 
 	return projectControl, nil
 }
