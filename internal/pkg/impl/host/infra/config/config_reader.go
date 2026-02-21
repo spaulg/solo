@@ -5,18 +5,18 @@ import (
 
 	"github.com/spf13/viper"
 
-	config_domain "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	config_types "github.com/spaulg/solo/internal/pkg/types/host/infra/config"
 )
 
 type ConfigReader struct {
 	reader *viper.Viper
-	config config_domain.Config
+	config domain.Config
 }
 
 func NewConfigReader() (config_types.ConfigReader, error) {
 	config := ConfigReader{
-		config: config_domain.NewConfig(),
+		config: domain.NewConfig(),
 		reader: viper.New(),
 	}
 
@@ -53,7 +53,7 @@ func (t *ConfigReader) AddConfigPath(path string) error {
 	return t.unmarshalConfig()
 }
 
-func (t *ConfigReader) GetConfig() *config_domain.Config {
+func (t *ConfigReader) GetConfig() *domain.Config {
 	return &t.config
 }
 

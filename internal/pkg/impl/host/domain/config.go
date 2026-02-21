@@ -1,4 +1,8 @@
-package config
+package domain
+
+import (
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+)
 
 const (
 	DefaultStateDirectoryName     = "./.solo"
@@ -22,47 +26,47 @@ var DefaultShellPriority = []string{
 }
 
 type Config struct {
-	StateDirectoryName string              `mapstructure:"state_directory_name" yaml:"state_directory_name"`
-	Logging            LoggingConfig       `mapstructure:"logging" yaml:"logging"`
-	Entrypoint         EntrypointConfig    `mapstructure:"entrypoint" yaml:"entrypoint"`
-	Orchestration      OrchestrationConfig `mapstructure:"orchestration" yaml:"orchestration"`
-	Workflow           WorkflowConfig      `mapstructure:"workflow" yaml:"workflow"`
-	Shell              ShellConfig         `mapstructure:"shell" yaml:"shell"`
+	StateDirectoryName string                     `mapstructure:"state_directory_name" yaml:"state_directory_name"`
+	Logging            config.LoggingConfig       `mapstructure:"logging" yaml:"logging"`
+	Entrypoint         config.EntrypointConfig    `mapstructure:"entrypoint" yaml:"entrypoint"`
+	Orchestration      config.OrchestrationConfig `mapstructure:"orchestration" yaml:"orchestration"`
+	Workflow           config.WorkflowConfig      `mapstructure:"workflow" yaml:"workflow"`
+	Shell              config.ShellConfig         `mapstructure:"shell" yaml:"shell"`
 }
 
 func NewConfig() Config {
 	return Config{
 		StateDirectoryName: DefaultStateDirectoryName,
 
-		Logging: LoggingConfig{
+		Logging: config.LoggingConfig{
 			Enabled: DefaultLoggingEnabled,
 			Level:   DefaultLoggingLevel,
 			Handler: DefaultLoggingHandler,
 		},
 
-		Entrypoint: EntrypointConfig{
+		Entrypoint: config.EntrypointConfig{
 			HostEntrypointPath:      DefaultHostEntrypoint,
 			ContainerEntrypointPath: DefaultContainerEntrypoint,
 		},
 
-		Orchestration: OrchestrationConfig{
+		Orchestration: config.OrchestrationConfig{
 			SearchOrder: []string{DefaultDockerOrchestratorName},
-			Orchestrators: map[string]OrchestratorConfig{
+			Orchestrators: map[string]config.OrchestratorConfig{
 				DefaultDockerOrchestratorName: {
 					Binary: DefaultDockerBinary,
 				},
 			},
 		},
 
-		Workflow: WorkflowConfig{
-			Grpc: GrpcConfig{
+		Workflow: config.WorkflowConfig{
+			Grpc: config.GrpcConfig{
 				ServerPort: DefaultGrpcServerPort,
 			},
 
 			DefaultStepShell: DefaultStepShell,
 		},
 
-		Shell: ShellConfig{
+		Shell: config.ShellConfig{
 			ShellPriority: DefaultShellPriority,
 			DefaultShell:  DefaultShell,
 		},

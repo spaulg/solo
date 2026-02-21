@@ -2,7 +2,7 @@ package grpc
 
 import (
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 

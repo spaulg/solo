@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/test"
 )
 
@@ -17,11 +17,11 @@ func TestFinderTestSuite(t *testing.T) {
 type FinderTestSuite struct {
 	suite.Suite
 
-	config *config_types.Config
+	config *domain.Config
 }
 
 func (t *FinderTestSuite) SetupTest() {
-	t.config = &config_types.Config{}
+	t.config = &domain.Config{}
 }
 
 func (t *FinderTestSuite) TestFindProjectFile() {

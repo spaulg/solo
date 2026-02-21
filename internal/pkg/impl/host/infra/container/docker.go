@@ -17,10 +17,10 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container/progress"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
@@ -307,7 +307,7 @@ func (t *DockerOrchestrator) GetHostGatewayHostname() string {
 	return "host.docker.internal"
 }
 
-func (t *DockerOrchestrator) ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error) {
+func (t *DockerOrchestrator) ExportComposeConfiguration(config *domain.Config, project project_types.Project) ([]byte, error) {
 	// Reload project with all profiles enabled
 	project, err := project.ReloadWithAllProfilesEnabled()
 	if err != nil {

@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	"github.com/spaulg/solo/internal/pkg/impl/host/domain/project"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/app/events"
 )
@@ -27,10 +27,10 @@ func (t *OrchestratorFactoryTestSuite) SetupTest() {
 }
 
 func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
-	loadedConfig := &config_types.Config{
-		Orchestration: config_types.OrchestrationConfig{
+	loadedConfig := &domain.Config{
+		Orchestration: domain_config.OrchestrationConfig{
 			SearchOrder: []string{"docker"},
-			Orchestrators: map[string]config_types.OrchestratorConfig{
+			Orchestrators: map[string]domain_config.OrchestratorConfig{
 				"docker": {
 					Binary: "docker",
 				},
@@ -39,7 +39,7 @@ func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
-	loadedProject, err := project.NewProject(projectFilePath, loadedConfig, []string{})
+	loadedProject, err := domain.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
 	soloCtx := &context.CliContext{
@@ -57,14 +57,14 @@ func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 }
 
 func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactoryFailure() {
-	loadedConfig := &config_types.Config{
-		Orchestration: config_types.OrchestrationConfig{
+	loadedConfig := &domain.Config{
+		Orchestration: domain_config.OrchestrationConfig{
 			SearchOrder: []string{},
 		},
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
-	loadedProject, err := project.NewProject(projectFilePath, loadedConfig, []string{})
+	loadedProject, err := domain.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
 	soloCtx := &context.CliContext{

@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type Authority interface {

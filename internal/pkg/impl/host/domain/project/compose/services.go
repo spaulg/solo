@@ -6,7 +6,7 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
+	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
 )
 

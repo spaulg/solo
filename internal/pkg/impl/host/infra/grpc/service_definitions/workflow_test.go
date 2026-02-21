@@ -12,7 +12,8 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	"github.com/spaulg/solo/test"
@@ -57,12 +58,12 @@ func (t *WorkflowTestSuite) SetupTest() {
 	t.soloCtx = &cli_context.CliContext{
 		Project: t.mockProject,
 		Logger:  slog.New(t.mockLogHandler),
-		Config: &config_types.Config{
-			Entrypoint: config_types.EntrypointConfig{
+		Config: &domain.Config{
+			Entrypoint: domain_config.EntrypointConfig{
 				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
 			},
-			Workflow: config_types.WorkflowConfig{
-				Grpc: config_types.GrpcConfig{
+			Workflow: domain_config.WorkflowConfig{
+				Grpc: domain_config.GrpcConfig{
 					ServerPort: 0,
 				},
 			},

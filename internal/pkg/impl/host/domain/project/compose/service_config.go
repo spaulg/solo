@@ -7,16 +7,17 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 
+	"github.com/spaulg/solo/internal/pkg/types/host/domain"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
 )
 
 type ServiceConfig struct {
-	project       project_types.Project
+	project       domain.Project
 	serviceConfig types.ServiceConfig
 }
 
-func NewServiceConfig(project project_types.Project, serviceConfig types.ServiceConfig) compose_types.ServiceConfig {
+func NewServiceConfig(project domain.Project, serviceConfig types.ServiceConfig) compose_types.ServiceConfig {
 	return &ServiceConfig{
 		project:       project,
 		serviceConfig: serviceConfig,

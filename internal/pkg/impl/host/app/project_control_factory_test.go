@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/test/mocks/host/domain/project"
 	"github.com/spaulg/solo/test/mocks/logging"
 )
@@ -36,7 +36,7 @@ func (t *ProjectControlFactoryTestSuite) SetupTest() {
 	t.soloCtx = &context.CliContext{
 		Project: t.mockProject,
 		Logger:  slog.New(t.mockLogHandler),
-		Config:  &config_types.Config{},
+		Config:  &domain.Config{},
 	}
 }
 

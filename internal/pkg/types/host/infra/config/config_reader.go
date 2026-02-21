@@ -1,7 +1,7 @@
 package config
 
 import (
-	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type ConfigReader interface {

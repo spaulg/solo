@@ -12,8 +12,9 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/common/app/cmd"
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/project"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/host/domain/project"
+	"github.com/spaulg/solo/internal/pkg/types/host/app/audit"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
@@ -28,7 +29,7 @@ type ProjectControl struct {
 	orchestratorFactory  container_types.OrchestratorFactory
 	grpcServerFactory    grpc_types.ServerFactory
 	workflowGuardFactory wms_types.WorkflowGuardFactory
-	workflowLogWriter    wms_types.WorkflowLogWriter
+	auditor              audit.Auditor
 }
 
 func NewProjectControl(
@@ -37,7 +38,7 @@ func NewProjectControl(
 	orchestratorFactory container_types.OrchestratorFactory,
 	grpcServerFactory grpc_types.ServerFactory,
 	workflowGuardFactory wms_types.WorkflowGuardFactory,
-	workflowLogWriter wms_types.WorkflowLogWriter,
+	auditor audit.Auditor,
 ) *ProjectControl {
 	return &ProjectControl{
 		soloCtx:              soloCtx,
@@ -45,24 +46,24 @@ func NewProjectControl(
 		orchestratorFactory:  orchestratorFactory,
 		grpcServerFactory:    grpcServerFactory,
 		workflowGuardFactory: workflowGuardFactory,
-		workflowLogWriter:    workflowLogWriter,
+		auditor:              auditor,
 	}
 }
 
 func (t *ProjectControl) Start() error {
-	return t.workflowLogWriter.RecordEvent(func() error {
+	return t.auditor.RecordExecutionEvent(func() error {
 		return t.internalStart()
 	})
 }
 
 func (t *ProjectControl) Stop() error {
-	return t.workflowLogWriter.RecordEvent(func() error {
+	return t.auditor.RecordExecutionEvent(func() error {
 		return t.internalStop()
 	})
 }
 
 func (t *ProjectControl) Restart() error {
-	return t.workflowLogWriter.RecordEvent(func() error {
+	return t.auditor.RecordExecutionEvent(func() error {
 		res := t.internalStop()
 		if res != nil {
 			return res
@@ -73,13 +74,13 @@ func (t *ProjectControl) Restart() error {
 }
 
 func (t *ProjectControl) Rebuild() error {
-	return t.workflowLogWriter.RecordEvent(func() error {
+	return t.auditor.RecordExecutionEvent(func() error {
 		return t.internalRebuild()
 	})
 }
 
 func (t *ProjectControl) Destroy() error {
-	return t.workflowLogWriter.RecordEvent(func() error {
+	return t.auditor.RecordExecutionEvent(func() error {
 		res := t.internalDestroy()
 		if res != nil {
 			return res
