@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	logging2 "github.com/spaulg/solo/test/mocks/host/wms/logging"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -41,7 +42,7 @@ type ProjectControlTestSuite struct {
 	mockWorkflowGuard        *wms.MockWorkflowGuard
 	mockServices             *compose.MockServices
 	mockServiceConfig        *compose.MockServiceConfig
-	mockWorkflowLogWriter    *wms.MockWorkflowLogWriter
+	mockWorkflowLogWriter    *logging2.MockWorkflowLogWriter
 }
 
 func (t *ProjectControlTestSuite) SetupTest() {
@@ -55,7 +56,7 @@ func (t *ProjectControlTestSuite) SetupTest() {
 	t.mockWorkflowGuard = &wms.MockWorkflowGuard{}
 	t.mockServices = &compose.MockServices{}
 	t.mockServiceConfig = &compose.MockServiceConfig{}
-	t.mockWorkflowLogWriter = &wms.MockWorkflowLogWriter{}
+	t.mockWorkflowLogWriter = &logging2.MockWorkflowLogWriter{}
 
 	t.mockWorkflowLogWriter.On("RecordEvent", mock.AnythingOfType("func() error"))
 

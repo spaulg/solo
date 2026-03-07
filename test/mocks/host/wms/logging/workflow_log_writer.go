@@ -1,4 +1,4 @@
-package wms
+package logging
 
 import (
 	"github.com/stretchr/testify/mock"
