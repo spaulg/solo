@@ -1,4 +1,6 @@
 paths-ignore:
+  - 'internal/*_test.go'
   - 'internal/**/*_test.go'
   - 'examples/**/*.go'
+  - 'test/*.go'
   - 'test/**/*.go'
