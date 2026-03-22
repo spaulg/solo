@@ -1,5 +1,4 @@
 /.solo
 /.build
 /coverage.txt
-/filtered.coverage.txt
 **/*.pb.go

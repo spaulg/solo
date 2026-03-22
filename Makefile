@@ -41,13 +41,15 @@ protos:
 	find $(SRC_DIR)/internal/pkg/impl/common/grpc/services -name *.proto -exec \
 		protoc --experimental_allow_proto3_optional --proto_path=$(SRC_DIR) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
-$(NATIVE_SERVICES): protos
+bootstrap: protos
+
+$(NATIVE_SERVICES): bootstrap
 	cd $(SRC_DIR)/cmd/$@ && CGO_ENABLED=0 $(GOBUILD) -ldflags="$(LDFLAGS) -s -w" -o $(BUILD_DIR)/$@
 
-$(LINUX_SERVICES): protos
+$(LINUX_SERVICES): bootstrap
 	cd $(SRC_DIR)/cmd/$@ && GOOS=linux CGO_ENABLED=0 $(GOBUILD) -ldflags="$(LDFLAGS) -s -w" -o $(BUILD_DIR)/$@
 
-build: protos $(NATIVE_SERVICES) $(LINUX_SERVICES) ## Build files
+build: bootstrap $(NATIVE_SERVICES) $(LINUX_SERVICES) ## Build files
 
 test: ## Run tests; pass the flag TEST_FLAGS="flags for go test" to override default test flags
 	@cd $(SRC_DIR) && $(GOTEST) \
