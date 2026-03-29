@@ -35,17 +35,18 @@ linters:
       - legacy
       - std-error-handling
     paths:
-      - third_party$
-      - builtin$
       - examples$
 
 formatters:
   enable:
     - goimports
 
+  settings:
+    goimports:
+      local-prefixes:
+       - github.com/spaulg/solo
+
   exclusions:
     generated: lax
     paths:
-      - third_party$
-      - builtin$
       - examples$

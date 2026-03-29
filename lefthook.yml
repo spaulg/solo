@@ -1,0 +1,12 @@
+output:
+ - meta
+ - summary
+ - skips
+
+pre-commit:
+   jobs:
+     # Reformat code using goimports
+     - name: 'Go formatting'
+       glob: "*.go"
+       stage_fixed: true
+       run: goimports -local $(go list -m -f '{{.Path}}') -w {staged_files}

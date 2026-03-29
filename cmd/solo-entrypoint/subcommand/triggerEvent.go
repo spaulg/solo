@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
+	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/context"
 )
 
 func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {
@@ -27,7 +27,7 @@ func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Com
 			return nil
 		},
 		Run: func(_ *cobra.Command, args []string) {
-			workflowRunner, err := entrypoint.WorkflowRunnerFactory(entrypointCtx)
+			workflowRunner, err := app.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)
 			}

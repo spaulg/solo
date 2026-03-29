@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/context"
-
 	"github.com/spf13/cobra"
+
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 )
 
 const RequireConfigLoadSuccessAnnotation = "RequireConfigLoadSuccess"

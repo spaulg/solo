@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
+	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/context"
 )
 
 func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {
@@ -21,7 +21,7 @@ func NewEntrypointCommand(entrypointCtx *context.EntrypointContext) *cobra.Comma
 		DisableFlagParsing: true,
 		Args:               cobra.ArbitraryArgs,
 		Run: func(_ *cobra.Command, _ []string) {
-			workflowRunner, err := entrypoint.WorkflowRunnerFactory(entrypointCtx)
+			workflowRunner, err := app.WorkflowRunnerFactory(entrypointCtx)
 			if err != nil {
 				panic(err)
 			}
