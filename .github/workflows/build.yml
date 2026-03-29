@@ -41,6 +41,10 @@ jobs:
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
+      - name: Install gotestsum
+        run: |
+          go install gotest.tools/gotestsum@v1.13.0
+
       - name: Build
         run: make build
 
@@ -48,7 +52,7 @@ jobs:
         run: make test
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 

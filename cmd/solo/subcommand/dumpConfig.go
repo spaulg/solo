@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 )
 
 func NewDumpConfigCommand(soloCtx *context.CliContext) *cobra.Command {

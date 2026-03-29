@@ -3,8 +3,8 @@ package subcommand
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host"
-	"github.com/spaulg/solo/internal/pkg/impl/host/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 )
 
 func NewStopCommand(soloCtx *context.CliContext) *cobra.Command {
@@ -23,7 +23,7 @@ func NewStopCommand(soloCtx *context.CliContext) *cobra.Command {
 			return soloCtx.Project.ReloadWithProfiles(profiles)
 		},
 		RunE: soloCtx.ProtectWithLock(func(_ *cobra.Command, _ []string) error {
-			projectControl, err := host.ProjectControlFactory(soloCtx)
+			projectControl, err := app.ProjectControlFactory(soloCtx)
 			if err != nil {
 				return err
 			}

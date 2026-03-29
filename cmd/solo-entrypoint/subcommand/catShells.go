@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/context"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/shells"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/infra/shells"
 )
 
 const shellsFilePath = "/etc/shells"

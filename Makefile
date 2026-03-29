@@ -5,13 +5,14 @@ GIT_COMMIT ?= $(shell git rev-parse HEAD)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Go build flags
-LDFLAGS := -X 'github.com/spaulg/solo/internal/pkg/impl/common/version.Version=$(VERSION)' \
-           -X 'github.com/spaulg/solo/internal/pkg/impl/common/version.GitCommit=$(GIT_COMMIT)' \
-           -X 'github.com/spaulg/solo/internal/pkg/impl/common/version.BuildDate=$(BUILD_DATE)'
+LDFLAGS := -X 'github.com/spaulg/solo/internal/pkg/impl/common/domain/version.Version=$(VERSION)' \
+           -X 'github.com/spaulg/solo/internal/pkg/impl/common/domain/version.GitCommit=$(GIT_COMMIT)' \
+           -X 'github.com/spaulg/solo/internal/pkg/impl/common/domain/version.BuildDate=$(BUILD_DATE)'
 
 GOCMD := go
 GOBUILD := $(GOCMD) build
 GOTEST := $(GOCMD) test
+GOTESTSUM := gotestsum
 GOCOVER := $(GOCMD) tool cover
 GOLINT := golangci-lint
 
@@ -22,9 +23,6 @@ PREFIX ?= /usr/local
 BINDIR := $(PREFIX)/bin
 IMPLDIR := ./internal/pkg/impl
 TEST_FLAGS ?= $(IMPLDIR)/...
-
-FIND_IMPL_PACKAGES := find $(IMPLDIR) -name "*.go" | grep -vE ".*\.pb\.go" | grep -v ".*_testsuite\.go" | \
-	xargs -n1 dirname | sort -u | paste -sd, -
 
 NATIVE_SERVICES := solo
 LINUX_SERVICES := solo-entrypoint
@@ -38,7 +36,7 @@ all: build
 
 protos:
 	mkdir -p $(BUILD_DIR)
-	find $(SRC_DIR)/internal/pkg/impl/common/grpc/services -name *.proto -exec \
+	find $(SRC_DIR)/internal/pkg/impl/common/infra/grpc/services -name *.proto -exec \
 		protoc --experimental_allow_proto3_optional --proto_path=$(SRC_DIR) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 bootstrap: protos
@@ -51,12 +49,10 @@ $(LINUX_SERVICES): bootstrap
 
 build: bootstrap $(NATIVE_SERVICES) $(LINUX_SERVICES) ## Build files
 
-test: ## Run tests; pass the flag TEST_FLAGS="flags for go test" to override default test flags
-	@cd $(SRC_DIR) && $(GOTEST) \
+test:
+	@cd $(SRC_DIR) && $(GOTESTSUM) --format pkgname -- \
 		$(TEST_FLAGS) \
-		-v \
-		-coverprofile=coverage.txt \
-		-coverpkg=$(shell $(FIND_IMPL_PACKAGES))
+ 		-coverprofile=coverage.txt
 
 cover: ## Open coverage report for the last test run
 	cd $(SRC_DIR) && $(GOCOVER) -html=coverage.txt
