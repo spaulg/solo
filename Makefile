@@ -54,6 +54,14 @@ test:
 		$(TEST_FLAGS) \
  		-coverprofile=coverage.txt
 
+citest:
+	@cd $(SRC_DIR) && $(GOTEST) \
+		$(TEST_FLAGS) \
+ 		-coverprofile=coverage.txt \
+ 		-json \
+ 		| tee test.json \
+		| go-junit-report -set-exit-code > junit.xml
+
 cover: ## Open coverage report for the last test run
 	cd $(SRC_DIR) && $(GOCOVER) -html=coverage.txt
 

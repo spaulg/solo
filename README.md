@@ -39,6 +39,7 @@ Install Go (see https://go.dev/doc/install)
 Install protoc (see https://protobuf.dev/installation/)
 
 ```shell
+go install github.com/jstemmer/go-junit-report/v2@v2.1.0
 go install gotest.tools/gotestsum@latest
 go install github.com/evilmartians/lefthook/v2@v2.1.4
 go install golang.org/x/tools/cmd/goimports@latest
@@ -57,6 +58,8 @@ export PATH="$PATH:$HOME/go/bin"
 ### Testing/Linting/Code Coverage
 
 `make test`
+
+`make citest`
 
 `make lint`
 
