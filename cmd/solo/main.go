@@ -1,9 +1,11 @@
 package main
 
 import (
+	"os"
+
 	"github.com/spaulg/solo/cmd/solo/subcommand"
 )
 
 func main() {
-	subcommand.Execute()
+	os.Exit(subcommand.Execute())
 }

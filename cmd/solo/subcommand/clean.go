@@ -2,7 +2,6 @@ package subcommand
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -37,7 +36,7 @@ func NewCleanSubCommand(soloCtx *context.CliContext) *cobra.Command {
 					if err != nil {
 						continue
 					} else if strings.ToLower(cmdConfirmationString) == "n" {
-						os.Exit(0)
+						return ErrUserAbortedCommand
 					} else if strings.ToLower(cmdConfirmationString) == "y" {
 						break
 					}
