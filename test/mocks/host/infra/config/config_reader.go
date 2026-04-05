@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/stretchr/testify/mock"
 
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	config_types "github.com/spaulg/solo/internal/pkg/host/domain"
 )
 
 type MockConfigReader struct {

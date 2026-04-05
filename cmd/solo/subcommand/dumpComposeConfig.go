@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/events"
-	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
+	"github.com/spaulg/solo/internal/pkg/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/host/app/events"
+	"github.com/spaulg/solo/internal/pkg/host/infra/container"
 )
 
 func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {

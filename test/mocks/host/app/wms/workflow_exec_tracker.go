@@ -3,7 +3,7 @@ package wms
 import (
 	"github.com/stretchr/testify/mock"
 
-	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
+	commonworkflow "github.com/spaulg/solo/internal/pkg/shared/domain/wms"
 )
 
 type MockWorkflowExecTracker struct {

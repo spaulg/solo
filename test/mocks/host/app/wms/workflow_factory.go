@@ -3,10 +3,10 @@ package wms
 import (
 	"github.com/stretchr/testify/mock"
 
-	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	context_types "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
+	context_types "github.com/spaulg/solo/internal/pkg/host/app/context"
+	wms_types "github.com/spaulg/solo/internal/pkg/shared/app/wms"
+	workflowcommon "github.com/spaulg/solo/internal/pkg/shared/domain/wms"
+	container_types "github.com/spaulg/solo/internal/pkg/shared/infra/container"
 )
 
 type MockWorkflowFactory struct {

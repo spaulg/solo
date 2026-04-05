@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	compose_types "github.com/spaulg/solo/internal/pkg/shared/domain/project/compose"
 )
 
 type MockServices struct {
