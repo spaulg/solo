@@ -15,7 +15,7 @@ type Services struct {
 	compose *types.Project
 }
 
-func NewServices(project project_types.Project, compose *types.Project) compose_types.Services {
+func NewServices(project project_types.Project, compose *types.Project) *Services {
 	return &Services{
 		project: project,
 		compose: compose,

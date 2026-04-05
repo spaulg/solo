@@ -34,7 +34,7 @@ func NewMutualTLSServerFactory(
 	eventManager events_types.Manager,
 	workflowFactory wms.WorkflowFactory,
 	certificateAuthority certificate_types.Authority,
-) grpc_types.ServerFactory {
+) *MutualTLSServerFactory {
 	return &MutualTLSServerFactory{
 		soloCtx:              soloCtx,
 		eventManager:         eventManager,

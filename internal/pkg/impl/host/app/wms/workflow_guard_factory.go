@@ -10,7 +10,7 @@ type WorkflowGuardFactory struct {
 	soloCtx *context.CliContext
 }
 
-func NewWorkflowGuardFactory(soloCtx *context.CliContext) wms_types.WorkflowGuardFactory {
+func NewWorkflowGuardFactory(soloCtx *context.CliContext) *WorkflowGuardFactory {
 	return &WorkflowGuardFactory{
 		soloCtx: soloCtx,
 	}

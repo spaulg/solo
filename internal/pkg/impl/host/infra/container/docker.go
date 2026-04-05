@@ -48,7 +48,7 @@ func NewDockerOrchestrator(
 	soloCtx *context.CliContext,
 	eventManager events_types.Manager,
 	dockerCommandPath string,
-) container_types.Orchestrator {
+) *DockerOrchestrator {
 	return &DockerOrchestrator{
 		soloCtx:           soloCtx,
 		eventManager:      eventManager,

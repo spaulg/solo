@@ -57,7 +57,7 @@ func WithDNSNames(dnsNames []string) certificate_types.CertificateOption {
 	}
 }
 
-func NewCertificateAuthority() (certificate_types.Authority, error) {
+func NewCertificateAuthority() (*SelfSignedCertificateAuthority, error) {
 	certificateTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{

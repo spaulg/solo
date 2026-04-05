@@ -58,7 +58,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           report_type: "coverage"
           disable_search: true
-          files: coverage.txt
+          files: .build/tests/coverage.txt
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -67,7 +67,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           report_type: "test_results"
           disable_search: true
-          files: junit.xml
+          files: .build/tests/junit.xml
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9

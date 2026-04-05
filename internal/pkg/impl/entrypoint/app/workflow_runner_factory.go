@@ -7,12 +7,11 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/workflow"
 	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/infra/grpc/credentials"
-	workflow_types "github.com/spaulg/solo/internal/pkg/types/entrypoint/app/workflow"
 )
 
 const metadataStateFile = "/solo/container/data/metadata_state.yml"
 
-func WorkflowRunnerFactory(entrypointCtx *context.EntrypointContext) (workflow_types.WorkflowRunner, error) {
+func WorkflowRunnerFactory(entrypointCtx *context.EntrypointContext) (*workflow.GrpcWorkflowRunner, error) {
 	targetBytes, err := os.ReadFile("/solo/services_all/provisioner_host")
 	if err != nil {
 		return nil, err

@@ -34,7 +34,7 @@ type Project struct {
 	filePath              string
 }
 
-func NewProject(projectFilePath string, config *Config, profiles []string) (domain_types.Project, error) {
+func NewProject(projectFilePath string, config *Config, profiles []string) (*Project, error) {
 	paths, isProjectFile := findComposeFiles(projectFilePath, config)
 
 	projectOptions, err := cli.NewProjectOptions(nil,

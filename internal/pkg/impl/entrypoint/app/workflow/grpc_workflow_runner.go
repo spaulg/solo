@@ -14,7 +14,6 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	entrypointcontext "github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/context"
-	workflow_types "github.com/spaulg/solo/internal/pkg/types/entrypoint/app/workflow"
 	grpc_credentials_types "github.com/spaulg/solo/internal/pkg/types/entrypoint/infra/grpc/credentials"
 )
 
@@ -35,7 +34,7 @@ func NewGrpcWorkflowRunner(
 	credentialsBuilder grpc_credentials_types.Builder,
 	workflowServerHost string,
 	metadataState *MetadataState,
-) (workflow_types.WorkflowRunner, error) {
+) (*GrpcWorkflowRunner, error) {
 	entrypointCtx.Logger.Info("Connect to grpc server")
 
 	creds, err := credentialsBuilder.Build()

@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	config_types "github.com/spaulg/solo/internal/pkg/types/host/infra/config"
 )
 
 type ConfigReader struct {
@@ -14,7 +13,7 @@ type ConfigReader struct {
 	config domain.Config
 }
 
-func NewConfigReader() (config_types.ConfigReader, error) {
+func NewConfigReader() (*ConfigReader, error) {
 	config := ConfigReader{
 		config: domain.NewConfig(),
 		reader: viper.New(),
