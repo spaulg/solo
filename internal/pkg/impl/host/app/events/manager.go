@@ -14,11 +14,11 @@ type Manager struct {
 
 // nolint:gochecknoglobals
 var (
-	eventManagerInstance events_types.Manager
+	eventManagerInstance *Manager
 	eventManagerOnce     sync.Once
 )
 
-func GetEventManagerInstance() events_types.Manager {
+func GetEventManagerInstance() *Manager {
 	eventManagerOnce.Do(func() {
 		eventManagerInstance = NewEventManager()
 	})
@@ -26,7 +26,7 @@ func GetEventManagerInstance() events_types.Manager {
 	return eventManagerInstance
 }
 
-func NewEventManager() events_types.Manager {
+func NewEventManager() *Manager {
 	return &Manager{
 		subscribers: make(map[events_types.Subscriber]chan events_types.Event),
 	}

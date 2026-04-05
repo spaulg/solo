@@ -26,7 +26,7 @@ func NewWorkflowGuard(
 	soloCtx *context.CliContext,
 	workflows []workflowcommon.WorkflowName,
 	containers []string,
-) wms_types.WorkflowGuard {
+) *WorkflowGuard {
 	workflowContainerChannels := make(map[workflowcommon.WorkflowName]map[string]chan int)
 	workflowContainerStatus := make(map[workflowcommon.WorkflowName]map[string]bool)
 

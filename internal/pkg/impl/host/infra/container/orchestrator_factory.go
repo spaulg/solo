@@ -18,7 +18,7 @@ type OrchestratorFactory struct {
 func NewOrchestratorFactory(
 	soloCtx *context.CliContext,
 	eventManager events_types.Manager,
-) container_types.OrchestratorFactory {
+) *OrchestratorFactory {
 	return &OrchestratorFactory{
 		soloCtx:      soloCtx,
 		eventManager: eventManager,

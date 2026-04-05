@@ -17,7 +17,7 @@ type ServiceConfig struct {
 	serviceConfig types.ServiceConfig
 }
 
-func NewServiceConfig(project domain.Project, serviceConfig types.ServiceConfig) compose_types.ServiceConfig {
+func NewServiceConfig(project domain.Project, serviceConfig types.ServiceConfig) *ServiceConfig {
 	return &ServiceConfig{
 		project:       project,
 		serviceConfig: serviceConfig,

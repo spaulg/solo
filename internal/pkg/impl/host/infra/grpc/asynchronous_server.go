@@ -15,7 +15,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
-	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/infra/grpc"
 )
 
 const hostFileName = "provisioner_host"
@@ -36,7 +35,7 @@ func NewAsynchronousServer(
 	stateDirectory string,
 	transportCredentials credentials.TransportCredentials,
 	workflowService services.WorkflowServer,
-) grpc_types.Server {
+) *AsynchronousServer {
 	return &AsynchronousServer{
 		orchestrator:         orchestrator,
 		port:                 uint32(port), // nolint:gosec

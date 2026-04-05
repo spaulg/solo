@@ -7,13 +7,11 @@ import (
 	"os"
 
 	"google.golang.org/grpc/credentials"
-
-	grpc_credentials_types "github.com/spaulg/solo/internal/pkg/types/entrypoint/infra/grpc/credentials"
 )
 
 type MutualTLS struct{}
 
-func NewMutualTLS() (grpc_credentials_types.Builder, error) {
+func NewMutualTLS() (*MutualTLS, error) {
 	return &MutualTLS{}, nil
 }
 

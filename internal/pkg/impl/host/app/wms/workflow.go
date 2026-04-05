@@ -22,7 +22,7 @@ func NewWorkflow(
 	soloCtx *context_types.CliContext,
 	serviceWorkingDirectory string,
 	workflow compose_types.ServiceWorkflowConfig,
-) wms_types.Workflow {
+) *Workflow {
 	return &Workflow{
 		soloCtx:                 soloCtx,
 		serviceWorkingDirectory: serviceWorkingDirectory,

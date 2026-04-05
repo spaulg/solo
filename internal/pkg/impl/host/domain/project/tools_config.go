@@ -5,5 +5,5 @@ import (
 )
 
 func NewTools() compose_types.Tools {
-	return make(compose_types.Tools, 0)
+	return make(compose_types.Tools)
 }

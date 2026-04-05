@@ -14,7 +14,7 @@ type Step struct {
 	shell            string
 }
 
-func NewStep(id string, name string, command string, workingDirectory string, shell string) wms_types.Step {
+func NewStep(id string, name string, command string, workingDirectory string, shell string) *Step {
 	command, arguments := cmd.SplitCommand(shell, command)
 
 	return &Step{

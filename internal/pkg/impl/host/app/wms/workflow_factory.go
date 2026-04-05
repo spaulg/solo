@@ -9,7 +9,7 @@ import (
 
 type WorkflowFactory struct{}
 
-func NewWorkflowFactory() wms_types.WorkflowFactory {
+func NewWorkflowFactory() *WorkflowFactory {
 	return &WorkflowFactory{}
 }
 

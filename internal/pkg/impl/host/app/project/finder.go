@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 const DefaultProjectFileName = "solo.yml"
@@ -14,7 +13,7 @@ const DefaultProjectFileName = "solo.yml"
 // FindProject Find the project file by navigating up the
 // filesystem tree until the project file is found, or
 // return error if no project file is found
-func FindProject(startPath string, config *domain.Config, profiles []string) (project_types.Project, error) {
+func FindProject(startPath string, config *domain.Config, profiles []string) (*domain.Project, error) {
 	var projectFilePath string
 
 	path, err := filepath.Abs(startPath)
