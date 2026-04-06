@@ -6,8 +6,8 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/stretchr/testify/mock"
 
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	"github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	project_types "github.com/spaulg/solo/internal/pkg/shared/domain"
+	"github.com/spaulg/solo/internal/pkg/shared/domain/project/compose"
 )
 
 type MockProject struct {

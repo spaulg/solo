@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/host/app/context"
 )
 
 func NewLogsCommand(_ *context.CliContext) *cobra.Command {

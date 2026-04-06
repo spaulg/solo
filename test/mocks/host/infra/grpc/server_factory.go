@@ -3,10 +3,10 @@ package grpc
 import (
 	"github.com/stretchr/testify/mock"
 
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
-	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/infra/grpc"
+	grpc_types "github.com/spaulg/solo/internal/pkg/host/infra/grpc"
+	wms_types "github.com/spaulg/solo/internal/pkg/shared/app/wms"
+	project_types "github.com/spaulg/solo/internal/pkg/shared/domain"
+	container_types "github.com/spaulg/solo/internal/pkg/shared/infra/container"
 )
 
 type MockGRPCServerFactory struct {

@@ -3,8 +3,8 @@ package wms
 import (
 	"github.com/stretchr/testify/mock"
 
-	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	wms_types "github.com/spaulg/solo/internal/pkg/shared/app/wms"
+	workflowcommon "github.com/spaulg/solo/internal/pkg/shared/domain/wms"
 )
 
 type MockWorkflowGuardFactory struct {

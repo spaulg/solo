@@ -3,7 +3,7 @@ package container
 import (
 	"github.com/stretchr/testify/mock"
 
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
+	container_types "github.com/spaulg/solo/internal/pkg/shared/infra/container"
 )
 
 type MockOrchestratorFactory struct {

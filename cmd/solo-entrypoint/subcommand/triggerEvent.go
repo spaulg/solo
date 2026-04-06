@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app"
-	"github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/context"
+	"github.com/spaulg/solo/internal/pkg/entrypoint/app"
+	"github.com/spaulg/solo/internal/pkg/entrypoint/app/context"
+	commonworkflow "github.com/spaulg/solo/internal/pkg/shared/domain/wms"
 )
 
 func NewTriggerEventCommand(entrypointCtx *context.EntrypointContext) *cobra.Command {

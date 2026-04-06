@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	wms_types "github.com/spaulg/solo/internal/pkg/shared/app/wms"
 )
 
 type MockWorkflow struct {

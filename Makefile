@@ -5,9 +5,9 @@ GIT_COMMIT ?= $(shell git rev-parse HEAD)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Go build flags
-LDFLAGS := -X 'github.com/spaulg/solo/internal/pkg/impl/common/domain/version.Version=$(VERSION)' \
-           -X 'github.com/spaulg/solo/internal/pkg/impl/common/domain/version.GitCommit=$(GIT_COMMIT)' \
-           -X 'github.com/spaulg/solo/internal/pkg/impl/common/domain/version.BuildDate=$(BUILD_DATE)'
+LDFLAGS := -X 'github.com/spaulg/solo/internal/pkg/shared/domain/version.Version=$(VERSION)' \
+           -X 'github.com/spaulg/solo/internal/pkg/shared/domain/version.GitCommit=$(GIT_COMMIT)' \
+           -X 'github.com/spaulg/solo/internal/pkg/shared/domain/version.BuildDate=$(BUILD_DATE)'
 
 GOCMD := go
 GOBUILD := $(GOCMD) build
@@ -23,8 +23,8 @@ TEST_OUTPUT_DIR := $(BUILD_ROOT)/tests
 SRC_DIR := $(ROOT_DIR)
 PREFIX ?= /usr/local
 BINDIR := $(PREFIX)/bin
-IMPLDIR := ./internal/pkg/impl
-TEST_FLAGS ?= $(IMPLDIR)/...
+INTERNAL_ROOT := ./internal/pkg
+TEST_FLAGS ?= $(INTERNAL_ROOT)/...
 
 NATIVE_SERVICES := solo
 LINUX_SERVICES := solo-entrypoint
@@ -38,7 +38,7 @@ all: build
 
 protos:
 	mkdir -p $(BUILD_OUTPUT_DIR)
-	find $(SRC_DIR)/internal/pkg/impl/common/infra/grpc/services -name *.proto -exec \
+	find $(SRC_DIR)/internal/pkg/shared/infra/grpc/services -name *.proto -exec \
 		protoc --experimental_allow_proto3_optional --proto_path=$(SRC_DIR) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
 bootstrap: protos
