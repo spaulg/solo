@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	archgo "github.com/arch-go/arch-go/api"
+	archgo_config "github.com/arch-go/arch-go/api/configuration"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/test"
@@ -40,6 +42,150 @@ func (t *ArchitectureTestSuite) SetupTest() {
 	}
 
 	t.isPackageInterfaceCacheMap = make(map[string]map[string]bool)
+}
+
+func (t *ArchitectureTestSuite) TestLayerDependencies() {
+	t.T().Skipf("Skipping architecture test as the architecture is still evolving." +
+		" Re-enable once the architecture is stable.")
+
+	configuration := archgo_config.Config{
+		DependenciesRules: []*archgo_config.DependenciesRule{
+			// Commands
+			{
+				Package: t.moduleName + "/cmd/solo.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/cmd/solo.**",
+						t.moduleName + "/internal/pkg/impl/host.**",
+					},
+				},
+			},
+
+			{
+				Package: t.moduleName + "/cmd/solo-entrypoint.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/cmd/solo-entrypoint.**",
+						t.moduleName + "/internal/pkg/impl/entrypoint.**",
+					},
+				},
+			},
+
+			// Host
+			// App -> App/Domain/Infra
+			{
+				Package: t.moduleName + "/internal/pkg/impl/host/app.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/types/host.**",
+						t.moduleName + "/internal/pkg/impl/host.**",
+						t.moduleName + "/internal/pkg/impl/common.**",
+					},
+				},
+			},
+
+			// Infra -> domain
+			{
+				Package: t.moduleName + "/internal/pkg/impl/host/infra.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/types/host/infra.**",
+						t.moduleName + "/internal/pkg/impl/host/infra.**",
+						t.moduleName + "/internal/pkg/impl/common/infra.**",
+						t.moduleName + "/internal/pkg/types/host/domain.**",
+						t.moduleName + "/internal/pkg/impl/host/domain.**",
+						t.moduleName + "/internal/pkg/impl/common/domain.**",
+					},
+				},
+			},
+
+			// Domain -> nothing
+			{
+				Package: t.moduleName + "/internal/pkg/impl/host/domain.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/types/host/domain.**",
+						t.moduleName + "/internal/pkg/impl/host/domain.**",
+						t.moduleName + "/internal/pkg/impl/common/domain.**",
+					},
+				},
+			},
+
+			// Entrypoint
+			// App -> App/Domain/Infra
+			{
+				Package: t.moduleName + "/internal/pkg/impl/entrypoint/app.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/types/entrypoint.**",
+						t.moduleName + "/internal/pkg/impl/entrypoint.**",
+						t.moduleName + "/internal/pkg/impl/common.**",
+					},
+				},
+			},
+
+			// Infra -> domain
+			{
+				Package: t.moduleName + "/internal/pkg/impl/entrypoint/infra.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/types/entrypoint/infra.**",
+						t.moduleName + "/internal/pkg/impl/entrypoint/infra.**",
+						t.moduleName + "/internal/pkg/impl/common/infra.**",
+					},
+				},
+			},
+
+			// Common
+			{
+				Package: t.moduleName + "/internal/pkg/impl/common/app.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/impl/common.**",
+					},
+				},
+			},
+
+			{
+				Package: t.moduleName + "/internal/pkg/impl/common/infra.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/impl/common/infra.**",
+						t.moduleName + "/internal/pkg/impl/common/domain.**",
+					},
+				},
+			},
+
+			{
+				Package: t.moduleName + "/internal/pkg/impl/common/domain.**",
+				ShouldOnlyDependsOn: &archgo_config.Dependencies{
+					Internal: []string{
+						t.moduleName + "/internal/pkg/impl/common/domain.**",
+					},
+				},
+			},
+		},
+	}
+
+	moduleInfo := archgo_config.Load(t.moduleName)
+	if result := archgo.CheckArchitecture(moduleInfo, configuration); !result.Pass {
+		if result.DependenciesRuleResult != nil {
+			for _, depRule := range result.DependenciesRuleResult.Results {
+				if depRule.Passes {
+					continue
+				}
+
+				for _, verification := range depRule.Verifications {
+					if verification.Passes {
+						continue
+					}
+
+					t.Failf("Incorrect layer dependency in package "+verification.Package,
+						strings.Join(verification.Details, "\n"))
+				}
+			}
+		}
+	}
 }
 
 // TestConstructorsDontReturnInterfaces checks that constructors
