@@ -12,6 +12,8 @@ func NewToolCommands(soloCtx *context.CliContext) []*cobra.Command {
 
 	if soloCtx.Project != nil {
 		for toolName, toolConfig := range soloCtx.Project.Tools() {
+			localToolName := toolName
+
 			toolCommands = append(toolCommands, &cobra.Command{
 				Use:                toolName,
 				GroupID:            "tooling",
@@ -23,12 +25,12 @@ func NewToolCommands(soloCtx *context.CliContext) []*cobra.Command {
 					RequireProjectLoadSuccessAnnotation: "true",
 				},
 				RunE: func(_ *cobra.Command, args []string) error {
-					projectControl, err := app.ProjectControlFactory(soloCtx)
+					projectTooling, err := app.ProjectToolingFactory(soloCtx)
 					if err != nil {
 						return err
 					}
 
-					return projectControl.ExecuteTool(toolName, args)
+					return projectTooling.ExecuteTool(localToolName, args)
 				},
 			})
 		}
