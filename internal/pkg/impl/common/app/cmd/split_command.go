@@ -3,13 +3,15 @@ package cmd
 import "strings"
 
 func SplitCommand(shell string, command string) (string, []string) {
-	if []rune(command)[0] == '/' {
+	// An absolute command needs a leading slash
+	// and at least one character for the binary
+	if len(command) >= 2 && strings.HasPrefix(command, "/") {
 		// Exec format
 		return extractExecCommandArgs(command)
 	}
 
 	// Shell format
-	return extractShellCommandArgs(command, shell)
+	return extractShellCommandArgs(shell, command)
 }
 
 func extractExecCommandArgs(command string) (string, []string) {
@@ -58,6 +60,6 @@ func extractExecCommandArgs(command string) (string, []string) {
 	return extracted[0], extracted[1:]
 }
 
-func extractShellCommandArgs(command string, shell string) (string, []string) {
+func extractShellCommandArgs(shell string, command string) (string, []string) {
 	return shell, []string{"-c", command}
 }

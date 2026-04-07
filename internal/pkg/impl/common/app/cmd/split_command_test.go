@@ -16,6 +16,20 @@ type SplitCommandTestSuite struct {
 	suite.Suite
 }
 
+func (t *SplitCommandTestSuite) TestSingleCharCommand() {
+	command, arguments := SplitCommand(expectedShell, "/")
+
+	t.Equal(expectedShell, command)
+	t.Equal([]string{"-c", "/"}, arguments)
+}
+
+func (t *SplitCommandTestSuite) TestBlankCommand() {
+	command, arguments := SplitCommand(expectedShell, "")
+
+	t.Equal(expectedShell, command)
+	t.Equal([]string{"-c", ""}, arguments)
+}
+
 func (t *SplitCommandTestSuite) TestExecWithArg() {
 	command := "/bin/ls -lh"
 

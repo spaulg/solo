@@ -30,12 +30,12 @@ func NewShCommand(soloCtx *context.CliContext) *cobra.Command {
 			return nil
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
-			projectControl, err := app.ProjectControlFactory(soloCtx)
+			projectTooling, err := app.ProjectToolingFactory(soloCtx)
 			if err != nil {
 				return err
 			}
 
-			return projectControl.ExecuteShell(shellPath, replica, args[0])
+			return projectTooling.ExecuteShell(shellPath, replica, args[0])
 		},
 	}
 
