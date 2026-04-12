@@ -16,7 +16,6 @@ import (
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/domain/project"
 	"github.com/spaulg/solo/test/mocks/host/domain/project/compose"
-	"github.com/spaulg/solo/test/mocks/host/infra/container"
 	"github.com/spaulg/solo/test/mocks/logging"
 )
 
@@ -27,15 +26,13 @@ func TestWorkflowFactoryTestSuite(t *testing.T) {
 type WorkflowFactoryTestSuite struct {
 	suite.Suite
 
-	soloCtx          *cli_context.CliContext
-	mockProject      *project.MockProject
-	mockOrchestrator *container.MockOrchestrator
-	mockLogHandler   *logging.MockHandler
+	soloCtx        *cli_context.CliContext
+	mockProject    *project.MockProject
+	mockLogHandler *logging.MockHandler
 }
 
 func (t *WorkflowFactoryTestSuite) SetupTest() {
 	t.mockProject = &project.MockProject{}
-	t.mockOrchestrator = &container.MockOrchestrator{}
 
 	t.mockLogHandler = &logging.MockHandler{}
 	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
@@ -72,10 +69,8 @@ func (t *WorkflowFactoryTestSuite) TestBuild() {
 	mockServiceConfig.On("GetServiceWorkflow", workflowName.String()).Return(workflowConfig)
 	mockServiceConfig.On("GetConfig").Return(types.ServiceConfig{})
 
-	t.mockOrchestrator.On("ResolveImageWorkingDirectory", serviceName).Return("/", nil)
-
 	workflowFactory := NewWorkflowFactory()
-	workflow, err := workflowFactory.Make(t.soloCtx, t.mockOrchestrator, serviceName, workflowName)
+	workflow, err := workflowFactory.Make(t.soloCtx, serviceName, "/", workflowName)
 
 	t.NotNil(workflow)
 	t.NoError(err)

@@ -5,7 +5,7 @@ module github.com/spaulg/solo
 go 1.24.0
 
 require (
-	github.com/arch-go/arch-go v1.7.0
+	github.com/arch-go/arch-go/v2 v2.1.2
 	github.com/compose-spec/compose-go/v2 v2.4.1
 	github.com/gofrs/flock v0.12.1
 	github.com/oklog/ulid/v2 v2.1.0

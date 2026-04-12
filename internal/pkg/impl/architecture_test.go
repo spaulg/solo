@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	archgo "github.com/arch-go/arch-go/api"
-	archgo_config "github.com/arch-go/arch-go/api/configuration"
+	archgo "github.com/arch-go/arch-go/v2/api"
+	archgo_config "github.com/arch-go/arch-go/v2/api/configuration"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/test"
@@ -81,6 +81,11 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 						t.moduleName + "/internal/pkg/impl/host.**",
 						t.moduleName + "/internal/pkg/impl/common.**",
 					},
+					External: []string{
+						"github.com/gofrs/flock.**",
+						"github.com/oklog/ulid/v2.**",
+						"github.com/spf13/cobra.**",
+					},
 				},
 			},
 
@@ -89,6 +94,7 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 				Package: t.moduleName + "/internal/pkg/impl/host/infra.**",
 				ShouldOnlyDependsOn: &archgo_config.Dependencies{
 					Internal: []string{
+						t.moduleName + "/internal/pkg/impl/host/shared.**",
 						t.moduleName + "/internal/pkg/types/host/infra.**",
 						t.moduleName + "/internal/pkg/impl/host/infra.**",
 						t.moduleName + "/internal/pkg/impl/common/infra.**",
@@ -104,6 +110,7 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 				Package: t.moduleName + "/internal/pkg/impl/host/domain.**",
 				ShouldOnlyDependsOn: &archgo_config.Dependencies{
 					Internal: []string{
+						t.moduleName + "/internal/pkg/impl/host/shared.**",
 						t.moduleName + "/internal/pkg/types/host/domain.**",
 						t.moduleName + "/internal/pkg/impl/host/domain.**",
 						t.moduleName + "/internal/pkg/impl/common/domain.**",

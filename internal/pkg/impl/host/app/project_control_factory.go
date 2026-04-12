@@ -42,7 +42,9 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	}
 
 	workflowFactory := wms.NewWorkflowFactory()
-	grpcServerFactory := grpc.NewMutualTLSServerFactory(soloCtx, eventManager, workflowFactory, certificateAuthority)
+	workflowRunner := wms.NewWorkflowRunner(soloCtx, eventManager, workflowFactory)
+
+	grpcServerFactory := grpc.NewMutualTLSServerFactory(soloCtx, eventManager, certificateAuthority, workflowRunner)
 
 	workflowGuardFactory := wms.NewWorkflowGuardFactory(soloCtx)
 
