@@ -52,7 +52,7 @@ $(LINUX_SERVICES): bootstrap
 build: bootstrap $(NATIVE_SERVICES) $(LINUX_SERVICES) ## Build files
 
 test:
-	mkdir -p $(TEST_OUTPUT_DIR)
+	@mkdir -p $(TEST_OUTPUT_DIR)
 	@cd $(SRC_DIR) && $(GOTESTSUM) --format pkgname -- \
 		$(TEST_FLAGS) \
 		-coverprofile=$(TEST_OUTPUT_DIR)/coverage.txt

@@ -2,6 +2,8 @@ github.com/agiledragon/gomonkey/v2 v2.14.0 h1:FASzes6sjtD0hRo5lu0g796qKL03bOHCgc
 github.com/agiledragon/gomonkey/v2 v2.14.0/go.mod h1:ap1AmDzcVOAz1YpeJ3TCzIgstoaWLA6jbbgxfB4w2iY=
 github.com/arch-go/arch-go v1.7.0 h1:tiUJX5E/2RmZCmO7U+3YD+EvghryR8X/MBoQ2aeg/Jc=
 github.com/arch-go/arch-go v1.7.0/go.mod h1:b35wChRB+99iDDHNFXirsSOWXd8kdNcOJFqI4iKHKq4=
+github.com/arch-go/arch-go/v2 v2.1.2 h1:kYf2VIVjtbKLGTs0/lr+2FOqiXFFKAiGc4UhoIS/l0M=
+github.com/arch-go/arch-go/v2 v2.1.2/go.mod h1:8W9kj7Pgv0iPioau6yoaiC3HLvzqyq5LydXam9Z1Fpc=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/compose-spec/compose-go/v2 v2.4.1 h1:tEg6Qn/9LZnKg42fZlFmxN4lxSqnCvsiG5TXnxzvI4c=

@@ -14,6 +14,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
+	wms3 "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
@@ -25,21 +26,21 @@ import (
 type MutualTLSServerFactory struct {
 	soloCtx              *context.CliContext
 	eventManager         events_types.Manager
-	workflowFactory      wms.WorkflowFactory
 	certificateAuthority certificate_types.Authority
+	workflowRunner       wms3.WorkflowRunner
 }
 
 func NewMutualTLSServerFactory(
 	soloCtx *context.CliContext,
 	eventManager events_types.Manager,
-	workflowFactory wms.WorkflowFactory,
 	certificateAuthority certificate_types.Authority,
+	workflowRunner wms3.WorkflowRunner,
 ) *MutualTLSServerFactory {
 	return &MutualTLSServerFactory{
 		soloCtx:              soloCtx,
 		eventManager:         eventManager,
-		workflowFactory:      workflowFactory,
 		certificateAuthority: certificateAuthority,
+		workflowRunner:       workflowRunner,
 	}
 }
 
@@ -60,8 +61,8 @@ func (t *MutualTLSServerFactory) Build(
 		t.soloCtx,
 		t.eventManager,
 		orchestrator,
-		t.workflowFactory,
 		workflowExecutionTracker,
+		t.workflowRunner,
 	)
 
 	return NewAsynchronousServer(
