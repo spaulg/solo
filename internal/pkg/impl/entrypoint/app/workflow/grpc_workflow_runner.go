@@ -14,7 +14,6 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	entrypointcontext "github.com/spaulg/solo/internal/pkg/impl/entrypoint/app/context"
-	grpc_credentials_types "github.com/spaulg/solo/internal/pkg/types/entrypoint/infra/grpc/credentials"
 )
 
 const FirstPreStartContainerCompleteMetadataKey = "first_pre_start_container_complete"
@@ -31,7 +30,7 @@ type WorkflowStream grpc.BidiStreamingClient[services.RunWorkflowStreamRequest, 
 
 func NewGrpcWorkflowRunner(
 	entrypointCtx *entrypointcontext.EntrypointContext,
-	credentialsBuilder grpc_credentials_types.Builder,
+	credentialsBuilder Builder,
 	workflowServerHost string,
 	metadataState *MetadataState,
 ) (*GrpcWorkflowRunner, error) {

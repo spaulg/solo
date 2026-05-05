@@ -11,7 +11,7 @@ import (
 
 const metadataStateFile = "/solo/container/data/metadata_state.yml"
 
-func WorkflowRunnerFactory(entrypointCtx *context.EntrypointContext) (*workflow.GrpcWorkflowRunner, error) {
+func WorkflowRunnerFactory(entrypointCtx *context.EntrypointContext) (WorkflowRunner, error) {
 	targetBytes, err := os.ReadFile("/solo/services_all/provisioner_host")
 	if err != nil {
 		return nil, err
