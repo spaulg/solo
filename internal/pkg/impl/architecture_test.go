@@ -124,7 +124,6 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 				Package: t.moduleName + "/internal/pkg/impl/entrypoint/app.**",
 				ShouldOnlyDependsOn: &archgo_config.Dependencies{
 					Internal: []string{
-						t.moduleName + "/internal/pkg/types/entrypoint.**",
 						t.moduleName + "/internal/pkg/impl/entrypoint.**",
 						t.moduleName + "/internal/pkg/impl/common.**",
 					},
@@ -136,7 +135,6 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 				Package: t.moduleName + "/internal/pkg/impl/entrypoint/infra.**",
 				ShouldOnlyDependsOn: &archgo_config.Dependencies{
 					Internal: []string{
-						t.moduleName + "/internal/pkg/types/entrypoint/infra.**",
 						t.moduleName + "/internal/pkg/impl/entrypoint/infra.**",
 						t.moduleName + "/internal/pkg/impl/common/infra.**",
 					},

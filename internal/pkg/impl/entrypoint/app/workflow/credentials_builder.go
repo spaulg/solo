@@ -1,4 +1,4 @@
-package credentials
+package workflow
 
 import "google.golang.org/grpc/credentials"
 
