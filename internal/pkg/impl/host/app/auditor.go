@@ -1,4 +1,4 @@
-package audit
+package app
 
 import (
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"

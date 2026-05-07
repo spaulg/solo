@@ -15,7 +15,7 @@ const auditLogsPath = "audit_logs"
 const executionEventFile = "event.json"
 const metaFileSuffix = ".meta.json"
 
-type Auditor struct {
+type StateDirectoryAuditor struct {
 	soloCtx                       *context.CliContext
 	mu                            sync.Mutex
 	outputDirectory               string
@@ -31,14 +31,14 @@ func NewAuditor(
 	workflowLogMetaRepository domain.WorkflowLogMetaRepository,
 	workflowStepLogMetaRepository domain.WorkflowStepLogMetaRepository,
 	logWriter domain.LogWriter,
-) *Auditor {
+) *StateDirectoryAuditor {
 	outputDirectory := path.Join(
 		soloCtx.Project.GetStateDirectoryRoot(),
 		auditLogsPath,
 		soloCtx.TriggerDateTime.Format("2006-01-02T15-04-05.999999999Z"),
 	)
 
-	return &Auditor{
+	return &StateDirectoryAuditor{
 		soloCtx:                       soloCtx,
 		outputDirectory:               outputDirectory,
 		executionEventRepository:      executionEventRepository,
@@ -48,7 +48,7 @@ func NewAuditor(
 	}
 }
 
-func (t *Auditor) RecordExecutionEvent(callback func() error) error {
+func (t *StateDirectoryAuditor) RecordExecutionEvent(callback func() error) error {
 	eventFile := path.Join(t.outputDirectory, executionEventFile)
 
 	workflowEvent := domain.NewExecutionEvent(t.soloCtx.CommandPath, t.soloCtx.CommandArgs)
@@ -66,7 +66,7 @@ func (t *Auditor) RecordExecutionEvent(callback func() error) error {
 	return res
 }
 
-func (t *Auditor) Publish(event events_types.Event) {
+func (t *StateDirectoryAuditor) Publish(event events_types.Event) {
 	switch e := event.(type) {
 	case *wms_types.WorkflowStepOutputEvent:
 		t.writeStepOutput(e)
@@ -76,7 +76,7 @@ func (t *Auditor) Publish(event events_types.Event) {
 	}
 }
 
-func (t *Auditor) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
+func (t *StateDirectoryAuditor) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
 	if e.Stderr == "" && e.Stdout == "" {
 		return
 	}
@@ -153,7 +153,7 @@ func (t *Auditor) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
 	}
 }
 
-func (t *Auditor) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
+func (t *StateDirectoryAuditor) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
 	outputDirectory := path.Join(
 		t.outputDirectory,
 		e.WorkflowName.String(),
