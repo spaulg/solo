@@ -11,7 +11,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/project"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms"
-	"github.com/spaulg/solo/internal/pkg/types/host/app/audit"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
@@ -26,7 +25,7 @@ type ProjectControl struct {
 	orchestratorFactory  container_types.OrchestratorFactory
 	grpcServerFactory    grpc_types.ServerFactory
 	workflowGuardFactory wms_types.WorkflowGuardFactory
-	auditor              audit.Auditor
+	auditor              Auditor
 }
 
 func NewProjectControl(
@@ -35,7 +34,7 @@ func NewProjectControl(
 	orchestratorFactory container_types.OrchestratorFactory,
 	grpcServerFactory grpc_types.ServerFactory,
 	workflowGuardFactory wms_types.WorkflowGuardFactory,
-	auditor audit.Auditor,
+	auditor Auditor,
 ) *ProjectControl {
 	return &ProjectControl{
 		soloCtx:              soloCtx,
