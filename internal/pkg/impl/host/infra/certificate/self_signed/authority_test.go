@@ -1,4 +1,4 @@
-package certificate
+package self_signed
 
 import (
 	"crypto/x509"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	"github.com/spaulg/solo/test"
 )
 
@@ -34,12 +35,12 @@ func (t *TestCertificateAuthority) TestGenerateCertificate() {
 	duration := 24 * time.Hour
 
 	cert, err := ca.GenerateCertificate(
-		WithKeyUsage(x509.KeyUsageDigitalSignature),
-		WithExtKeyUsage([]x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning, x509.ExtKeyUsageIPSECUser}),
-		WithDuration(duration),
-		WithCommonName("test.example.com"),
-		WithDNSNames([]string{"foo.example.com", "bar.example.com"}),
-		WithOrganization([]string{"test Organization"}),
+		certificate.WithKeyUsage(x509.KeyUsageDigitalSignature),
+		certificate.WithExtKeyUsage([]x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning, x509.ExtKeyUsageIPSECUser}),
+		certificate.WithDuration(duration),
+		certificate.WithCommonName("test.example.com"),
+		certificate.WithDNSNames([]string{"foo.example.com", "bar.example.com"}),
+		certificate.WithOrganization([]string{"test Organization"}),
 	)
 	t.NoError(err)
 

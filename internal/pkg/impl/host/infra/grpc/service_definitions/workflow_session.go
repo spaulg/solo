@@ -12,7 +12,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
 	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
-	"github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 type WorkflowSession struct {
@@ -20,7 +19,7 @@ type WorkflowSession struct {
 	workflowName        commonworkflow.WorkflowName
 	server              grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse]
 	workflowExecTracker wms.WorkflowExecTracker
-	orchestrator        container.Orchestrator
+	orchestrator        ContainerImageWorkingDirectoryResolver
 
 	serviceName       string
 	containerName     string
@@ -32,7 +31,7 @@ func NewWorkflowSession(
 	workflowName commonworkflow.WorkflowName,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
 	workflowExecTracker wms.WorkflowExecTracker,
-	orchestrator container.Orchestrator,
+	orchestrator ContainerImageWorkingDirectoryResolver,
 ) (*WorkflowSession, error) {
 	ctx := server.Context()
 

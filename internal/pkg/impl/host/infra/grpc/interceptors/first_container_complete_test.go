@@ -10,7 +10,6 @@ import (
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	grpc_mock "github.com/spaulg/solo/test/mocks/grpc"
-	"github.com/spaulg/solo/test/mocks/host/infra/container"
 )
 
 func TestFirstPreStartCompleteTestSuite(t *testing.T) {
@@ -19,12 +18,6 @@ func TestFirstPreStartCompleteTestSuite(t *testing.T) {
 
 type FirstPreStartCompleteTestSuite struct {
 	suite.Suite
-
-	mockOrchestrator *container.MockOrchestrator
-}
-
-func (t *FirstPreStartCompleteTestSuite) SetupTest() {
-	t.mockOrchestrator = &container.MockOrchestrator{}
 }
 
 func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnaryInterceptor() {
@@ -37,7 +30,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnar
 	req := new(interface{})
 	expectedResult := new(interface{})
 
-	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	interceptor := NewFirstContainerCompleteInterceptor()
 	result, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(ctx context.Context, _ any) (any, error) {
 		firstPreStartComplete, ok := ctx.Value(FirstContainerComplete(workflowcommon.FirstPreStartContainer)).(string)
 
@@ -49,7 +42,6 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteUnar
 
 	t.Equal(expectedResult, result)
 	t.NoError(err)
-	t.mockOrchestrator.AssertExpectations(t.T())
 }
 
 func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteUnaryInterceptorWithMetadataLoadError() {
@@ -59,13 +51,12 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteUnaryIntercept
 	req := new(interface{})
 	expectedResult := new(interface{})
 
-	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	interceptor := NewFirstContainerCompleteInterceptor()
 	_, err := interceptor.FirstContainerCompleteUnaryInterceptor(ctx, req, info, func(_ context.Context, _ any) (any, error) {
 		return expectedResult, nil
 	})
 
 	t.ErrorContains(err, "failed to load metadata from incoming context")
-	t.mockOrchestrator.AssertExpectations(t.T())
 }
 
 func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStreamInterceptor() {
@@ -80,7 +71,7 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStre
 	ss := &grpc_mock.MockServerStream{}
 	ss.On("Context").Return(ctx)
 
-	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	interceptor := NewFirstContainerCompleteInterceptor()
 	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(_ any, stream grpc.ServerStream) error {
 		firstPreStartComplete, ok := stream.Context().Value(FirstContainerComplete(workflowcommon.FirstPreStartContainer)).(string)
 
@@ -91,7 +82,6 @@ func (t *FirstPreStartCompleteTestSuite) TestSuccessfulFirstPreStartCompleteStre
 	})
 
 	t.NoError(err)
-	t.mockOrchestrator.AssertExpectations(t.T())
 	ss.AssertExpectations(t.T())
 }
 
@@ -104,12 +94,11 @@ func (t *FirstPreStartCompleteTestSuite) TestFirstPreStartCompleteStreamIntercep
 	ss := &grpc_mock.MockServerStream{}
 	ss.On("Context").Return(ctx)
 
-	interceptor := NewFirstContainerCompleteInterceptor(t.mockOrchestrator)
+	interceptor := NewFirstContainerCompleteInterceptor()
 	err := interceptor.FirstContainerCompleteStreamInterceptor(srv, ss, info, func(_ any, _ grpc.ServerStream) error {
 		return nil
 	})
 
 	t.ErrorContains(err, "failed to load metadata from incoming context")
-	t.mockOrchestrator.AssertExpectations(t.T())
 	ss.AssertExpectations(t.T())
 }

@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	container_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
 	"github.com/spaulg/solo/test/mocks/host/app/audit"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/app/events"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"

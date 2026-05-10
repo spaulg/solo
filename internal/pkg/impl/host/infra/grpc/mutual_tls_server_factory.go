@@ -18,22 +18,19 @@ import (
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	certificate_types "github.com/spaulg/solo/internal/pkg/types/host/infra/certificate"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
-	grpc_types "github.com/spaulg/solo/internal/pkg/types/host/infra/grpc"
 )
 
 type MutualTLSServerFactory struct {
 	soloCtx              *context.CliContext
 	eventManager         events_types.Manager
-	certificateAuthority certificate_types.Authority
+	certificateAuthority Authority
 	workflowRunner       wms3.WorkflowRunner
 }
 
 func NewMutualTLSServerFactory(
 	soloCtx *context.CliContext,
 	eventManager events_types.Manager,
-	certificateAuthority certificate_types.Authority,
+	certificateAuthority Authority,
 	workflowRunner wms3.WorkflowRunner,
 ) *MutualTLSServerFactory {
 	return &MutualTLSServerFactory{
@@ -45,11 +42,11 @@ func NewMutualTLSServerFactory(
 }
 
 func (t *MutualTLSServerFactory) Build(
-	orchestrator container_types.Orchestrator,
+	orchestrator ContainerResolver,
 	workflowExecutionTracker wms.WorkflowExecTracker,
 	project project_types.Project,
 	port int,
-) (grpc_types.Server, error) {
+) (Server, error) {
 	hostname := orchestrator.GetHostGatewayHostname()
 
 	transportCredentials, err := t.buildTransportCredentials(hostname, project)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 type OrchestratorFactory struct {
@@ -25,7 +24,7 @@ func NewOrchestratorFactory(
 	}
 }
 
-func (t *OrchestratorFactory) Build() (container_types.Orchestrator, error) {
+func (t *OrchestratorFactory) Build() (Orchestrator, error) {
 	orchestrator, binaryPath, err := t.findOrchestrator()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find orchestrator: %w", err)

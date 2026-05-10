@@ -16,13 +16,12 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/config"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	config_types "github.com/spaulg/solo/internal/pkg/types/host/infra/config"
 )
 
 const lockFileName = "locking_file"
 
 type CliContext struct {
-	configReader config_types.ConfigReader
+	configReader ConfigReader
 
 	Project        project_types.Project
 	ProjectLoadErr error

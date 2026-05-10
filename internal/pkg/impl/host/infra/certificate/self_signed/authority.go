@@ -1,4 +1,4 @@
-package certificate
+package self_signed
 
 import (
 	"crypto/ecdsa"
@@ -13,48 +13,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	certificate_types "github.com/spaulg/solo/internal/pkg/types/host/infra/certificate"
 )
 
 type SelfSignedCertificateAuthority struct {
 	caCertificate *tls.Certificate
-}
-
-func WithDuration(duration time.Duration) certificate_types.CertificateOption {
-	return func(template *x509.Certificate) {
-		template.NotAfter = time.Now().Add(duration)
-	}
-}
-
-func WithKeyUsage(keyUsage x509.KeyUsage) certificate_types.CertificateOption {
-	return func(template *x509.Certificate) {
-		template.KeyUsage = keyUsage
-	}
-}
-
-func WithExtKeyUsage(extKeyUsage []x509.ExtKeyUsage) certificate_types.CertificateOption {
-	return func(template *x509.Certificate) {
-		template.ExtKeyUsage = extKeyUsage
-	}
-}
-
-func WithOrganization(organization []string) certificate_types.CertificateOption {
-	return func(template *x509.Certificate) {
-		template.Subject.Organization = organization
-	}
-}
-
-func WithCommonName(commonName string) certificate_types.CertificateOption {
-	return func(template *x509.Certificate) {
-		template.Subject.CommonName = commonName
-	}
-}
-
-func WithDNSNames(dnsNames []string) certificate_types.CertificateOption {
-	return func(template *x509.Certificate) {
-		template.DNSNames = dnsNames
-	}
 }
 
 func NewCertificateAuthority() (*SelfSignedCertificateAuthority, error) {
@@ -142,7 +106,7 @@ func (t *SelfSignedCertificateAuthority) ExportCACertificate(project project_typ
 }
 
 func (t *SelfSignedCertificateAuthority) GenerateCertificate(
-	opts ...certificate_types.CertificateOption,
+	opts ...certificate.Option,
 ) (*tls.Certificate, error) {
 	certificateTemplate := x509.Certificate{
 		SerialNumber:          big.NewInt(1),

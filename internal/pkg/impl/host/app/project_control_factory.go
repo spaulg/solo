@@ -8,7 +8,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate/self_signed"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/repository"
@@ -36,7 +36,7 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	orchestratorFactory := container.NewOrchestratorFactory(soloCtx, eventManager)
 
 	// GRPC server factory
-	certificateAuthority, err := certificate.NewCertificateAuthority()
+	certificateAuthority, err := self_signed.NewCertificateAuthority()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize certificate authority: %w", err)
 	}

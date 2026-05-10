@@ -21,7 +21,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container/progress"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 type ComposeServiceStatus struct {
@@ -211,7 +210,7 @@ func (t *DockerOrchestrator) RunCommand(containerName string, command []string) 
 	return stdoutBuf.String(), nil
 }
 
-func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*container_types.ServiceStatus, error) {
+func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*ServiceStatus, error) {
 	arguments := []string{
 		"compose",
 		"--profile", strings.Join(t.soloCtx.Project.Profiles(), ","),
@@ -294,7 +293,7 @@ func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*container_t
 		}
 	}
 
-	return &container_types.ServiceStatus{
+	return &ServiceStatus{
 		RunningServices:    runningServiceNames,
 		StoppedServices:    stoppedServiceNames,
 		ExitedServices:     exitedServiceNames,
