@@ -5,8 +5,8 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	container_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 type MockOrchestrator struct {

@@ -8,19 +8,14 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 type FirstContainerComplete workflowcommon.WorkflowName
 
-type FirstContainerCompleteInterceptor struct {
-	orchestrator container_types.Orchestrator
-}
+type FirstContainerCompleteInterceptor struct{}
 
-func NewFirstContainerCompleteInterceptor(orchestrator container_types.Orchestrator) *FirstContainerCompleteInterceptor {
-	return &FirstContainerCompleteInterceptor{
-		orchestrator: orchestrator,
-	}
+func NewFirstContainerCompleteInterceptor() *FirstContainerCompleteInterceptor {
+	return &FirstContainerCompleteInterceptor{}
 }
 
 func (t *FirstContainerCompleteInterceptor) FirstContainerCompleteUnaryInterceptor(

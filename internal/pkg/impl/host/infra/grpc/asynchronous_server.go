@@ -14,13 +14,12 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 const hostFileName = "provisioner_host"
 
 type AsynchronousServer struct {
-	orchestrator         container_types.Orchestrator
+	orchestrator         ContainerResolver
 	port                 uint32
 	stateDirectory       string
 	transportCredentials credentials.TransportCredentials
@@ -30,7 +29,7 @@ type AsynchronousServer struct {
 }
 
 func NewAsynchronousServer(
-	orchestrator container_types.Orchestrator,
+	orchestrator ContainerResolver,
 	port int,
 	stateDirectory string,
 	transportCredentials credentials.TransportCredentials,
@@ -75,7 +74,7 @@ func (t *AsynchronousServer) Start() error {
 
 		serviceNameInterceptor := interceptors.NewServiceNameInterceptor()
 		containerNameInterceptor := interceptors.NewContainerNameInterceptor(t.orchestrator)
-		firstPreStartCompleteInterceptor := interceptors.NewFirstContainerCompleteInterceptor(t.orchestrator)
+		firstPreStartCompleteInterceptor := interceptors.NewFirstContainerCompleteInterceptor()
 
 		t.server = grpc.NewServer(
 			grpc.Creds(t.transportCredentials),

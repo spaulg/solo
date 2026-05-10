@@ -1,16 +1,14 @@
-package certificate
+package grpc
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type Authority interface {
 	GetCACertificate() *tls.Certificate
 	ExportCACertificate(project project_types.Project) error
-	GenerateCertificate(opts ...CertificateOption) (*tls.Certificate, error)
+	GenerateCertificate(opts ...certificate.Option) (*tls.Certificate, error)
 }
-
-type CertificateOption func(template *x509.Certificate)

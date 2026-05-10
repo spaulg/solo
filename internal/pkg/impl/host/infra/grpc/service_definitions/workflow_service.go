@@ -12,14 +12,13 @@ import (
 	wms3 "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
 	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 type WorkflowServerImpl struct {
 	soloCtx *solo_context.CliContext
 	services.UnimplementedWorkflowServer
 	eventManager        events_types.Manager
-	orchestrator        container_types.Orchestrator
+	orchestrator        ContainerImageWorkingDirectoryResolver
 	workflowExecTracker wms.WorkflowExecTracker
 	workflowRunner      wms3.WorkflowRunner
 }
@@ -27,7 +26,7 @@ type WorkflowServerImpl struct {
 func NewWorkflowService(
 	soloCtx *solo_context.CliContext,
 	eventManager events_types.Manager,
-	orchestrator container_types.Orchestrator,
+	orchestrator ContainerImageWorkingDirectoryResolver,
 	workflowExecTracker wms.WorkflowExecTracker,
 	workflowRunner wms3.WorkflowRunner,
 ) *WorkflowServerImpl {

@@ -1,4 +1,4 @@
-package config
+package context
 
 import (
 	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain"

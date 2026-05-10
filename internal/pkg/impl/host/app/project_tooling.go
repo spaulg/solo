@@ -9,19 +9,18 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/common/app/cmd"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 const maxOutputPreviewLen = 200
 
 type ProjectTooling struct {
 	soloCtx             *context.CliContext
-	orchestratorFactory container_types.OrchestratorFactory
+	orchestratorFactory OrchestratorFactory
 }
 
 func NewProjectTooling(
 	soloCtx *context.CliContext,
-	orchestratorFactory container_types.OrchestratorFactory,
+	orchestratorFactory OrchestratorFactory,
 ) *ProjectTooling {
 	return &ProjectTooling{
 		soloCtx:             soloCtx,

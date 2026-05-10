@@ -6,8 +6,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-
-	container_types "github.com/spaulg/solo/internal/pkg/types/host/infra/container"
 )
 
 const ContainerNameContextValueName = "ContainerName"
@@ -16,10 +14,10 @@ const FullContainerNameContextValueName = "FullContainerName"
 type ContainerName string
 
 type ContainerNameInterceptor struct {
-	orchestrator container_types.Orchestrator
+	orchestrator ContainerNameResolver
 }
 
-func NewContainerNameInterceptor(orchestrator container_types.Orchestrator) *ContainerNameInterceptor {
+func NewContainerNameInterceptor(orchestrator ContainerNameResolver) *ContainerNameInterceptor {
 	return &ContainerNameInterceptor{
 		orchestrator: orchestrator,
 	}
