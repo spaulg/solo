@@ -10,7 +10,7 @@ import (
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 
@@ -49,7 +49,7 @@ func NewWorkflowGuard(
 	}
 }
 
-func (t *WorkflowGuard) Publish(event events_types.Event) {
+func (t *WorkflowGuard) Publish(event events.Event) {
 	var workflowName workflowcommon.WorkflowName
 	var containerName string
 	var workflowSuccessful = true

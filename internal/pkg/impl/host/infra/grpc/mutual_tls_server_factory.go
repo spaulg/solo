@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
 	wms3 "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )

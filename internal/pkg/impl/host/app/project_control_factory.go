@@ -5,7 +5,7 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/audit"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate/self_signed"
@@ -29,7 +29,7 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	)
 
 	// Event manager
-	eventManager := events.GetEventManagerInstance()
+	eventManager := event_manager.GetEventManagerInstance()
 	eventManager.Subscribe(auditor)
 
 	// Container orchestrator factory

@@ -1,4 +1,4 @@
-package events
+package event_manager
 
 import (
 	"testing"

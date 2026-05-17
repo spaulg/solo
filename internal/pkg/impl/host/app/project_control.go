@@ -9,28 +9,28 @@ import (
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/project"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms"
-	grpc_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc"
 )
 
 const workflowExecTrackerFile = "workflow_exec_tracker.json"
 
 type ProjectControl struct {
 	soloCtx              *context.CliContext
-	eventManager         events_types.Manager
+	eventManager         events.Manager
 	orchestratorFactory  OrchestratorFactory
-	grpcServerFactory    grpc_types.ServerFactory
+	grpcServerFactory    grpc.ServerFactory
 	workflowGuardFactory WorkflowGuardFactory
 	auditor              Auditor
 }
 
 func NewProjectControl(
 	soloCtx *context.CliContext,
-	workflowManager events_types.Manager,
+	workflowManager events.Manager,
 	orchestratorFactory OrchestratorFactory,
-	grpcServerFactory grpc_types.ServerFactory,
+	grpcServerFactory grpc.ServerFactory,
 	workflowGuardFactory WorkflowGuardFactory,
 	auditor Auditor,
 ) *ProjectControl {

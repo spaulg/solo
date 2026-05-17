@@ -1,11 +1,11 @@
 package app
 
 import (
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 )
 
 type Auditor interface {
-	events_types.Subscriber
+	events.Subscriber
 
 	RecordExecutionEvent(callback func() error) error
 }

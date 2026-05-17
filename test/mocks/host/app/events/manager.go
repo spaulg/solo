@@ -3,22 +3,22 @@ package events
 import (
 	"github.com/stretchr/testify/mock"
 
-	"github.com/spaulg/solo/internal/pkg/types/host/app/events"
+	events2 "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 )
 
 type MockEventManager struct {
 	mock.Mock
 }
 
-func (m *MockEventManager) Subscribe(eventSubscriber events.Subscriber) {
+func (m *MockEventManager) Subscribe(eventSubscriber events2.Subscriber) {
 	m.Called(eventSubscriber)
 }
 
-func (m *MockEventManager) Unsubscribe(eventSubscriber events.Subscriber) {
+func (m *MockEventManager) Unsubscribe(eventSubscriber events2.Subscriber) {
 	m.Called(eventSubscriber)
 }
 
-func (m *MockEventManager) Publish(data events.Event) {
+func (m *MockEventManager) Publish(data events2.Event) {
 	m.Called(data)
 }
 

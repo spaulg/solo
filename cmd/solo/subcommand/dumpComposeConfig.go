@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
 )
 
@@ -21,7 +21,7 @@ func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 			RequireProjectLoadSuccessAnnotation: "true",
 		},
 		RunE: func(_ *cobra.Command, _ []string) error {
-			eventManager := events.GetEventManagerInstance()
+			eventManager := event_manager.GetEventManagerInstance()
 			orchestrator, err := container.NewOrchestratorFactory(soloCtx, eventManager).Build()
 
 			if err != nil {
