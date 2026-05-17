@@ -2,7 +2,7 @@ package wms
 
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
+	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 )
 
 type WorkflowGuard interface {

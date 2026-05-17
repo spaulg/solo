@@ -4,20 +4,20 @@ import (
 	"fmt"
 
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 
 type WorkflowRunner struct {
 	soloCtx         *solo_context.CliContext
-	eventManager    events_types.Manager
+	eventManager    events.Manager
 	workflowFactory wms_types.WorkflowFactory
 }
 
 func NewWorkflowRunner(
 	soloCtx *solo_context.CliContext,
-	eventManager events_types.Manager,
+	eventManager events.Manager,
 	workflowFactory wms_types.WorkflowFactory,
 ) *WorkflowRunner {
 	return &WorkflowRunner{

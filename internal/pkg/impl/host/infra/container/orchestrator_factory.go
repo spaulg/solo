@@ -6,7 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
+	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 )
 
 type OrchestratorFactory struct {

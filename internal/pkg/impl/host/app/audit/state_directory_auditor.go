@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 
@@ -66,7 +66,7 @@ func (t *StateDirectoryAuditor) RecordExecutionEvent(callback func() error) erro
 	return res
 }
 
-func (t *StateDirectoryAuditor) Publish(event events_types.Event) {
+func (t *StateDirectoryAuditor) Publish(event events.Event) {
 	switch e := event.(type) {
 	case *wms_types.WorkflowStepOutputEvent:
 		t.writeStepOutput(e)

@@ -9,8 +9,8 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	wms3 "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 

@@ -17,9 +17,9 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container/progress"
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 

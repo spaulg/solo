@@ -1,13 +1,13 @@
-package events
+package event_manager
 
 import (
 	"sync"
 
-	events_types "github.com/spaulg/solo/internal/pkg/types/host/app/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 )
 
 type Manager struct {
-	subscribers map[events_types.Subscriber]chan events_types.Event
+	subscribers map[events.Subscriber]chan events.Event
 	mu          sync.RWMutex
 	wg          sync.WaitGroup
 }
@@ -28,18 +28,18 @@ func GetEventManagerInstance() *Manager {
 
 func NewEventManager() *Manager {
 	return &Manager{
-		subscribers: make(map[events_types.Subscriber]chan events_types.Event),
+		subscribers: make(map[events.Subscriber]chan events.Event),
 	}
 }
 
-func (t *Manager) Subscribe(eventSubscriber events_types.Subscriber) {
+func (t *Manager) Subscribe(eventSubscriber events.Subscriber) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	subscriberChannel := make(chan events_types.Event, 30)
+	subscriberChannel := make(chan events.Event, 30)
 	t.subscribers[eventSubscriber] = subscriberChannel
 
-	go func(subscriber events_types.Subscriber) {
+	go func(subscriber events.Subscriber) {
 		for val := range subscriberChannel {
 			subscriber.Publish(val)
 			t.wg.Done()
@@ -47,7 +47,7 @@ func (t *Manager) Subscribe(eventSubscriber events_types.Subscriber) {
 	}(eventSubscriber)
 }
 
-func (t *Manager) Unsubscribe(eventSubscriber events_types.Subscriber) {
+func (t *Manager) Unsubscribe(eventSubscriber events.Subscriber) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -57,7 +57,7 @@ func (t *Manager) Unsubscribe(eventSubscriber events_types.Subscriber) {
 	}
 }
 
-func (t *Manager) Publish(event events_types.Event) {
+func (t *Manager) Publish(event events.Event) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
