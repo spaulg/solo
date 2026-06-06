@@ -15,12 +15,12 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile.php
-    command: /usr/sbin/php-fpm8.4 -FO
+    command: /usr/sbin/php-fpm8.5 -FO
 
     volumes:
       - "composer:/root/.cache/composer"
       - "./:/var/www/project"
-      - "./pool.conf:/etc/php/8.4/fpm/pool.d/www.conf"
+      - "./pool.conf:/etc/php/8.5/fpm/pool.d/www.conf"
 
     deploy:
       replicas: 3
@@ -57,9 +57,11 @@ services:
         
         steps:
           - name: Clear project cache
+            working_dir: /var/www/project
             run: rm -rf var/cache/*
 
           - name: composer install
+            working_dir: /var/www/project
             run: composer install
 
   mail:
