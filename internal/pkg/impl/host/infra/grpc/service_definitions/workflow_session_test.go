@@ -456,3 +456,36 @@ func (t *WorkflowSessionTestSuite) TestRecvWithExitCode() {
 	t.Equal("stderr data", response.Stderr)
 	t.Equal(&expectedExitCode, response.ExitCode)
 }
+
+func (t *WorkflowSessionTestSuite) TestMarkComplete() {
+	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
+	ctx = context.WithValue(ctx, fullContainerNameContextValueName, "test_service-1")
+	ctx = context.WithValue(ctx, containerNameContextValueName, "service-1")
+	ctx = context.WithValue(ctx, firstContainerCompleteValueName, "false")
+
+	t.mockGrpcServer.On("Context").Return(ctx)
+
+	workflowSession, err := NewWorkflowSession(
+		t.soloCtx,
+		commonworkflow.FirstPreStartContainer,
+		t.mockGrpcServer,
+		t.mockWorkflowExecTracker,
+		t.mockOrchestrator,
+	)
+
+	t.NotNil(workflowSession)
+	t.NoError(err)
+
+	t.mockGrpcServer.On("Send", &services.WorkflowStreamResponse{
+		Action: services.WorkflowAction_COMPLETE_ACTION,
+	}).Return(nil)
+
+	err = workflowSession.MarkCompletion()
+	t.NoError(err)
+}

@@ -15,10 +15,8 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/grpc"
-	"github.com/spaulg/solo/test/mocks/host/app/events"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
 	"github.com/spaulg/solo/test/mocks/host/domain/project"
 	"github.com/spaulg/solo/test/mocks/host/infra/container"
@@ -35,7 +33,6 @@ type WorkflowServiceTestSuite struct {
 	soloCtx                 *cli_context.CliContext
 	mockProject             *project.MockProject
 	mockLogHandler          *logging.MockHandler
-	mockEventManager        *events.MockEventManager
 	mockWorkflowExecTracker *wms.MockWorkflowExecTracker
 	mockOrchestrator        *container.MockOrchestrator
 	mockGrpcServer          *grpc.MockBidiStreamingServer[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse]
@@ -43,7 +40,6 @@ type WorkflowServiceTestSuite struct {
 }
 
 func (t *WorkflowServiceTestSuite) SetupTest() {
-	t.mockEventManager = &events.MockEventManager{}
 	t.mockProject = &project.MockProject{}
 	t.mockOrchestrator = &container.MockOrchestrator{}
 	t.mockGrpcServer = &grpc.MockBidiStreamingServer[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse]{}
@@ -72,7 +68,6 @@ func (t *WorkflowServiceTestSuite) SetupTest() {
 func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestFailed() {
 	workflowService := NewWorkflowService(
 		t.soloCtx,
-		t.mockEventManager,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -85,7 +80,6 @@ func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestFailed() {
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
 	t.Error(err)
 
-	t.mockEventManager.AssertExpectations(t.T())
 	t.mockOrchestrator.AssertExpectations(t.T())
 	t.mockGrpcServer.AssertExpectations(t.T())
 	t.mockWorkflowExecTracker.AssertExpectations(t.T())
@@ -95,7 +89,6 @@ func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestFailed() {
 func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestMessageUnsupported() {
 	workflowService := NewWorkflowService(
 		t.soloCtx,
-		t.mockEventManager,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -109,7 +102,6 @@ func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestMessageUnsupp
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
 	t.ErrorContains(err, "unsupported first message")
 
-	t.mockEventManager.AssertExpectations(t.T())
 	t.mockOrchestrator.AssertExpectations(t.T())
 	t.mockGrpcServer.AssertExpectations(t.T())
 	t.mockWorkflowExecTracker.AssertExpectations(t.T())
@@ -138,24 +130,10 @@ func (t *WorkflowServiceTestSuite) TestFirstContainerCompleteSkipsWorkflow() {
 		},
 	}, nil).Once()
 
-	t.mockEventManager.On("Publish", &wms_types.WorkflowSkippedEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:       "test_service",
-			ContainerName:     "service-1",
-			FullContainerName: "test_service-1",
-			WorkflowName:      commonworkflow.FirstPreStartContainer,
-		},
-		Successful: true,
-	}).Return()
-
-	t.mockGrpcServer.On("Send", &services.WorkflowStreamResponse{
-		Action:     services.WorkflowAction_COMPLETE_ACTION,
-		RunCommand: nil,
-	}).Return(nil)
+	t.mockWorkflowRunner.On("RunWorkflow", mock.AnythingOfType("*service_definitions.WorkflowSession")).Return(nil)
 
 	workflowService := NewWorkflowService(
 		t.soloCtx,
-		t.mockEventManager,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -164,7 +142,6 @@ func (t *WorkflowServiceTestSuite) TestFirstContainerCompleteSkipsWorkflow() {
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
 	t.NoError(err)
 
-	t.mockEventManager.AssertExpectations(t.T())
 	t.mockOrchestrator.AssertExpectations(t.T())
 	t.mockGrpcServer.AssertExpectations(t.T())
 	t.mockWorkflowExecTracker.AssertExpectations(t.T())
@@ -196,26 +173,10 @@ func (t *WorkflowServiceTestSuite) TestRunWorkflowSucceeds() {
 	t.mockWorkflowRunner.On(
 		"RunWorkflow",
 		mock.AnythingOfType("*service_definitions.WorkflowSession"),
-	).Return(true, nil).Once()
-
-	t.mockEventManager.On("Publish", &wms_types.WorkflowCompleteEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
-			ServiceName:       "test_service",
-			ContainerName:     "service-1",
-			FullContainerName: "test_service-1",
-			WorkflowName:      commonworkflow.FirstPreStartContainer,
-		},
-		Successful: true,
-	}).Return()
-
-	t.mockGrpcServer.On("Send", &services.WorkflowStreamResponse{
-		Action:     services.WorkflowAction_COMPLETE_ACTION,
-		RunCommand: nil,
-	}).Return(nil)
+	).Return(nil).Once()
 
 	workflowService := NewWorkflowService(
 		t.soloCtx,
-		t.mockEventManager,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -224,7 +185,6 @@ func (t *WorkflowServiceTestSuite) TestRunWorkflowSucceeds() {
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
 	t.NoError(err)
 
-	t.mockEventManager.AssertExpectations(t.T())
 	t.mockOrchestrator.AssertExpectations(t.T())
 	t.mockGrpcServer.AssertExpectations(t.T())
 	t.mockWorkflowExecTracker.AssertExpectations(t.T())
@@ -256,11 +216,10 @@ func (t *WorkflowServiceTestSuite) TestRunWorkflowFails() {
 	t.mockWorkflowRunner.On(
 		"RunWorkflow",
 		mock.AnythingOfType("*service_definitions.WorkflowSession"),
-	).Return(false, errors.New("mock workflow error")).Once()
+	).Return(errors.New("mock workflow error")).Once()
 
 	workflowService := NewWorkflowService(
 		t.soloCtx,
-		t.mockEventManager,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -269,7 +228,6 @@ func (t *WorkflowServiceTestSuite) TestRunWorkflowFails() {
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
 	t.ErrorContains(err, "mock workflow error")
 
-	t.mockEventManager.AssertExpectations(t.T())
 	t.mockOrchestrator.AssertExpectations(t.T())
 	t.mockGrpcServer.AssertExpectations(t.T())
 	t.mockWorkflowExecTracker.AssertExpectations(t.T())

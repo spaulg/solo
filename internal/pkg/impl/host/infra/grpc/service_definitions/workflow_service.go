@@ -9,30 +9,25 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
-	wms3 "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
-	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 
 type WorkflowServerImpl struct {
 	soloCtx *solo_context.CliContext
 	services.UnimplementedWorkflowServer
-	eventManager        events_types.Manager
 	orchestrator        ContainerImageWorkingDirectoryResolver
-	workflowExecTracker wms.WorkflowExecTracker
-	workflowRunner      wms3.WorkflowRunner
+	workflowExecTracker wms_types.WorkflowExecTracker
+	workflowRunner      WorkflowRunner
 }
 
 func NewWorkflowService(
 	soloCtx *solo_context.CliContext,
-	eventManager events_types.Manager,
 	orchestrator ContainerImageWorkingDirectoryResolver,
-	workflowExecTracker wms.WorkflowExecTracker,
-	workflowRunner wms3.WorkflowRunner,
+	workflowExecTracker wms_types.WorkflowExecTracker,
+	workflowRunner WorkflowRunner,
 ) *WorkflowServerImpl {
 	return &WorkflowServerImpl{
 		soloCtx:             soloCtx,
-		eventManager:        eventManager,
 		orchestrator:        orchestrator,
 		workflowExecTracker: workflowExecTracker,
 		workflowRunner:      workflowRunner,
@@ -49,68 +44,31 @@ func (t WorkflowServerImpl) RunWorkflowStream(
 
 	switch request := message.Request.(type) {
 	case *services.RunWorkflowStreamRequest_RunRequest:
-		workflowName := commonworkflow.WorkflowNameFromString(request.RunRequest.WorkflowName)
 		bidiStreamServer := NewRunWorkflowStreamWrapper(server)
+		workflowName := commonworkflow.WorkflowNameFromString(request.RunRequest.WorkflowName)
 
-		workflowSession, err := NewWorkflowSession(
-			t.soloCtx,
-			workflowName,
-			bidiStreamServer,
-			t.workflowExecTracker,
-			t.orchestrator,
-		)
-
-		if err != nil {
-			return fmt.Errorf("failed to create workflow session: %w", err)
-		}
-
-		return t.handleRunRequest(bidiStreamServer, workflowSession)
+		return t.handleRunWorkflowRequest(workflowName, bidiStreamServer)
 	default:
 		return errors.New("unsupported first message")
 	}
 }
 
-func (t WorkflowServerImpl) handleRunRequest(
+func (t WorkflowServerImpl) handleRunWorkflowRequest(
+	workflowName commonworkflow.WorkflowName,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-	workflowSession *WorkflowSession,
 ) error {
-	// Handle previously run once-only workflows
-	hasServiceWorkflowRun, err := workflowSession.HasServiceWorkflowRun(workflowSession.GetServiceName())
+
+	workflowSession, err := NewWorkflowSession(
+		t.soloCtx,
+		workflowName,
+		server,
+		t.workflowExecTracker,
+		t.orchestrator,
+	)
+
 	if err != nil {
-		return fmt.Errorf("failed to check if service workflow has run: %w", err)
+		return fmt.Errorf("failed to create workflow session: %w", err)
 	}
 
-	hasFirstContainerWorkflowRun := workflowSession.HasFirstContainerWorkflowRun()
-
-	if hasServiceWorkflowRun || hasFirstContainerWorkflowRun {
-		t.eventManager.Publish(&wms.WorkflowSkippedEvent{
-			BaseWorkflowEvent: wms.BaseWorkflowEvent{
-				ServiceName:       workflowSession.GetServiceName(),
-				ContainerName:     workflowSession.GetContainerName(),
-				FullContainerName: workflowSession.GetFullContainerName(),
-				WorkflowName:      workflowSession.GetWorkflowName(),
-			},
-			Successful: true,
-		})
-	} else {
-		workflowSuccess, err := t.workflowRunner.RunWorkflow(workflowSession)
-
-		if err != nil {
-			return err
-		}
-
-		t.eventManager.Publish(&wms.WorkflowCompleteEvent{
-			BaseWorkflowEvent: wms.BaseWorkflowEvent{
-				ServiceName:       workflowSession.GetServiceName(),
-				ContainerName:     workflowSession.GetContainerName(),
-				FullContainerName: workflowSession.GetFullContainerName(),
-				WorkflowName:      workflowSession.GetWorkflowName(),
-			},
-			Successful: workflowSuccess,
-		})
-	}
-
-	return server.Send(&services.WorkflowStreamResponse{
-		Action: services.WorkflowAction_COMPLETE_ACTION,
-	})
+	return t.workflowRunner.RunWorkflow(workflowSession)
 }
