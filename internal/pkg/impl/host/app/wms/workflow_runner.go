@@ -27,7 +27,47 @@ func NewWorkflowRunner(
 	}
 }
 
-func (t *WorkflowRunner) RunWorkflow(workflowSession wms_shared.WorkflowSession) (bool, error) {
+func (t *WorkflowRunner) RunWorkflow(workflowSession wms_shared.WorkflowSession) error {
+	// Handle previously run once-only workflows
+	hasServiceWorkflowRun, err := workflowSession.HasServiceWorkflowRun(workflowSession.GetServiceName())
+	if err != nil {
+		return fmt.Errorf("failed to check if service workflow has run: %w", err)
+	}
+
+	hasFirstContainerWorkflowRun := workflowSession.HasFirstContainerWorkflowRun()
+
+	if hasServiceWorkflowRun || hasFirstContainerWorkflowRun {
+		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
+			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+				ServiceName:       workflowSession.GetServiceName(),
+				ContainerName:     workflowSession.GetContainerName(),
+				FullContainerName: workflowSession.GetFullContainerName(),
+				WorkflowName:      workflowSession.GetWorkflowName(),
+			},
+			Successful: true,
+		})
+	} else {
+		workflowSuccess, err := t.handleRunWorkflow(workflowSession)
+
+		if err != nil {
+			return err
+		}
+
+		t.eventManager.Publish(&wms_types.WorkflowCompleteEvent{
+			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+				ServiceName:       workflowSession.GetServiceName(),
+				ContainerName:     workflowSession.GetContainerName(),
+				FullContainerName: workflowSession.GetFullContainerName(),
+				WorkflowName:      workflowSession.GetWorkflowName(),
+			},
+			Successful: workflowSuccess,
+		})
+	}
+
+	return workflowSession.MarkCompletion()
+}
+
+func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSession) (bool, error) {
 	workflowSuccess := true
 
 	t.eventManager.Publish(&wms_types.WorkflowStartedEvent{

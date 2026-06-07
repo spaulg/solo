@@ -168,3 +168,9 @@ func (t *WorkflowSession) RecvCommandResponse() (*wms_shared.CommandResponse, er
 		ExitCode: exitCodePtr,
 	}, nil
 }
+
+func (t *WorkflowSession) MarkCompletion() error {
+	return t.server.Send(&services.WorkflowStreamResponse{
+		Action: services.WorkflowAction_COMPLETE_ACTION,
+	})
+}

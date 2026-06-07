@@ -11,7 +11,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/test"
-	"github.com/spaulg/solo/test/mocks/host/app/events"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
 	"github.com/spaulg/solo/test/mocks/host/domain/project"
 	"github.com/spaulg/solo/test/mocks/host/infra/certificate"
@@ -28,14 +27,12 @@ type MutualTLSServerFactoryTestSuite struct {
 	soloCtx                  *cli_context.CliContext
 	mockProject              *project.MockProject
 	mockLogHandler           *logging.MockHandler
-	mockEventManager         *events.MockEventManager
 	mockCertificateAuthority *certificate.MockAuthority
 	mockWorkflowRunner       *wms.MockWorkflowRunner
 }
 
 func (t *MutualTLSServerFactoryTestSuite) SetupTest() {
 	t.mockProject = &project.MockProject{}
-	t.mockEventManager = &events.MockEventManager{}
 	t.mockCertificateAuthority = &certificate.MockAuthority{}
 	t.mockWorkflowRunner = &wms.MockWorkflowRunner{}
 
@@ -61,7 +58,6 @@ func (t *MutualTLSServerFactoryTestSuite) SetupTest() {
 func (t *MutualTLSServerFactoryTestSuite) TestNewMutualTLSServerFactory() {
 	serverFactory := NewMutualTLSServerFactory(
 		t.soloCtx,
-		t.mockEventManager,
 		t.mockCertificateAuthority,
 		t.mockWorkflowRunner,
 	)

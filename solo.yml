@@ -44,12 +44,13 @@ services:
     build:
       context: .
       dockerfile: ./examples/symfony-webapp/Dockerfile.php
-    command: /usr/sbin/php-fpm8.4 -FO
+    command: /usr/sbin/php-fpm8.5 -FO
     working_dir: /var/www/project
+
     volumes:
       - "composer:/root/.cache/composer"
       - "./examples/symfony-webapp:/var/www/project"
-      - "./examples/symfony-webapp/pool.conf:/etc/php/8.4/fpm/pool.d/www.conf"
+      - "./examples/symfony-webapp/pool.conf:/etc/php/8.5/fpm/pool.d/www.conf"
       - "./cmd/solo-entrypoint:/solo/cmd/solo-entrypoint"
       - "./internal:/solo/internal"
       - "./go.mod:/solo/go.mod"

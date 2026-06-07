@@ -59,3 +59,8 @@ func (m *MockWorkflowSession) RecvCommandResponse() (*shared_wms.CommandResponse
 
 	return nil, args.Error(1)
 }
+
+func (m *MockWorkflowSession) MarkCompletion() error {
+	args := m.Called()
+	return args.Error(0)
+}

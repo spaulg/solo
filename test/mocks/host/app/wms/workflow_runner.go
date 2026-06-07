@@ -10,7 +10,7 @@ type MockWorkflowRunner struct {
 	mock.Mock
 }
 
-func (m *MockWorkflowRunner) RunWorkflow(workflowSession wms.WorkflowSession) (bool, error) {
+func (m *MockWorkflowRunner) RunWorkflow(workflowSession wms.WorkflowSession) error {
 	args := m.Called(workflowSession)
-	return args.Bool(0), args.Error(1)
+	return args.Error(0)
 }

@@ -12,30 +12,25 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
-	wms3 "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
 	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type MutualTLSServerFactory struct {
 	soloCtx              *context.CliContext
-	eventManager         events_types.Manager
 	certificateAuthority Authority
-	workflowRunner       wms3.WorkflowRunner
+	workflowRunner       service_definitions.WorkflowRunner
 }
 
 func NewMutualTLSServerFactory(
 	soloCtx *context.CliContext,
-	eventManager events_types.Manager,
 	certificateAuthority Authority,
-	workflowRunner wms3.WorkflowRunner,
+	workflowRunner service_definitions.WorkflowRunner,
 ) *MutualTLSServerFactory {
 	return &MutualTLSServerFactory{
 		soloCtx:              soloCtx,
-		eventManager:         eventManager,
 		certificateAuthority: certificateAuthority,
 		workflowRunner:       workflowRunner,
 	}
@@ -56,7 +51,6 @@ func (t *MutualTLSServerFactory) Build(
 
 	workflowService := service_definitions.NewWorkflowService(
 		t.soloCtx,
-		t.eventManager,
 		orchestrator,
 		workflowExecutionTracker,
 		t.workflowRunner,

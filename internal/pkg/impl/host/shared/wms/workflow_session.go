@@ -27,4 +27,5 @@ type WorkflowSession interface {
 
 	RunCommand(*RunCommandRequest) error
 	RecvCommandResponse() (*CommandResponse, error)
+	MarkCompletion() error
 }

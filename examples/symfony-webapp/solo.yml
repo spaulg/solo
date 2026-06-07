@@ -16,6 +16,7 @@ services:
       context: .
       dockerfile: ./Dockerfile.php
     command: /usr/sbin/php-fpm8.5 -FO
+    working_dir: /var/www/project
 
     volumes:
       - "composer:/root/.cache/composer"
@@ -57,11 +58,9 @@ services:
         
         steps:
           - name: Clear project cache
-            working_dir: /var/www/project
             run: rm -rf var/cache/*
 
           - name: composer install
-            working_dir: /var/www/project
             run: composer install
 
   mail:
