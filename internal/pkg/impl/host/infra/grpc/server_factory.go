@@ -1,14 +1,14 @@
 package grpc
 
 import (
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type ServerFactory interface {
 	Build(
 		orchestrator ContainerResolver,
-		workflowExecutionTracker wms_types.WorkflowExecTracker,
+		workflowExecutionTracker service_definitions.WorkflowExecTracker,
 		project project_types.Project,
 		port int,
 	) (Server, error)

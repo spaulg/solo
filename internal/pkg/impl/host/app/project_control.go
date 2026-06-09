@@ -12,18 +12,20 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/project"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc"
 )
 
 const workflowExecTrackerFile = "workflow_exec_tracker.json"
 
 type ProjectControl struct {
-	soloCtx              *context.CliContext
-	eventManager         events.Manager
-	orchestratorFactory  OrchestratorFactory
-	grpcServerFactory    grpc.ServerFactory
-	workflowGuardFactory WorkflowGuardFactory
-	auditor              Auditor
+	soloCtx                     *context.CliContext
+	eventManager                events.Manager
+	orchestratorFactory         OrchestratorFactory
+	grpcServerFactory           grpc.ServerFactory
+	workflowGuardFactory        WorkflowGuardFactory
+	auditor                     Auditor
+	workflowExecTraceRepository domain.WorkflowExecTraceRepository
 }
 
 func NewProjectControl(
@@ -33,14 +35,16 @@ func NewProjectControl(
 	grpcServerFactory grpc.ServerFactory,
 	workflowGuardFactory WorkflowGuardFactory,
 	auditor Auditor,
+	workflowExecTraceRepository domain.WorkflowExecTraceRepository,
 ) *ProjectControl {
 	return &ProjectControl{
-		soloCtx:              soloCtx,
-		eventManager:         workflowManager,
-		orchestratorFactory:  orchestratorFactory,
-		grpcServerFactory:    grpcServerFactory,
-		workflowGuardFactory: workflowGuardFactory,
-		auditor:              auditor,
+		soloCtx:                     soloCtx,
+		eventManager:                workflowManager,
+		orchestratorFactory:         orchestratorFactory,
+		grpcServerFactory:           grpcServerFactory,
+		workflowGuardFactory:        workflowGuardFactory,
+		auditor:                     auditor,
+		workflowExecTraceRepository: workflowExecTraceRepository,
 	}
 }
 
@@ -139,8 +143,9 @@ func (t *ProjectControl) internalStart() error {
 		return nil
 	}
 
-	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(
+	workflowExecutionTracker, err := wms.NewWorkflowExecTracker(
 		t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile),
+		t.workflowExecTraceRepository,
 	)
 
 	if err != nil {
@@ -267,8 +272,9 @@ func (t *ProjectControl) internalStop() error {
 	}
 
 	if len(serviceStatus.RunningServices) > 0 {
-		workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(
+		workflowExecutionTracker, err := wms.NewWorkflowExecTracker(
 			t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile),
+			t.workflowExecTraceRepository,
 		)
 
 		if err != nil {
@@ -353,8 +359,9 @@ func (t *ProjectControl) internalDestroy() error {
 		return fmt.Errorf("failed to check service status: %w", err)
 	}
 
-	workflowExecutionTracker, err := wms.LoadWorkflowExecTracker(
+	workflowExecutionTracker, err := wms.NewWorkflowExecTracker(
 		t.soloCtx.Project.ResolveStateDirectory(workflowExecTrackerFile),
+		t.workflowExecTraceRepository,
 	)
 
 	if err != nil {

@@ -11,14 +11,13 @@ import (
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
 	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
-	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 
 type WorkflowSession struct {
 	soloCtx             *solo_context.CliContext
 	workflowName        commonworkflow.WorkflowName
 	server              grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse]
-	workflowExecTracker wms.WorkflowExecTracker
+	workflowExecTracker WorkflowExecTracker
 	orchestrator        ContainerImageWorkingDirectoryResolver
 
 	serviceName       string
@@ -30,7 +29,7 @@ func NewWorkflowSession(
 	soloCtx *solo_context.CliContext,
 	workflowName commonworkflow.WorkflowName,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
-	workflowExecTracker wms.WorkflowExecTracker,
+	workflowExecTracker WorkflowExecTracker,
 	orchestrator ContainerImageWorkingDirectoryResolver,
 ) (*WorkflowSession, error) {
 	ctx := server.Context()

@@ -18,6 +18,7 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	execEventRepository := repository.NewJSONFileRepository[*domain.ExecutionEvent]()
 	workflowLogMetaRepository := repository.NewJSONFileRepository[domain.WorkflowLogMeta]()
 	workflowStepLogMetaRepository := repository.NewJSONFileRepository[*domain.WorkflowStepLogMeta]()
+	workflowExecTraceRepository := repository.NewJSONFileRepository[*domain.WorkflowExecTrace]()
 	logWriter := repository.NewAppendFileStore()
 
 	auditor := audit.NewAuditor(
@@ -49,7 +50,15 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	workflowGuardFactory := wms.NewWorkflowGuardFactory(soloCtx)
 
 	// Project control
-	projectControl := NewProjectControl(soloCtx, eventManager, orchestratorFactory, grpcServerFactory, workflowGuardFactory, auditor)
+	projectControl := NewProjectControl(
+		soloCtx,
+		eventManager,
+		orchestratorFactory,
+		grpcServerFactory,
+		workflowGuardFactory,
+		auditor,
+		workflowExecTraceRepository,
+	)
 
 	return projectControl, nil
 }
