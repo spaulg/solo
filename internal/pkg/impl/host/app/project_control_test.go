@@ -12,6 +12,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	container_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
 	"github.com/spaulg/solo/test/mocks/host/app/audit"
+	"github.com/spaulg/solo/test/mocks/host/infra/repository"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
@@ -32,19 +33,20 @@ func TestProjectControlTestSuite(t *testing.T) {
 type ProjectControlTestSuite struct {
 	suite.Suite
 
-	soloCtx                  *context.CliContext
-	mockProject              *project.MockProject
-	mockOrchestratorFactory  *container.MockOrchestratorFactory
-	mockGrpcServerFactory    *grpc.MockGRPCServerFactory
-	mockWorkflowManager      *events.MockEventManager
-	mockOrchestrator         *container.MockOrchestrator
-	mockLogHandler           *logging.MockHandler
-	mockGrpcServer           *grpc.MockAsynchronousServer
-	mockWorkflowGuardFactory *wms.MockWorkflowGuardFactory
-	mockWorkflowGuard        *wms.MockWorkflowGuard
-	mockServices             *compose.MockServices
-	mockServiceConfig        *compose.MockServiceConfig
-	mockAuditor              *audit.MockAuditor
+	soloCtx                         *context.CliContext
+	mockProject                     *project.MockProject
+	mockOrchestratorFactory         *container.MockOrchestratorFactory
+	mockGrpcServerFactory           *grpc.MockGRPCServerFactory
+	mockWorkflowManager             *events.MockEventManager
+	mockOrchestrator                *container.MockOrchestrator
+	mockLogHandler                  *logging.MockHandler
+	mockGrpcServer                  *grpc.MockAsynchronousServer
+	mockWorkflowGuardFactory        *wms.MockWorkflowGuardFactory
+	mockWorkflowGuard               *wms.MockWorkflowGuard
+	mockServices                    *compose.MockServices
+	mockServiceConfig               *compose.MockServiceConfig
+	mockAuditor                     *audit.MockAuditor
+	mockWorkflowExecTraceRepository *repository.MockJSONFileRepository[*domain.WorkflowExecTrace]
 }
 
 func (t *ProjectControlTestSuite) SetupTest() {
@@ -79,6 +81,20 @@ func (t *ProjectControlTestSuite) SetupTest() {
 			},
 		},
 	}
+
+	t.mockWorkflowExecTraceRepository = &repository.MockJSONFileRepository[*domain.WorkflowExecTrace]{}
+	workflowExecTrace := domain.NewWorkflowExecTrace()
+
+	t.mockWorkflowExecTraceRepository.On(
+		"Load",
+		mock.AnythingOfType("string"),
+	).Return(workflowExecTrace, nil)
+
+	t.mockWorkflowExecTraceRepository.On(
+		"Save",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("*domain.WorkflowExecTrace"),
+	).Return(nil)
 }
 
 func (t *ProjectControlTestSuite) TestStart_OrchestratorFactoryReturnsError() {
@@ -91,6 +107,7 @@ func (t *ProjectControlTestSuite) TestStart_OrchestratorFactoryReturnsError() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -117,6 +134,7 @@ func (t *ProjectControlTestSuite) TestStart_ServiceStatusReturnsError() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -157,6 +175,7 @@ func (t *ProjectControlTestSuite) TestStart_AllServicesAlreadyRunning() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -197,6 +216,7 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToBuild() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -238,6 +258,7 @@ func (t *ProjectControlTestSuite) TestStart_GRPCServerFailsToStart() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -287,6 +308,7 @@ func (t *ProjectControlTestSuite) TestStart_EntrypointCopyFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -336,6 +358,7 @@ func (t *ProjectControlTestSuite) TestStart_ContainerNamesFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -393,6 +416,7 @@ func (t *ProjectControlTestSuite) TestStart_ComposeUpFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -453,6 +477,7 @@ func (t *ProjectControlTestSuite) TestStart_GuardWaitFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -523,6 +548,7 @@ func (t *ProjectControlTestSuite) TestStart_Succeeds() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Start()
@@ -556,6 +582,7 @@ func (t *ProjectControlTestSuite) TestStop_OrchestratorFactoryFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -590,6 +617,7 @@ func (t *ProjectControlTestSuite) TestStop_ServicesStatusFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -637,6 +665,7 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerBuildFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -685,6 +714,7 @@ func (t *ProjectControlTestSuite) TestStop_GrpcServerStartFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -737,6 +767,7 @@ func (t *ProjectControlTestSuite) TestStop_ContainerNamesFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -795,6 +826,7 @@ func (t *ProjectControlTestSuite) TestStop_GuardWaitFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -857,6 +889,7 @@ func (t *ProjectControlTestSuite) TestStop_ComposeStopFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -926,6 +959,7 @@ func (t *ProjectControlTestSuite) TestStop_Succeeds() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Stop()
@@ -960,6 +994,7 @@ func (t *ProjectControlTestSuite) TestDestroy_OrchestratorFactoryFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()
@@ -993,6 +1028,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ServicesStatusFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()
@@ -1038,6 +1074,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerBuildFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()
@@ -1085,6 +1122,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GrpcServerStartFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()
@@ -1136,6 +1174,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ContainerNamesFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()
@@ -1191,6 +1230,7 @@ func (t *ProjectControlTestSuite) TestDestroy_GuardWaitFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()
@@ -1254,6 +1294,7 @@ func (t *ProjectControlTestSuite) TestDestroy_ComposeDownFails() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()
@@ -1326,6 +1367,7 @@ func (t *ProjectControlTestSuite) TestDestroy_Succeeds() {
 		t.mockGrpcServerFactory,
 		t.mockWorkflowGuardFactory,
 		t.mockAuditor,
+		t.mockWorkflowExecTraceRepository,
 	)
 
 	err := projectControl.Destroy()

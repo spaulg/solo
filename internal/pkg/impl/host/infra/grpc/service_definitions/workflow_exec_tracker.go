@@ -1,4 +1,4 @@
-package wms
+package service_definitions
 
 import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"

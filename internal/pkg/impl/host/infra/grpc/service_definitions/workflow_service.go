@@ -9,21 +9,20 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 
 type WorkflowServerImpl struct {
 	soloCtx *solo_context.CliContext
 	services.UnimplementedWorkflowServer
 	orchestrator        ContainerImageWorkingDirectoryResolver
-	workflowExecTracker wms_types.WorkflowExecTracker
+	workflowExecTracker WorkflowExecTracker
 	workflowRunner      WorkflowRunner
 }
 
 func NewWorkflowService(
 	soloCtx *solo_context.CliContext,
 	orchestrator ContainerImageWorkingDirectoryResolver,
-	workflowExecTracker wms_types.WorkflowExecTracker,
+	workflowExecTracker WorkflowExecTracker,
 	workflowRunner WorkflowRunner,
 ) *WorkflowServerImpl {
 	return &WorkflowServerImpl{

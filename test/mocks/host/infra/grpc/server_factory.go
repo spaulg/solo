@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 

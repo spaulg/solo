@@ -14,7 +14,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
-	"github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
@@ -38,7 +37,7 @@ func NewMutualTLSServerFactory(
 
 func (t *MutualTLSServerFactory) Build(
 	orchestrator ContainerResolver,
-	workflowExecutionTracker wms.WorkflowExecTracker,
+	workflowExecutionTracker service_definitions.WorkflowExecTracker,
 	project project_types.Project,
 	port int,
 ) (Server, error) {
