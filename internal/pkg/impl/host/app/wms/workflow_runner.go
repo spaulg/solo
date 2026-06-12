@@ -5,20 +5,19 @@ import (
 
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
-	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 )
 
 type WorkflowRunner struct {
 	soloCtx         *solo_context.CliContext
 	eventManager    events.Manager
-	workflowFactory wms_types.WorkflowFactory
+	workflowFactory workflow.Factory
 }
 
 func NewWorkflowRunner(
 	soloCtx *solo_context.CliContext,
 	eventManager events.Manager,
-	workflowFactory wms_types.WorkflowFactory,
+	workflowFactory workflow.Factory,
 ) *WorkflowRunner {
 	return &WorkflowRunner{
 		soloCtx:         soloCtx,
@@ -27,7 +26,7 @@ func NewWorkflowRunner(
 	}
 }
 
-func (t *WorkflowRunner) RunWorkflow(workflowSession wms_shared.WorkflowSession) error {
+func (t *WorkflowRunner) RunWorkflow(workflowSession workflow.Session) error {
 	// Handle previously run once-only workflows
 	hasServiceWorkflowRun, err := workflowSession.HasServiceWorkflowRun(workflowSession.GetServiceName())
 	if err != nil {
@@ -37,8 +36,8 @@ func (t *WorkflowRunner) RunWorkflow(workflowSession wms_shared.WorkflowSession)
 	hasFirstContainerWorkflowRun := workflowSession.HasFirstContainerWorkflowRun()
 
 	if hasServiceWorkflowRun || hasFirstContainerWorkflowRun {
-		t.eventManager.Publish(&wms_types.WorkflowSkippedEvent{
-			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+		t.eventManager.Publish(&workflow.SkippedEvent{
+			BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 				ServiceName:       workflowSession.GetServiceName(),
 				ContainerName:     workflowSession.GetContainerName(),
 				FullContainerName: workflowSession.GetFullContainerName(),
@@ -53,8 +52,8 @@ func (t *WorkflowRunner) RunWorkflow(workflowSession wms_shared.WorkflowSession)
 			return err
 		}
 
-		t.eventManager.Publish(&wms_types.WorkflowCompleteEvent{
-			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+		t.eventManager.Publish(&workflow.CompleteEvent{
+			BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 				ServiceName:       workflowSession.GetServiceName(),
 				ContainerName:     workflowSession.GetContainerName(),
 				FullContainerName: workflowSession.GetFullContainerName(),
@@ -67,11 +66,11 @@ func (t *WorkflowRunner) RunWorkflow(workflowSession wms_shared.WorkflowSession)
 	return workflowSession.MarkCompletion()
 }
 
-func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSession) (bool, error) {
+func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bool, error) {
 	workflowSuccess := true
 
-	t.eventManager.Publish(&wms_types.WorkflowStartedEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	t.eventManager.Publish(&workflow.StartedEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       workflowSession.GetServiceName(),
 			ContainerName:     workflowSession.GetContainerName(),
 			FullContainerName: workflowSession.GetFullContainerName(),
@@ -84,7 +83,7 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSe
 		return false, err
 	}
 
-	workflow, err := t.workflowFactory.Make(
+	wf, err := t.workflowFactory.Make(
 		t.soloCtx,
 		workflowSession.GetServiceName(),
 		serviceWorkingDirectory,
@@ -95,12 +94,12 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSe
 		return false, fmt.Errorf("failed to create workflow: %w", err)
 	}
 
-	if workflow != nil {
-		for step := range workflow.StepIterator() {
+	if wf != nil {
+		for step := range wf.StepIterator() {
 			err := step.Trigger(func() error {
 				// Trigger callback
-				t.eventManager.Publish(&wms_types.WorkflowStepStartedEvent{
-					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+				t.eventManager.Publish(&workflow.StepStartedEvent{
+					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),
@@ -114,7 +113,7 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSe
 					Shell:     step.GetShell(),
 				})
 
-				return workflowSession.RunCommand(&wms_shared.RunCommandRequest{
+				return workflowSession.RunCommand(&workflow.RunCommandRequest{
 					Command:          step.GetCommand(),
 					Arguments:        step.GetArguments(),
 					WorkingDirectory: step.GetWorkingDirectory(),
@@ -126,8 +125,8 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSe
 					return nil, err
 				}
 
-				t.eventManager.Publish(&wms_types.WorkflowStepOutputEvent{
-					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+				t.eventManager.Publish(&workflow.StepOutputEvent{
+					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),
@@ -141,8 +140,8 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSe
 				return result.ExitCode, nil
 			}, func(exitCode uint8) error {
 				// Completion callback
-				t.eventManager.Publish(&wms_types.WorkflowStepCompleteEvent{
-					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+				t.eventManager.Publish(&workflow.StepCompleteEvent{
+					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),
@@ -164,8 +163,8 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wms_shared.WorkflowSe
 			})
 
 			if err != nil {
-				t.eventManager.Publish(&wms_types.WorkflowErrorEvent{
-					BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+				t.eventManager.Publish(&workflow.ErrorEvent{
+					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),

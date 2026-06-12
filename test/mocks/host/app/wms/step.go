@@ -3,7 +3,7 @@ package wms
 import (
 	"github.com/stretchr/testify/mock"
 
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 )
 
 type MockStep struct {
@@ -11,9 +11,9 @@ type MockStep struct {
 }
 
 func (m *MockStep) Trigger(
-	trigger wms_types.StepTriggerLambda,
-	progress wms_types.StepProgressLambda,
-	complete wms_types.StepCompleteLambda,
+	trigger wms_types.StepTriggerFunc,
+	progress wms_types.StepProgressFunc,
+	complete wms_types.StepCompleteFunc,
 ) error {
 	args := m.Called(trigger, progress, complete)
 	return args.Error(0)

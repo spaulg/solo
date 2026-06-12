@@ -11,7 +11,7 @@ import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 )
 
 type WorkflowGuard struct {
@@ -55,13 +55,13 @@ func (t *WorkflowGuard) Publish(event events.Event) {
 	var workflowSuccessful = true
 
 	switch e := event.(type) {
-	case *wms_types.WorkflowSkippedEvent:
+	case *workflow.SkippedEvent:
 		workflowName = e.WorkflowName
 		containerName = e.FullContainerName
 
 		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event skipped for workflow %s for container %s", workflowName, containerName))
 
-	case *wms_types.WorkflowCompleteEvent:
+	case *workflow.CompleteEvent:
 		workflowName = e.WorkflowName
 		containerName = e.FullContainerName
 

@@ -7,8 +7,8 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 )
 
 const auditLogsPath = "audit_logs"
@@ -68,15 +68,15 @@ func (t *StateDirectoryAuditor) RecordExecutionEvent(callback func() error) erro
 
 func (t *StateDirectoryAuditor) Publish(event events.Event) {
 	switch e := event.(type) {
-	case *wms_types.WorkflowStepOutputEvent:
+	case *workflow.StepOutputEvent:
 		t.writeStepOutput(e)
 
-	case *wms_types.WorkflowStepCompleteEvent:
+	case *workflow.StepCompleteEvent:
 		t.writeStepResult(e)
 	}
 }
 
-func (t *StateDirectoryAuditor) writeStepOutput(e *wms_types.WorkflowStepOutputEvent) {
+func (t *StateDirectoryAuditor) writeStepOutput(e *workflow.StepOutputEvent) {
 	if e.Stderr == "" && e.Stdout == "" {
 		return
 	}
@@ -153,7 +153,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wms_types.WorkflowStepOutputE
 	}
 }
 
-func (t *StateDirectoryAuditor) writeStepResult(e *wms_types.WorkflowStepCompleteEvent) {
+func (t *StateDirectoryAuditor) writeStepResult(e *workflow.StepCompleteEvent) {
 	outputDirectory := path.Join(
 		t.outputDirectory,
 		e.WorkflowName.String(),

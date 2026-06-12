@@ -1,11 +1,11 @@
-package wms
+package workflow
 
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 )
 
-type WorkflowGuard interface {
-	Publish(event events_types.Event)
+type Guard interface {
+	Publish(event events.Event)
 	Wait(callback func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error) error
 }

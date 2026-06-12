@@ -11,9 +11,9 @@ import (
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/domain/project"
 	"github.com/spaulg/solo/test/mocks/logging"
@@ -63,8 +63,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 		[]string{"test_container1", "test_container2"},
 	)
 
-	guard.Publish(&wms_types.WorkflowCompleteEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	guard.Publish(&workflow.CompleteEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test-service",
 			ContainerName:     "container1",
 			FullContainerName: "test_container1",
@@ -73,8 +73,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 		Successful: true,
 	})
 
-	guard.Publish(&wms_types.WorkflowSkippedEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	guard.Publish(&workflow.SkippedEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test-service",
 			ContainerName:     "container2",
 			FullContainerName: "test_container2",
@@ -98,8 +98,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedEventType() {
 		[]string{"test_container1"},
 	)
 
-	guard.Publish(&wms_types.WorkflowErrorEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	guard.Publish(&workflow.ErrorEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test-service",
 			ContainerName:     "container1",
 			FullContainerName: "test_container1",
@@ -127,8 +127,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
 		[]string{"test_container1"},
 	)
 
-	guard.Publish(&wms_types.WorkflowCompleteEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	guard.Publish(&workflow.CompleteEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test-service",
 			ContainerName:     "container1",
 			FullContainerName: "test_container1",
@@ -157,8 +157,8 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 		[]string{"test_container1"},
 	)
 
-	guard.Publish(&wms_types.WorkflowCompleteEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	guard.Publish(&workflow.CompleteEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test-service",
 			ContainerName:     "container2",
 			FullContainerName: "test_container2",
