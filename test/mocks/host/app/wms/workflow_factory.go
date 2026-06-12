@@ -5,7 +5,7 @@ import (
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	context_types "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 )
 
 type MockWorkflowFactory struct {
@@ -17,9 +17,9 @@ func (m *MockWorkflowFactory) Make(
 	service string,
 	serviceWorkingDirectory string,
 	workflowName workflowcommon.WorkflowName,
-) (wms_types.Workflow, error) {
+) (wms_types.Definition, error) {
 	args := m.Called(soloCtx, service, serviceWorkingDirectory, workflowName)
-	if o, ok := args.Get(0).(wms_types.Workflow); ok {
+	if o, ok := args.Get(0).(wms_types.Definition); ok {
 		return o, args.Error(1)
 	}
 

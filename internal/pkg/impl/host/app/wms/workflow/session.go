@@ -1,4 +1,4 @@
-package wms
+package workflow
 
 import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
@@ -16,7 +16,7 @@ type CommandResponse struct {
 	ExitCode *uint8
 }
 
-type WorkflowSession interface {
+type Session interface {
 	GetWorkflowName() commonworkflow.WorkflowName
 	HasServiceWorkflowRun(serviceName string) (bool, error)
 	HasFirstContainerWorkflowRun() bool

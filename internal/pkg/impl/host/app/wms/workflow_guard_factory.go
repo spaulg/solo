@@ -3,7 +3,7 @@ package wms
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 )
 
 type WorkflowGuardFactory struct {
@@ -16,6 +16,6 @@ func NewWorkflowGuardFactory(soloCtx *context.CliContext) *WorkflowGuardFactory 
 	}
 }
 
-func (t *WorkflowGuardFactory) Build(workflowNames []workflowcommon.WorkflowName, containerNames []string) wms_types.WorkflowGuard {
+func (t *WorkflowGuardFactory) Build(workflowNames []workflowcommon.WorkflowName, containerNames []string) workflow.Guard {
 	return NewWorkflowGuard(t.soloCtx, workflowNames, containerNames)
 }

@@ -10,10 +10,9 @@ import (
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
-	wms_types "github.com/spaulg/solo/internal/pkg/types/host/app/wms"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/app/events"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
@@ -74,7 +73,7 @@ func (t *WorkflowRunnerTestSuite) SetupTest() {
 	t.hasFirstContainerWorkflowRun = false
 }
 
-func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.WorkflowName, exitCode uint8) {
+func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(wfName commonworkflow.WorkflowName, exitCode uint8) {
 	t.workflowSession.On("HasServiceWorkflowRun", "test_service").Return(t.hasServiceWorkflowRun, t.hasServiceWorkflowRunError)
 	t.workflowSession.On("HasFirstContainerWorkflowRun").Return(t.hasFirstContainerWorkflowRun)
 	t.workflowSession.On("MarkCompletion").Return(nil)
@@ -82,15 +81,15 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.Wo
 	t.workflowSession.On("GetServiceName").Return("test_service")
 	t.workflowSession.On("GetContainerName").Return("service-1")
 	t.workflowSession.On("GetFullContainerName").Return("test_service-1")
-	t.workflowSession.On("GetWorkflowName").Return(workflow)
+	t.workflowSession.On("GetWorkflowName").Return(wfName)
 
 	if t.hasServiceWorkflowRun || t.hasFirstContainerWorkflowRun {
-		t.mockEventManager.On("Publish", &wms_types.WorkflowSkippedEvent{
-			BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+		t.mockEventManager.On("Publish", &workflow.SkippedEvent{
+			BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 				ServiceName:       "test_service",
 				ContainerName:     "service-1",
 				FullContainerName: "test_service-1",
-				WorkflowName:      workflow,
+				WorkflowName:      wfName,
 			},
 			Successful: true,
 		}).Return()
@@ -100,12 +99,12 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.Wo
 
 	t.workflowSession.On("GetWorkingDirectory").Return("/", nil)
 
-	t.mockEventManager.On("Publish", &wms_types.WorkflowStartedEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	t.mockEventManager.On("Publish", &workflow.StartedEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test_service",
 			ContainerName:     "service-1",
 			FullContainerName: "test_service-1",
-			WorkflowName:      workflow,
+			WorkflowName:      wfName,
 		},
 	}).Return()
 
@@ -117,7 +116,7 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.Wo
 		mock.Anything,
 	).Return(t.mockWorkflowOrchestrator, nil)
 
-	t.mockWorkflowOrchestrator.On("StepIterator").Return(func(yield func(wms_types.Step) bool) {
+	t.mockWorkflowOrchestrator.On("StepIterator").Return(func(yield func(workflow.Step) bool) {
 		step := &wms.MockStep{}
 		step.On("GetID").Return("12345")
 		step.On("GetName").Return("test")
@@ -128,17 +127,17 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.Wo
 
 		step.On(
 			"Trigger",
-			mock.AnythingOfType("wms.StepTriggerLambda"),
-			mock.AnythingOfType("wms.StepProgressLambda"),
-			mock.AnythingOfType("wms.StepCompleteLambda"),
+			mock.AnythingOfType("StepTriggerFunc"),
+			mock.AnythingOfType("StepProgressFunc"),
+			mock.AnythingOfType("StepCompleteFunc"),
 		).Run(func(args mock.Arguments) {
 			// trigger
-			t.mockEventManager.On("Publish", &wms_types.WorkflowStepStartedEvent{
-				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+			t.mockEventManager.On("Publish", &workflow.StepStartedEvent{
+				BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 					ServiceName:       "test_service",
 					ContainerName:     "service-1",
 					FullContainerName: "test_service-1",
-					WorkflowName:      workflow,
+					WorkflowName:      wfName,
 				},
 				StepID:    "12345",
 				Name:      "test",
@@ -148,50 +147,50 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.Wo
 				Shell:     "/bin/sh",
 			}).Return()
 
-			t.workflowSession.On("RunCommand", &wms_shared.RunCommandRequest{
+			t.workflowSession.On("RunCommand", &workflow.RunCommandRequest{
 				Command:          "/bin/sh",
 				Arguments:        []string{"-c", "echo \"Hello World\""},
 				WorkingDirectory: "/",
 			}).Return(nil)
 
-			trigger, ok := args.Get(0).(wms_types.StepTriggerLambda)
+			trigger, ok := args.Get(0).(workflow.StepTriggerFunc)
 			t.True(ok)
 
 			err := trigger()
 			t.Nil(err)
 
 			// progress
-			t.workflowSession.On("RecvCommandResponse").Return(&wms_shared.CommandResponse{
+			t.workflowSession.On("RecvCommandResponse").Return(&workflow.CommandResponse{
 				Stdout:   "Hello World",
 				Stderr:   "",
 				ExitCode: &exitCode,
 			}, nil)
 
-			t.mockEventManager.On("Publish", &wms_types.WorkflowStepOutputEvent{
-				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+			t.mockEventManager.On("Publish", &workflow.StepOutputEvent{
+				BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 					ServiceName:       "test_service",
 					ContainerName:     "service-1",
 					FullContainerName: "test_service-1",
-					WorkflowName:      workflow,
+					WorkflowName:      wfName,
 				},
 				StepID: "12345",
 				Stdout: "Hello World",
 				Stderr: "",
 			}).Return()
 
-			progress, ok := args.Get(1).(wms_types.StepProgressLambda)
+			progress, ok := args.Get(1).(workflow.StepProgressFunc)
 			t.True(ok)
 
 			exitCodePtr, err := progress()
 			t.Nil(err)
 
 			// completion
-			t.mockEventManager.On("Publish", &wms_types.WorkflowStepCompleteEvent{
-				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+			t.mockEventManager.On("Publish", &workflow.StepCompleteEvent{
+				BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 					ServiceName:       "test_service",
 					ContainerName:     "service-1",
 					FullContainerName: "test_service-1",
-					WorkflowName:      workflow,
+					WorkflowName:      wfName,
 				},
 				StepID:    "12345",
 				Command:   "/bin/sh",
@@ -201,7 +200,7 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.Wo
 				ExitCode:  uint8(exitCode), // nolint:gosec
 			}).Return()
 
-			complete, ok := args.Get(2).(wms_types.StepCompleteLambda)
+			complete, ok := args.Get(2).(workflow.StepCompleteFunc)
 			t.True(ok)
 
 			err = complete(*exitCodePtr)
@@ -211,12 +210,12 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(workflow commonworkflow.Wo
 		yield(step)
 	})
 
-	t.mockEventManager.On("Publish", &wms_types.WorkflowCompleteEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	t.mockEventManager.On("Publish", &workflow.CompleteEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test_service",
 			ContainerName:     "service-1",
 			FullContainerName: "test_service-1",
-			WorkflowName:      workflow,
+			WorkflowName:      wfName,
 		},
 		Successful: exitCode == 0,
 	}).Return()
@@ -447,23 +446,23 @@ func (t *WorkflowRunnerTestSuite) TestPreDestroyNonZeroWorkflowStepTrigger() {
 	t.mockWorkflowOrchestrator.AssertExpectations(t.T())
 }
 
-func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(workflow commonworkflow.WorkflowName) {
+func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(wfName commonworkflow.WorkflowName) {
 	t.workflowSession.On("GetServiceName").Return("test_service")
 	t.workflowSession.On("GetContainerName").Return("service-1")
 	t.workflowSession.On("GetFullContainerName").Return("test_service-1")
-	t.workflowSession.On("GetWorkflowName").Return(workflow)
+	t.workflowSession.On("GetWorkflowName").Return(wfName)
 	t.workflowSession.On("GetWorkingDirectory").Return("/", nil)
 
 	t.workflowSession.On("HasServiceWorkflowRun", "test_service").Return(false, nil)
 	t.workflowSession.On("HasFirstContainerWorkflowRun").Return(false)
 	t.workflowSession.On("MarkCompletion").Return(nil)
 
-	t.mockEventManager.On("Publish", &wms_types.WorkflowStartedEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	t.mockEventManager.On("Publish", &workflow.StartedEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test_service",
 			ContainerName:     "service-1",
 			FullContainerName: "test_service-1",
-			WorkflowName:      workflow,
+			WorkflowName:      wfName,
 		},
 	}).Return()
 
@@ -475,7 +474,7 @@ func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(workflow commonworkflow
 		mock.Anything,
 	).Return(t.mockWorkflowOrchestrator, nil)
 
-	t.mockWorkflowOrchestrator.On("StepIterator").Return(func(yield func(wms_types.Step) bool) {
+	t.mockWorkflowOrchestrator.On("StepIterator").Return(func(yield func(workflow.Step) bool) {
 		step := &wms.MockStep{}
 		step.On("GetID").Return("12345")
 		step.On("GetName").Return("test")
@@ -486,17 +485,17 @@ func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(workflow commonworkflow
 
 		step.On(
 			"Trigger",
-			mock.AnythingOfType("wms.StepTriggerLambda"),
-			mock.AnythingOfType("wms.StepProgressLambda"),
-			mock.AnythingOfType("wms.StepCompleteLambda"),
+			mock.AnythingOfType("StepTriggerFunc"),
+			mock.AnythingOfType("StepProgressFunc"),
+			mock.AnythingOfType("StepCompleteFunc"),
 		).Run(func(args mock.Arguments) {
 			// trigger
-			t.mockEventManager.On("Publish", &wms_types.WorkflowStepStartedEvent{
-				BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+			t.mockEventManager.On("Publish", &workflow.StepStartedEvent{
+				BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 					ServiceName:       "test_service",
 					ContainerName:     "service-1",
 					FullContainerName: "test_service-1",
-					WorkflowName:      workflow,
+					WorkflowName:      wfName,
 				},
 				StepID:    "12345",
 				Name:      "test",
@@ -506,13 +505,13 @@ func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(workflow commonworkflow
 				Shell:     "/bin/sh",
 			}).Return()
 
-			t.workflowSession.On("RunCommand", &wms_shared.RunCommandRequest{
+			t.workflowSession.On("RunCommand", &workflow.RunCommandRequest{
 				Command:          "/bin/sh",
 				Arguments:        []string{"-c", "echo \"Hello World\""},
 				WorkingDirectory: "/",
 			}).Return(nil)
 
-			trigger, ok := args.Get(0).(wms_types.StepTriggerLambda)
+			trigger, ok := args.Get(0).(workflow.StepTriggerFunc)
 			t.True(ok)
 
 			err := trigger()
@@ -521,7 +520,7 @@ func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(workflow commonworkflow
 			// progress
 			t.workflowSession.On("RecvCommandResponse").Return(nil, errors.New("mock recv error"))
 
-			progress, ok := args.Get(1).(wms_types.StepProgressLambda)
+			progress, ok := args.Get(1).(workflow.StepProgressFunc)
 			t.True(ok)
 
 			_, err = progress()
@@ -531,12 +530,12 @@ func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(workflow commonworkflow
 		yield(step)
 	})
 
-	t.mockEventManager.On("Publish", &wms_types.WorkflowErrorEvent{
-		BaseWorkflowEvent: wms_types.BaseWorkflowEvent{
+	t.mockEventManager.On("Publish", &workflow.ErrorEvent{
+		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
 			ServiceName:       "test_service",
 			ContainerName:     "service-1",
 			FullContainerName: "test_service-1",
-			WorkflowName:      workflow,
+			WorkflowName:      wfName,
 		},
 		Err: errors.New("mock recv error"),
 	}).Return()

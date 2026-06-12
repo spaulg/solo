@@ -1,4 +1,4 @@
-package wms
+package workflow
 
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
@@ -11,11 +11,11 @@ type BaseWorkflowEvent struct {
 	WorkflowName      workflowcommon.WorkflowName
 }
 
-type WorkflowStartedEvent struct {
+type StartedEvent struct {
 	BaseWorkflowEvent
 }
 
-type WorkflowStepStartedEvent struct {
+type StepStartedEvent struct {
 	BaseWorkflowEvent
 	StepID    string
 	Name      string
@@ -25,14 +25,14 @@ type WorkflowStepStartedEvent struct {
 	Shell     string
 }
 
-type WorkflowStepOutputEvent struct {
+type StepOutputEvent struct {
 	BaseWorkflowEvent
 	StepID string
 	Stdout string
 	Stderr string
 }
 
-type WorkflowStepCompleteEvent struct {
+type StepCompleteEvent struct {
 	BaseWorkflowEvent
 	StepID    string
 	Command   string
@@ -42,17 +42,17 @@ type WorkflowStepCompleteEvent struct {
 	ExitCode  uint8
 }
 
-type WorkflowCompleteEvent struct {
+type CompleteEvent struct {
 	BaseWorkflowEvent
 	Successful bool
 }
 
-type WorkflowSkippedEvent struct {
+type SkippedEvent struct {
 	BaseWorkflowEvent
 	Successful bool
 }
 
-type WorkflowErrorEvent struct {
+type ErrorEvent struct {
 	BaseWorkflowEvent
 	Err error
 }

@@ -9,8 +9,8 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
-	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/shared/wms"
 )
 
 type WorkflowSession struct {

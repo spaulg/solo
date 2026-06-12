@@ -1,7 +1,7 @@
-package wms
+package workflow
 
 import "iter"
 
-type Workflow interface {
+type Definition interface {
 	StepIterator() iter.Seq[Step]
 }
