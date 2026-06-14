@@ -10,15 +10,15 @@ import (
 func NewToolCommands(soloCtx *context.CliContext) []*cobra.Command {
 	var toolCommands []*cobra.Command
 
-	if soloCtx.Project != nil {
+	if soloCtx.Project != nil && soloCtx.ProjectLoadErr == nil {
 		for toolName, toolConfig := range soloCtx.Project.Tools() {
 			localToolName := toolName
 
 			toolCommands = append(toolCommands, &cobra.Command{
 				Use:                toolName,
 				GroupID:            "tooling",
-				Short:              toolConfig.Description,
-				Long:               toolConfig.Description,
+				Short:              toolConfig.Description(),
+				Long:               toolConfig.Description(),
 				DisableFlagParsing: true,
 				Annotations: map[string]string{
 					RequireConfigLoadSuccessAnnotation:  "true",

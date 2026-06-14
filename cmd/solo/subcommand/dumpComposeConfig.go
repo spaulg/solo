@@ -22,8 +22,15 @@ func NewDumpComposeConfigCommand(soloCtx *context.CliContext) *cobra.Command {
 		},
 		RunE: func(_ *cobra.Command, _ []string) error {
 			eventManager := event_manager.GetEventManagerInstance()
-			orchestrator, err := container.NewOrchestratorFactory(soloCtx, eventManager).Build()
 
+			orchestratorFactory := container.NewOrchestratorFactory(
+				soloCtx.Logger,
+				soloCtx.Config,
+				soloCtx.Project,
+				eventManager,
+			)
+
+			orchestrator, err := orchestratorFactory.Build()
 			if err != nil {
 				return err
 			}

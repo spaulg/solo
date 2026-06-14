@@ -77,7 +77,6 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 				Package: t.moduleName + "/internal/pkg/impl/host/app.**",
 				ShouldOnlyDependsOn: &archgo_config.Dependencies{
 					Internal: []string{
-						t.moduleName + "/internal/pkg/types/host.**",
 						t.moduleName + "/internal/pkg/impl/host.**",
 						t.moduleName + "/internal/pkg/impl/common.**",
 					},
@@ -95,10 +94,8 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 				ShouldOnlyDependsOn: &archgo_config.Dependencies{
 					Internal: []string{
 						t.moduleName + "/internal/pkg/impl/host/shared.**",
-						t.moduleName + "/internal/pkg/types/host/infra.**",
 						t.moduleName + "/internal/pkg/impl/host/infra.**",
 						t.moduleName + "/internal/pkg/impl/common/infra.**",
-						t.moduleName + "/internal/pkg/types/host/domain.**",
 						t.moduleName + "/internal/pkg/impl/host/domain.**",
 						t.moduleName + "/internal/pkg/impl/common/domain.**",
 					},
@@ -111,7 +108,6 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 				ShouldOnlyDependsOn: &archgo_config.Dependencies{
 					Internal: []string{
 						t.moduleName + "/internal/pkg/impl/host/shared.**",
-						t.moduleName + "/internal/pkg/types/host/domain.**",
 						t.moduleName + "/internal/pkg/impl/host/domain.**",
 						t.moduleName + "/internal/pkg/impl/common/domain.**",
 					},

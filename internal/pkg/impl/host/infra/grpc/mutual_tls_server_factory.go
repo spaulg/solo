@@ -6,30 +6,33 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
 	"google.golang.org/grpc/credentials"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type MutualTLSServerFactory struct {
-	soloCtx              *context.CliContext
+	logger               *slog.Logger
+	project              domain.Project
 	certificateAuthority Authority
 	workflowRunner       service_definitions.WorkflowRunner
 }
 
 func NewMutualTLSServerFactory(
-	soloCtx *context.CliContext,
+	logger *slog.Logger,
+	project domain.Project,
 	certificateAuthority Authority,
 	workflowRunner service_definitions.WorkflowRunner,
 ) *MutualTLSServerFactory {
 	return &MutualTLSServerFactory{
-		soloCtx:              soloCtx,
+		logger:               logger,
+		project:              project,
 		certificateAuthority: certificateAuthority,
 		workflowRunner:       workflowRunner,
 	}
@@ -38,7 +41,7 @@ func NewMutualTLSServerFactory(
 func (t *MutualTLSServerFactory) Build(
 	orchestrator ContainerResolver,
 	workflowExecutionTracker service_definitions.WorkflowExecTracker,
-	project project_types.Project,
+	project domain.Project,
 	port int,
 ) (Server, error) {
 	hostname := orchestrator.GetHostGatewayHostname()
@@ -49,7 +52,8 @@ func (t *MutualTLSServerFactory) Build(
 	}
 
 	workflowService := service_definitions.NewWorkflowService(
-		t.soloCtx,
+		t.logger,
+		t.project,
 		orchestrator,
 		workflowExecutionTracker,
 		t.workflowRunner,
@@ -66,7 +70,7 @@ func (t *MutualTLSServerFactory) Build(
 
 func (t *MutualTLSServerFactory) buildTransportCredentials(
 	hostname string,
-	project project_types.Project,
+	project domain.Project,
 ) (credentials.TransportCredentials, error) {
 	var err error
 
@@ -112,7 +116,7 @@ func (t *MutualTLSServerFactory) generateServerCertificate(hostname string) (*tl
 	)
 }
 
-func (t *MutualTLSServerFactory) generateClientCertificate(project project_types.Project) error {
+func (t *MutualTLSServerFactory) generateClientCertificate(project domain.Project) error {
 	for _, serviceName := range project.Services().ServiceNames() {
 		clientCert, err := t.certificateAuthority.GenerateCertificate(
 			certificate.WithOrganization([]string{"Solo Client"}),

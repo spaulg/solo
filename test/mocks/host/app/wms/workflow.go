@@ -5,17 +5,17 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type MockWorkflow struct {
 	mock.Mock
 }
 
-func (m *MockWorkflow) StepIterator() iter.Seq[wms_types.Step] {
+func (m *MockWorkflow) StepIterator() iter.Seq[wf.Step] {
 	args := m.Called()
 
-	if s, ok := args.Get(0).(func(yield func(wms_types.Step) bool)); ok {
+	if s, ok := args.Get(0).(func(yield func(wf.Step) bool)); ok {
 		return s
 	}
 

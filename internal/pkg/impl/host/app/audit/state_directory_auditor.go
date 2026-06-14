@@ -2,6 +2,7 @@ package audit
 
 import (
 	"fmt"
+	"log/slog"
 	"path"
 	"sync"
 
@@ -17,6 +18,9 @@ const metaFileSuffix = ".meta.json"
 
 type StateDirectoryAuditor struct {
 	soloCtx                       *context.CliContext
+	logger                        *slog.Logger
+	config                        *domain.Config
+	project                       domain.Project
 	mu                            sync.Mutex
 	outputDirectory               string
 	executionEventRepository      domain.ExecutionEventRepository
@@ -27,19 +31,25 @@ type StateDirectoryAuditor struct {
 
 func NewAuditor(
 	soloCtx *context.CliContext,
+	logger *slog.Logger,
+	config *domain.Config,
+	project domain.Project,
 	executionEventRepository domain.ExecutionEventRepository,
 	workflowLogMetaRepository domain.WorkflowLogMetaRepository,
 	workflowStepLogMetaRepository domain.WorkflowStepLogMetaRepository,
 	logWriter domain.LogWriter,
 ) *StateDirectoryAuditor {
 	outputDirectory := path.Join(
-		soloCtx.Project.GetStateDirectoryRoot(),
+		project.GetStateDirectoryRoot(),
 		auditLogsPath,
 		soloCtx.TriggerDateTime.Format("2006-01-02T15-04-05.999999999Z"),
 	)
 
 	return &StateDirectoryAuditor{
 		soloCtx:                       soloCtx,
+		logger:                        logger,
+		config:                        config,
+		project:                       project,
 		outputDirectory:               outputDirectory,
 		executionEventRepository:      executionEventRepository,
 		workflowLogMetaRepository:     workflowLogMetaRepository,
@@ -93,7 +103,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 
 	meta, err := t.workflowStepLogMetaRepository.Load(filePath)
 	if err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to write step output to log file: %s: %v",
 			filePath,
 			err,
@@ -106,7 +116,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 		meta = domain.NewWorkflowStepLogMeta()
 
 		if err := t.workflowStepLogMetaRepository.Save(filePath, meta); err != nil {
-			t.soloCtx.Logger.Error(fmt.Sprintf(
+			t.logger.Error(fmt.Sprintf(
 				"Failed to write workflow step meta file: %s: %v",
 				filePath,
 				err,
@@ -117,7 +127,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 	// Combined file
 	combinedOutputPath := path.Join(outputDirectory, e.StepID+".out")
 	if err := t.logWriter.Append(combinedOutputPath, []byte(e.Stderr)); err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to write step output to log file: %s: %v",
 			combinedOutputPath,
 			err,
@@ -125,7 +135,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 	}
 
 	if err := t.logWriter.Append(combinedOutputPath, []byte(e.Stdout)); err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to write step output to log file: %s: %v",
 			combinedOutputPath,
 			err,
@@ -135,7 +145,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 	// stderr file
 	stderrPath := path.Join(outputDirectory, e.StepID+".stderr")
 	if err := t.logWriter.Append(stderrPath, []byte(e.Stderr)); err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to write step output to log file: %s: %v",
 			stderrPath,
 			err,
@@ -145,7 +155,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 	// stdout file
 	stdoutPath := path.Join(outputDirectory, e.StepID+".stdout")
 	if err := t.logWriter.Append(stdoutPath, []byte(e.Stdout)); err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to write step output to log file: %s: %v",
 			stdoutPath,
 			err,
@@ -167,7 +177,7 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	metaJSON, err := t.workflowStepLogMetaRepository.Load(filePath)
 
 	if err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to load workflow meta file: failed to load meta file: %s: %v",
 			filePath,
 			err,
@@ -183,7 +193,7 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	metaJSON.SetExecutionInfo(e.ExitCode, e.Command, e.Arguments, e.Cwd)
 
 	if err := t.workflowStepLogMetaRepository.Save(filePath, metaJSON); err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to write workflow step meta file: failed to save meta file: %s: %v",
 			filePath,
 			err,
@@ -193,7 +203,7 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	workflowMetaPath := path.Join(outputDirectory, e.WorkflowName.String()+".meta.json")
 	workflowMeta, err := t.workflowLogMetaRepository.Load(workflowMetaPath)
 	if err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to load workflow meta file: failed to load meta file: %s: %v",
 			workflowMetaPath,
 			err,
@@ -209,7 +219,7 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	workflowMeta.AppendStep(e.ContainerName, e.StepID)
 
 	if err = t.workflowLogMetaRepository.Save(workflowMetaPath, workflowMeta); err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf(
+		t.logger.Error(fmt.Sprintf(
 			"Failed to write workflow meta file: failed to save meta file: %s: %v",
 			workflowMetaPath,
 			err,

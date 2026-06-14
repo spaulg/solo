@@ -3,30 +3,35 @@ package service_definitions
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"google.golang.org/grpc"
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
-	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type WorkflowServerImpl struct {
-	soloCtx *solo_context.CliContext
 	services.UnimplementedWorkflowServer
+
+	logger              *slog.Logger
+	project             domain.Project
 	orchestrator        ContainerImageWorkingDirectoryResolver
 	workflowExecTracker WorkflowExecTracker
 	workflowRunner      WorkflowRunner
 }
 
 func NewWorkflowService(
-	soloCtx *solo_context.CliContext,
+	logger *slog.Logger,
+	project domain.Project,
 	orchestrator ContainerImageWorkingDirectoryResolver,
 	workflowExecTracker WorkflowExecTracker,
 	workflowRunner WorkflowRunner,
 ) *WorkflowServerImpl {
 	return &WorkflowServerImpl{
-		soloCtx:             soloCtx,
+		logger:              logger,
+		project:             project,
 		orchestrator:        orchestrator,
 		workflowExecTracker: workflowExecTracker,
 		workflowRunner:      workflowRunner,
@@ -58,7 +63,8 @@ func (t WorkflowServerImpl) handleRunWorkflowRequest(
 ) error {
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.logger,
+		t.project,
 		workflowName,
 		server,
 		t.workflowExecTracker,

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/compose"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
 	"github.com/spaulg/solo/test"
 )
@@ -59,7 +60,7 @@ func (t *TestCertificateAuthority) TestExportCACertificate() {
 	loadedConfig := &domain.Config{}
 
 	projectFilePath := test.GetTestDataFilePath("certificate/solo.yml")
-	loadedProject, err := domain.NewProject(projectFilePath, loadedConfig, []string{})
+	loadedProject, err := compose.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
 	ca, err := NewCertificateAuthority()

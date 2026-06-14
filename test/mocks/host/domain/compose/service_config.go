@@ -4,16 +4,16 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/stretchr/testify/mock"
 
-	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type MockServiceConfig struct {
 	mock.Mock
 }
 
-func (m *MockServiceConfig) GetServiceWorkflow(eventName string) compose_types.ServiceWorkflowConfig {
+func (m *MockServiceConfig) GetServiceWorkflow(eventName string) domain.ServiceWorkflowConfig {
 	args := m.Called(eventName)
-	return args.Get(0).(compose_types.ServiceWorkflowConfig)
+	return args.Get(0).(domain.ServiceWorkflowConfig)
 }
 
 func (m *MockServiceConfig) GetConfig() types.ServiceConfig {

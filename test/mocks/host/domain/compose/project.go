@@ -1,4 +1,4 @@
-package project
+package compose
 
 import (
 	"time"
@@ -6,22 +6,11 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/stretchr/testify/mock"
 
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
-	"github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type MockProject struct {
 	mock.Mock
-}
-
-func (m *MockProject) ReloadWithAllProfilesEnabled() (project_types.Project, error) {
-	args := m.Called()
-
-	if p, ok := args.Get(0).(project_types.Project); ok {
-		return p, args.Error(1)
-	}
-
-	return nil, args.Error(1)
 }
 
 func (m *MockProject) ResolveStateDirectory(relativePath string) string {
@@ -69,9 +58,9 @@ func (m *MockProject) GetFilePath() string {
 	return args.String(0)
 }
 
-func (m *MockProject) GetServiceWorkflow(serviceName string, eventName string) compose.ServiceWorkflowConfig {
+func (m *MockProject) GetServiceWorkflow(serviceName string, eventName string) domain.ServiceWorkflowConfig {
 	args := m.Called(serviceName, eventName)
-	return args.Get(0).(compose.ServiceWorkflowConfig)
+	return args.Get(0).(domain.ServiceWorkflowConfig)
 }
 
 func (m *MockProject) GetGeneratedComposeFilePath() string {
@@ -109,9 +98,9 @@ func (m *MockProject) ReloadWithProfiles(profiles []string) error {
 	return args.Error(0)
 }
 
-func (m *MockProject) Tools() compose.Tools {
+func (m *MockProject) Tools() domain.Tools {
 	args := m.Called()
-	if t, ok := args.Get(0).(compose.Tools); ok {
+	if t, ok := args.Get(0).(domain.Tools); ok {
 		return t
 	}
 
@@ -137,34 +126,9 @@ func (m *MockProject) GetCompose() *types.Project {
 	return nil
 }
 
-func (m *MockProject) Services() compose.Services {
+func (m *MockProject) Services() domain.Services {
 	args := m.Called()
-	return args.Get(0).(compose.Services)
-}
-
-func (m *MockProject) HasService(serviceName string) bool {
-	args := m.Called(serviceName)
-	return args.Get(0).(bool)
-}
-
-func (m *MockProject) ServiceNames() []string {
-	args := m.Called()
-	return args.Get(0).([]string)
-}
-
-func (m *MockProject) ExclusiveServiceNames() []string {
-	args := m.Called()
-	return args.Get(0).([]string)
-}
-
-func (m *MockProject) MarshalYAML() ([]byte, error) {
-	args := m.Called()
-
-	if b, ok := args.Get(0).([]byte); ok {
-		return b, args.Error(1)
-	}
-
-	return nil, args.Error(1)
+	return args.Get(0).(domain.Services)
 }
 
 func (m *MockProject) Name() string {

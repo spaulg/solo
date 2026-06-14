@@ -13,8 +13,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type SelfSignedCertificateAuthority struct {
@@ -84,7 +84,7 @@ func (t *SelfSignedCertificateAuthority) GetCACertificate() *tls.Certificate {
 	return t.caCertificate
 }
 
-func (t *SelfSignedCertificateAuthority) ExportCACertificate(project project_types.Project) error {
+func (t *SelfSignedCertificateAuthority) ExportCACertificate(project domain.Project) error {
 	stateDirectory := project.GetAllServicesStateDirectory()
 
 	err := os.MkdirAll(stateDirectory, 0700)

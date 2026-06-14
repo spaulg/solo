@@ -11,14 +11,10 @@ import (
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
-	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
-	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/grpc"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
+	"github.com/spaulg/solo/test/mocks/host/domain/compose"
 	"github.com/spaulg/solo/test/mocks/host/infra/container"
 	"github.com/spaulg/solo/test/mocks/logging"
 )
@@ -30,8 +26,8 @@ func TestWorkflowServiceTestSuite(t *testing.T) {
 type WorkflowServiceTestSuite struct {
 	suite.Suite
 
-	soloCtx                 *cli_context.CliContext
-	mockProject             *project.MockProject
+	mockLogger              *slog.Logger
+	mockProject             *compose.MockProject
 	mockLogHandler          *logging.MockHandler
 	mockWorkflowExecTracker *wms.MockWorkflowExecTracker
 	mockOrchestrator        *container.MockOrchestrator
@@ -40,7 +36,7 @@ type WorkflowServiceTestSuite struct {
 }
 
 func (t *WorkflowServiceTestSuite) SetupTest() {
-	t.mockProject = &project.MockProject{}
+	t.mockProject = &compose.MockProject{}
 	t.mockOrchestrator = &container.MockOrchestrator{}
 	t.mockGrpcServer = &grpc.MockBidiStreamingServer[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse]{}
 	t.mockWorkflowExecTracker = &wms.MockWorkflowExecTracker{}
@@ -49,25 +45,13 @@ func (t *WorkflowServiceTestSuite) SetupTest() {
 	t.mockLogHandler = &logging.MockHandler{}
 	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
 
-	t.soloCtx = &cli_context.CliContext{
-		Project: t.mockProject,
-		Logger:  slog.New(t.mockLogHandler),
-		Config: &domain.Config{
-			Entrypoint: domain_config.EntrypointConfig{
-				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
-			},
-			Workflow: domain_config.WorkflowConfig{
-				Grpc: domain_config.GrpcConfig{
-					ServerPort: 0,
-				},
-			},
-		},
-	}
+	t.mockLogger = slog.New(t.mockLogHandler)
 }
 
 func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestFailed() {
 	workflowService := NewWorkflowService(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -88,7 +72,8 @@ func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestFailed() {
 
 func (t *WorkflowServiceTestSuite) TestRecvRunWorkflowStreamRequestMessageUnsupported() {
 	workflowService := NewWorkflowService(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -133,7 +118,8 @@ func (t *WorkflowServiceTestSuite) TestFirstContainerCompleteSkipsWorkflow() {
 	t.mockWorkflowRunner.On("RunWorkflow", mock.AnythingOfType("*service_definitions.WorkflowSession")).Return(nil)
 
 	workflowService := NewWorkflowService(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -176,7 +162,8 @@ func (t *WorkflowServiceTestSuite) TestRunWorkflowSucceeds() {
 	).Return(nil).Once()
 
 	workflowService := NewWorkflowService(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
@@ -216,17 +203,18 @@ func (t *WorkflowServiceTestSuite) TestRunWorkflowFails() {
 	t.mockWorkflowRunner.On(
 		"RunWorkflow",
 		mock.AnythingOfType("*service_definitions.WorkflowSession"),
-	).Return(errors.New("mock workflow error")).Once()
+	).Return(errors.New("mock wf error")).Once()
 
 	workflowService := NewWorkflowService(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		t.mockOrchestrator,
 		t.mockWorkflowExecTracker,
 		t.mockWorkflowRunner,
 	)
 
 	err := workflowService.RunWorkflowStream(t.mockGrpcServer)
-	t.ErrorContains(err, "mock workflow error")
+	t.ErrorContains(err, "mock wf error")
 
 	t.mockOrchestrator.AssertExpectations(t.T())
 	t.mockGrpcServer.AssertExpectations(t.T())

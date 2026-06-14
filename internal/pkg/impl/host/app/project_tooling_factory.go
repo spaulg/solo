@@ -11,7 +11,7 @@ func ProjectToolingFactory(soloCtx *context.CliContext) (*ProjectTooling, error)
 	eventManager := event_manager.GetEventManagerInstance()
 
 	// Container orchestrator factory
-	orchestratorFactory := container.NewOrchestratorFactory(soloCtx, eventManager)
+	orchestratorFactory := container.NewOrchestratorFactory(soloCtx.Logger, soloCtx.Config, soloCtx.Project, eventManager)
 
 	projectTooling := NewProjectTooling(soloCtx, orchestratorFactory)
 

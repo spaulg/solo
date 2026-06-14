@@ -3,9 +3,9 @@ package grpc
 import (
 	"github.com/stretchr/testify/mock"
 
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc"
-	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/service_definitions"
 )
 
 type MockGRPCServerFactory struct {
@@ -14,8 +14,8 @@ type MockGRPCServerFactory struct {
 
 func (m *MockGRPCServerFactory) Build(
 	orchestrator grpc.ContainerResolver,
-	workflowExecutionTracker wms_types.WorkflowExecTracker,
-	project project_types.Project,
+	workflowExecutionTracker service_definitions.WorkflowExecTracker,
+	project domain.Project,
 	port int,
 ) (grpc.Server, error) {
 	args := m.Called(orchestrator, workflowExecutionTracker, project, port)

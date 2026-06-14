@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
@@ -16,11 +17,9 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container/progress"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type ComposeServiceStatus struct {
@@ -36,24 +35,30 @@ type DockerInspect struct {
 }
 
 type DockerOrchestrator struct {
-	soloCtx           *context.CliContext
-	eventManager      events_types.Manager
+	logger            *slog.Logger
+	config            *domain.Config
+	project           domain.Project
+	eventManager      events.Manager
 	dockerCommandPath string
 	projectDirectory  string
 	composeFile       string
 }
 
 func NewDockerOrchestrator(
-	soloCtx *context.CliContext,
-	eventManager events_types.Manager,
+	logger *slog.Logger,
+	config *domain.Config,
+	project domain.Project,
+	eventManager events.Manager,
 	dockerCommandPath string,
 ) *DockerOrchestrator {
 	return &DockerOrchestrator{
-		soloCtx:           soloCtx,
+		logger:            logger,
+		config:            config,
+		project:           project,
 		eventManager:      eventManager,
 		dockerCommandPath: dockerCommandPath,
-		projectDirectory:  soloCtx.Project.GetDirectory(),
-		composeFile:       soloCtx.Project.GetGeneratedComposeFilePath(),
+		projectDirectory:  project.GetDirectory(),
+		composeFile:       project.GetGeneratedComposeFilePath(),
 	}
 }
 
@@ -73,8 +78,16 @@ func (t *DockerOrchestrator) runComposeCommandWithProgress(arguments ...string) 
 	}
 
 	// Stream the progress events
-	eventStreamReader := progress.NewProgressEventPublisher(t.soloCtx, t.eventManager, t.soloCtx.Project.Name(), stderr)
-	go func(eventStreamReader *progress.ProgressEventStreamer) {
+	eventStreamReader := progress.NewProgressEventPublisher(
+		t.logger,
+		t.config,
+		t.project,
+		t.eventManager,
+		t.project.Name(),
+		stderr,
+	)
+
+	go func(eventStreamReader *progress.ProgressEventPublisher) {
 		eventStreamReader.PublishStreamedProgressEvents()
 	}(eventStreamReader)
 
@@ -213,7 +226,7 @@ func (t *DockerOrchestrator) RunCommand(containerName string, command []string) 
 func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*ServiceStatus, error) {
 	arguments := []string{
 		"compose",
-		"--profile", strings.Join(t.soloCtx.Project.Profiles(), ","),
+		"--profile", strings.Join(t.project.Profiles(), ","),
 		"-f", t.composeFile,
 		"--project-directory", t.projectDirectory,
 		"ps",
@@ -282,7 +295,7 @@ func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*ServiceStat
 
 	// Add services with no container
 	if serviceNames == nil {
-		serviceNames = t.soloCtx.Project.Services().ServiceNames()
+		serviceNames = t.project.Services().ServiceNames()
 	}
 
 	for _, service := range serviceNames {
@@ -306,13 +319,8 @@ func (t *DockerOrchestrator) GetHostGatewayHostname() string {
 	return "host.docker.internal"
 }
 
-func (t *DockerOrchestrator) ExportComposeConfiguration(config *domain.Config, project project_types.Project) ([]byte, error) {
-	// Reload project with all profiles enabled
-	project, err := project.ReloadWithAllProfilesEnabled()
-	if err != nil {
-		return nil, fmt.Errorf("failed to reload project with all services: %w", err)
-	}
-
+func (t *DockerOrchestrator) ExportComposeConfiguration(config *domain.Config, project domain.Project) ([]byte, error) {
+	var err error
 	soloEntrypoint := path.Join(project.GetStateDirectoryRoot(), "solo-entrypoint")
 
 	allServicesDataPath := project.GetAllServicesStateDirectory()
@@ -328,6 +336,10 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *domain.Config, p
 	}
 
 	compose := project.GetCompose()
+	compose, err = compose.WithProfiles([]string{"*"})
+	if err != nil {
+		return nil, fmt.Errorf("failed to reload compose with all services: %w", err)
+	}
 
 	for index, service := range compose.Services {
 		// Replace the entrypoint of each service. if an existing entrypoint has been set, prepend this to command
@@ -436,7 +448,7 @@ func (t *DockerOrchestrator) ResolveImageWorkingDirectory(serviceName string) (s
 }
 
 func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName string, index int) (string, string, error) {
-	service := t.soloCtx.Project.Services().GetService(serviceName).GetConfig()
+	service := t.project.Services().GetService(serviceName).GetConfig()
 	replicas := 1
 
 	if service.Deploy != nil && service.Deploy.Replicas != nil {
@@ -447,7 +459,7 @@ func (t *DockerOrchestrator) ResolveContainerNameFromServiceName(serviceName str
 	if len(service.ContainerName) > 0 && replicas == 1 {
 		containerName = service.ContainerName
 	} else {
-		containerName = fmt.Sprintf("%s-%s-%d", t.soloCtx.Project.Name(), serviceName, index)
+		containerName = fmt.Sprintf("%s-%s-%d", t.project.Name(), serviceName, index)
 	}
 
 	return t.resolveContainerNameFromIDOrName(containerName)
@@ -459,7 +471,7 @@ func (t *DockerOrchestrator) resolveContainerNameFromIDOrName(containerNameOrID 
 		return "", "", fmt.Errorf("failed to inspect container %s: %w", containerNameOrID, err)
 	}
 
-	projectName := t.soloCtx.Project.Name()
+	projectName := t.project.Name()
 
 	fullContainerName := inspect.Name
 	fullContainerName = strings.TrimLeft(fullContainerName, "/")
@@ -480,13 +492,13 @@ func (t *DockerOrchestrator) dockerInspect(artifactName string, nameOrID string)
 	composeCmd.Stdout = &stdoutBuf
 
 	if err := composeCmd.Run(); err != nil {
-		t.soloCtx.Logger.Error("Failed to run")
+		t.logger.Error("Failed to run")
 		return nil, err
 	}
 
 	inspect := DockerInspect{}
 	if err := json.Unmarshal(stdoutBuf.Bytes(), &inspect); err != nil {
-		t.soloCtx.Logger.Error("Failed to unmarshall")
+		t.logger.Error("Failed to unmarshall")
 		return nil, err
 	}
 

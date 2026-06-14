@@ -3,18 +3,19 @@ package service_definitions
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"google.golang.org/grpc"
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
-	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
 )
 
 type WorkflowSession struct {
-	soloCtx             *solo_context.CliContext
+	project             domain.Project
 	workflowName        commonworkflow.WorkflowName
 	server              grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse]
 	workflowExecTracker WorkflowExecTracker
@@ -26,7 +27,8 @@ type WorkflowSession struct {
 }
 
 func NewWorkflowSession(
-	soloCtx *solo_context.CliContext,
+	logger *slog.Logger,
+	project domain.Project,
 	workflowName commonworkflow.WorkflowName,
 	server grpc.BidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse],
 	workflowExecTracker WorkflowExecTracker,
@@ -38,7 +40,7 @@ func NewWorkflowSession(
 	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
 	serviceName, ok := ctx.Value(serviceNameContextValueName).(string)
 	if !ok {
-		soloCtx.Logger.Error("Service name not found")
+		logger.Error("Service name not found")
 		return nil, fmt.Errorf("unauthorized")
 	}
 
@@ -46,7 +48,7 @@ func NewWorkflowSession(
 	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
 	containerName, ok := ctx.Value(containerNameContextValueName).(string)
 	if !ok {
-		soloCtx.Logger.Error("Container name not found")
+		logger.Error("Container name not found")
 		return nil, fmt.Errorf("unauthorized")
 	}
 
@@ -54,12 +56,12 @@ func NewWorkflowSession(
 	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
 	fullContainerName, ok := ctx.Value(fullContainerNameContextValueName).(string)
 	if !ok {
-		soloCtx.Logger.Error("Full container name not found")
+		logger.Error("Full container name not found")
 		return nil, fmt.Errorf("unauthorized")
 	}
 
 	return &WorkflowSession{
-		soloCtx:             soloCtx,
+		project:             project,
 		workflowName:        workflowName,
 		server:              server,
 		workflowExecTracker: workflowExecTracker,
@@ -116,7 +118,7 @@ func (t *WorkflowSession) GetWorkingDirectory() (string, error) {
 	var err error
 
 	serviceName := t.GetServiceName()
-	service := t.soloCtx.Project.Services().GetService(serviceName)
+	service := t.project.Services().GetService(serviceName)
 	serviceWorkingDirectory := service.GetConfig().WorkingDir
 
 	if serviceWorkingDirectory == "" {
@@ -131,7 +133,7 @@ func (t *WorkflowSession) GetWorkingDirectory() (string, error) {
 	return serviceWorkingDirectory, err
 }
 
-func (t *WorkflowSession) RunCommand(request *wms_shared.RunCommandRequest) error {
+func (t *WorkflowSession) RunCommand(request *wf.RunCommandRequest) error {
 	return t.server.Send(&services.WorkflowStreamResponse{
 		Action: services.WorkflowAction_RUN_COMMAND_ACTION,
 		RunCommand: &services.WorkflowRunCommand{
@@ -142,7 +144,7 @@ func (t *WorkflowSession) RunCommand(request *wms_shared.RunCommandRequest) erro
 	})
 }
 
-func (t *WorkflowSession) RecvCommandResponse() (*wms_shared.CommandResponse, error) {
+func (t *WorkflowSession) RecvCommandResponse() (*wf.CommandResponse, error) {
 	result, err := t.server.Recv()
 
 	if err != nil {
@@ -161,7 +163,7 @@ func (t *WorkflowSession) RecvCommandResponse() (*wms_shared.CommandResponse, er
 		exitCodePtr = &exitCode
 	}
 
-	return &wms_shared.CommandResponse{
+	return &wf.CommandResponse{
 		Stdout:   result.RunCommandResult.Stdout,
 		Stderr:   result.RunCommandResult.Stderr,
 		ExitCode: exitCodePtr,

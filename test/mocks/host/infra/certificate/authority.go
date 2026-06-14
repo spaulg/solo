@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/certificate"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 type MockAuthority struct {
@@ -18,7 +18,7 @@ func (m *MockAuthority) GetCACertificate() *tls.Certificate {
 	return args.Get(0).(*tls.Certificate)
 }
 
-func (m *MockAuthority) ExportCACertificate(project project_types.Project) error {
+func (m *MockAuthority) ExportCACertificate(project domain.Project) error {
 	args := m.Called(project)
 	return args.Error(0)
 }

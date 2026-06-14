@@ -11,15 +11,11 @@ import (
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
-	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
-	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
-	"github.com/spaulg/solo/test"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	interceptors2 "github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"
 	"github.com/spaulg/solo/test/mocks/grpc"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
+	"github.com/spaulg/solo/test/mocks/host/domain/compose"
 	"github.com/spaulg/solo/test/mocks/host/infra/container"
 	"github.com/spaulg/solo/test/mocks/logging"
 )
@@ -31,8 +27,8 @@ func TestWorkflowSessionTestSuite(t *testing.T) {
 type WorkflowSessionTestSuite struct {
 	suite.Suite
 
-	soloCtx                 *cli_context.CliContext
-	mockProject             *project.MockProject
+	mockLogger              *slog.Logger
+	mockProject             *compose.MockProject
 	mockLogHandler          *logging.MockHandler
 	mockOrchestrator        *container.MockOrchestrator
 	mockWorkflowExecTracker *wms.MockWorkflowExecTracker
@@ -43,27 +39,14 @@ func (t *WorkflowSessionTestSuite) SetupTest() {
 	t.mockGrpcServer = &grpc.MockBidiStreamingServer[services.WorkflowStreamRequest, services.WorkflowStreamResponse]{}
 	t.mockWorkflowExecTracker = &wms.MockWorkflowExecTracker{}
 	t.mockOrchestrator = &container.MockOrchestrator{}
-	t.mockProject = &project.MockProject{}
+	t.mockProject = &compose.MockProject{}
 	t.mockLogHandler = &logging.MockHandler{}
 
 	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).
 		Maybe().
 		Return(true)
 
-	t.soloCtx = &cli_context.CliContext{
-		Project: t.mockProject,
-		Logger:  slog.New(t.mockLogHandler),
-		Config: &domain.Config{
-			Entrypoint: domain_config.EntrypointConfig{
-				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
-			},
-			Workflow: domain_config.WorkflowConfig{
-				Grpc: domain_config.GrpcConfig{
-					ServerPort: 0,
-				},
-			},
-		},
-	}
+	t.mockLogger = slog.New(t.mockLogHandler)
 }
 
 func (t *WorkflowSessionTestSuite) TestMissingServiceName() {
@@ -75,7 +58,8 @@ func (t *WorkflowSessionTestSuite) TestMissingServiceName() {
 	})).Return(nil)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.PreStartService,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -92,7 +76,7 @@ func (t *WorkflowSessionTestSuite) TestMissingServiceName() {
 }
 
 func (t *WorkflowSessionTestSuite) TestMissingContainerName() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -104,7 +88,8 @@ func (t *WorkflowSessionTestSuite) TestMissingContainerName() {
 	})).Return(nil)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.PreStartService,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -121,8 +106,8 @@ func (t *WorkflowSessionTestSuite) TestMissingContainerName() {
 }
 
 func (t *WorkflowSessionTestSuite) TestMissingFullContainerName() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -135,7 +120,8 @@ func (t *WorkflowSessionTestSuite) TestMissingFullContainerName() {
 	})).Return(nil)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.PreStartService,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -152,9 +138,9 @@ func (t *WorkflowSessionTestSuite) TestMissingFullContainerName() {
 }
 
 func (t *WorkflowSessionTestSuite) TestAccessors() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -164,7 +150,8 @@ func (t *WorkflowSessionTestSuite) TestAccessors() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.PreStartService,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -187,10 +174,10 @@ func (t *WorkflowSessionTestSuite) TestAccessors() {
 }
 
 func (t *WorkflowSessionTestSuite) TestHasFirstContainerWorkflowRunTrue() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -201,7 +188,8 @@ func (t *WorkflowSessionTestSuite) TestHasFirstContainerWorkflowRunTrue() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -220,10 +208,10 @@ func (t *WorkflowSessionTestSuite) TestHasFirstContainerWorkflowRunTrue() {
 }
 
 func (t *WorkflowSessionTestSuite) TestHasFirstContainerWorkflowRunFalse() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -234,7 +222,8 @@ func (t *WorkflowSessionTestSuite) TestHasFirstContainerWorkflowRunFalse() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -253,10 +242,10 @@ func (t *WorkflowSessionTestSuite) TestHasFirstContainerWorkflowRunFalse() {
 }
 
 func (t *WorkflowSessionTestSuite) TestRunCommand() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -267,7 +256,8 @@ func (t *WorkflowSessionTestSuite) TestRunCommand() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -286,7 +276,7 @@ func (t *WorkflowSessionTestSuite) TestRunCommand() {
 		},
 	}).Return(nil)
 
-	err = workflowSession.RunCommand(&wms_shared.RunCommandRequest{
+	err = workflowSession.RunCommand(&wf.RunCommandRequest{
 		Command:          "test_command",
 		Arguments:        []string{"arg1", "arg2"},
 		WorkingDirectory: "/tmp",
@@ -301,10 +291,10 @@ func (t *WorkflowSessionTestSuite) TestRunCommand() {
 }
 
 func (t *WorkflowSessionTestSuite) TestRecvReturnsError() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -315,7 +305,8 @@ func (t *WorkflowSessionTestSuite) TestRecvReturnsError() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -337,10 +328,10 @@ func (t *WorkflowSessionTestSuite) TestRecvReturnsError() {
 }
 
 func (t *WorkflowSessionTestSuite) TestRecvIncorrectCommandResult() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -351,7 +342,8 @@ func (t *WorkflowSessionTestSuite) TestRecvIncorrectCommandResult() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -371,10 +363,10 @@ func (t *WorkflowSessionTestSuite) TestRecvIncorrectCommandResult() {
 }
 
 func (t *WorkflowSessionTestSuite) TestRecvWithoutExitCode() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -385,7 +377,8 @@ func (t *WorkflowSessionTestSuite) TestRecvWithoutExitCode() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -413,10 +406,10 @@ func (t *WorkflowSessionTestSuite) TestRecvWithoutExitCode() {
 }
 
 func (t *WorkflowSessionTestSuite) TestRecvWithExitCode() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -427,7 +420,8 @@ func (t *WorkflowSessionTestSuite) TestRecvWithExitCode() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,
@@ -458,10 +452,10 @@ func (t *WorkflowSessionTestSuite) TestRecvWithExitCode() {
 }
 
 func (t *WorkflowSessionTestSuite) TestMarkComplete() {
-	serviceNameContextValueName := interceptors.ServiceName(interceptors.ServiceNameContextValueName)
-	fullContainerNameContextValueName := interceptors.ContainerName(interceptors.FullContainerNameContextValueName)
-	containerNameContextValueName := interceptors.ContainerName(interceptors.ContainerNameContextValueName)
-	firstContainerCompleteValueName := interceptors.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
+	serviceNameContextValueName := interceptors2.ServiceName(interceptors2.ServiceNameContextValueName)
+	fullContainerNameContextValueName := interceptors2.ContainerName(interceptors2.FullContainerNameContextValueName)
+	containerNameContextValueName := interceptors2.ContainerName(interceptors2.ContainerNameContextValueName)
+	firstContainerCompleteValueName := interceptors2.FirstContainerComplete(commonworkflow.FirstPreStartContainer)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, serviceNameContextValueName, "test_service")
@@ -472,7 +466,8 @@ func (t *WorkflowSessionTestSuite) TestMarkComplete() {
 	t.mockGrpcServer.On("Context").Return(ctx)
 
 	workflowSession, err := NewWorkflowSession(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockProject,
 		commonworkflow.FirstPreStartContainer,
 		t.mockGrpcServer,
 		t.mockWorkflowExecTracker,

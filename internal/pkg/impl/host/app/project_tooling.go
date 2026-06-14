@@ -43,26 +43,26 @@ func (t *ProjectTooling) ExecuteTool(name string, args []string) error {
 	}
 
 	// Validate service exists in the project
-	if !t.soloCtx.Project.Services().HasService(toolConfig.Service) {
-		return fmt.Errorf("service %s not found in project configuration", toolConfig.Service)
+	if !t.soloCtx.Project.Services().HasService(toolConfig.Service()) {
+		return fmt.Errorf("service %s not found in project configuration", toolConfig.Service())
 	}
 
 	shell := t.soloCtx.Config.Shell.DefaultShell
-	if toolConfig.Shell != nil {
-		shell = *toolConfig.Shell
+	if toolConfig.Shell() != nil {
+		shell = *toolConfig.Shell()
 	}
 
 	// Parse the initial command and args for a full path or
 	// shell and split into arguments
-	command, arguments := cmd.SplitCommand(shell, toolConfig.Command+" "+strings.Join(args, " "))
+	command, arguments := cmd.SplitCommand(shell, toolConfig.Command()+" "+strings.Join(args, " "))
 	workingDirectory := ""
 
 	// If a static working directory is specified, use it
-	if toolConfig.WorkingDirectory != "" {
-		workingDirectory = toolConfig.WorkingDirectory
+	if toolConfig.WorkingDirectory() != "" {
+		workingDirectory = toolConfig.WorkingDirectory()
 	}
 
-	return orchestrator.ComposeForkAndExecute(toolConfig.Service, 1, command, arguments, workingDirectory)
+	return orchestrator.ComposeForkAndExecute(toolConfig.Service(), 1, command, arguments, workingDirectory)
 }
 
 func (t *ProjectTooling) ExecuteShell(shell string, index int, serviceName string) error {

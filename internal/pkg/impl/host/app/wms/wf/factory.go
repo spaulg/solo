@@ -2,12 +2,13 @@ package wf
 
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	context_types "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type Factory interface {
 	Make(
-		soloCtx *context_types.CliContext,
+		config *domain.Config,
+		project domain.Project,
 		service string,
 		serviceWorkingDirectory string,
 		workflowName workflowcommon.WorkflowName,

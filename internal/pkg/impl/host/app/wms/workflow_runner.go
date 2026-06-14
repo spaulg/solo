@@ -3,24 +3,27 @@ package wms
 import (
 	"fmt"
 
-	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type WorkflowRunner struct {
-	soloCtx         *solo_context.CliContext
+	config          *domain.Config
+	project         domain.Project
 	eventManager    events.Manager
 	workflowFactory wf.Factory
 }
 
 func NewWorkflowRunner(
-	soloCtx *solo_context.CliContext,
+	config *domain.Config,
+	project domain.Project,
 	eventManager events.Manager,
 	workflowFactory wf.Factory,
 ) *WorkflowRunner {
 	return &WorkflowRunner{
-		soloCtx:         soloCtx,
+		config:          config,
+		project:         project,
 		eventManager:    eventManager,
 		workflowFactory: workflowFactory,
 	}
@@ -84,7 +87,8 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wf.Session) (bool, er
 	}
 
 	workflow, err := t.workflowFactory.Make(
-		t.soloCtx,
+		t.config,
+		t.project,
 		workflowSession.GetServiceName(),
 		serviceWorkingDirectory,
 		workflowSession.GetWorkflowName(),

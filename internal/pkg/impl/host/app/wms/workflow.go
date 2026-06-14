@@ -7,24 +7,23 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	context_types "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
-	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type Workflow struct {
-	soloCtx                 *context_types.CliContext
+	config                  *domain.Config
 	serviceWorkingDirectory string
-	workflow                compose_types.ServiceWorkflowConfig
+	workflow                domain.ServiceWorkflowConfig
 }
 
 func NewWorkflow(
-	soloCtx *context_types.CliContext,
+	config *domain.Config,
 	serviceWorkingDirectory string,
-	workflow compose_types.ServiceWorkflowConfig,
+	workflow domain.ServiceWorkflowConfig,
 ) *Workflow {
 	return &Workflow{
-		soloCtx:                 soloCtx,
+		config:                  config,
 		serviceWorkingDirectory: serviceWorkingDirectory,
 		workflow:                workflow,
 	}
@@ -32,25 +31,25 @@ func NewWorkflow(
 
 func (t *Workflow) StepIterator() iter.Seq[wf.Step] {
 	return func(yield func(wf.Step) bool) {
-		for stepNumber := range t.workflow.Steps {
+		for _, step := range t.workflow.Steps() {
 			id := ulid.MustNew(ulid.Timestamp(time.Now()), rand.Reader)
 
 			workingDirectory := t.serviceWorkingDirectory
-			if t.workflow.Steps[stepNumber].WorkingDirectory != nil {
-				workingDirectory = *t.workflow.Steps[stepNumber].WorkingDirectory
+			if step.WorkingDirectory() != nil {
+				workingDirectory = *step.WorkingDirectory()
 			}
 
-			shell := t.soloCtx.Config.Workflow.DefaultStepShell
-			if t.workflow.Steps[stepNumber].Shell != nil {
-				shell = *t.workflow.Steps[stepNumber].Shell
-			} else if t.workflow.Shell != nil {
-				shell = *t.workflow.Shell
+			shell := t.config.Workflow.DefaultStepShell
+			if step.Shell() != nil {
+				shell = *step.Shell()
+			} else if t.workflow.Shell() != nil {
+				shell = *t.workflow.Shell()
 			}
 
 			step := NewStep(
 				id.String(),
-				t.workflow.Steps[stepNumber].Name,
-				t.workflow.Steps[stepNumber].Run,
+				step.Name(),
+				step.Run(),
 				workingDirectory,
 				shell,
 			)

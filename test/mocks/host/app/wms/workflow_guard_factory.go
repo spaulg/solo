@@ -4,17 +4,17 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type MockWorkflowGuardFactory struct {
 	mock.Mock
 }
 
-func (m *MockWorkflowGuardFactory) Build(workflowNames []workflowcommon.WorkflowName, containerNames []string) wms_types.Guard {
+func (m *MockWorkflowGuardFactory) Build(workflowNames []workflowcommon.WorkflowName, containerNames []string) wf.Guard {
 	args := m.Called(workflowNames, containerNames)
 
-	if g, ok := args.Get(0).(wms_types.Guard); ok {
+	if g, ok := args.Get(0).(wf.Guard); ok {
 		return g
 	}
 
