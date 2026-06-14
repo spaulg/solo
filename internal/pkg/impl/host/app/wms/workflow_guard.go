@@ -3,19 +3,22 @@ package wms
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type WorkflowGuard struct {
-	soloCtx                   *context.CliContext
+	logger                    *slog.Logger
+	config                    *domain.Config
+	project                   domain.Project
 	channelLock               sync.Mutex
 	containers                []string
 	workflowContainerChannels map[workflowcommon.WorkflowName]map[string]chan int
@@ -23,7 +26,9 @@ type WorkflowGuard struct {
 }
 
 func NewWorkflowGuard(
-	soloCtx *context.CliContext,
+	logger *slog.Logger,
+	config *domain.Config,
+	project domain.Project,
 	workflows []workflowcommon.WorkflowName,
 	containers []string,
 ) *WorkflowGuard {
@@ -41,7 +46,9 @@ func NewWorkflowGuard(
 	}
 
 	return &WorkflowGuard{
-		soloCtx:                   soloCtx,
+		logger:                    logger,
+		config:                    config,
+		project:                   project,
 		channelLock:               sync.Mutex{},
 		containers:                containers,
 		workflowContainerChannels: workflowContainerChannels,
@@ -59,13 +66,13 @@ func (t *WorkflowGuard) Publish(event events.Event) {
 		workflowName = e.WorkflowName
 		containerName = e.FullContainerName
 
-		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event skipped for workflow %s for container %s", workflowName, containerName))
+		t.logger.Debug(fmt.Sprintf("Received event skipped for workflow %s for container %s", workflowName, containerName))
 
 	case *wf.CompleteEvent:
 		workflowName = e.WorkflowName
 		containerName = e.FullContainerName
 
-		t.soloCtx.Logger.Debug(fmt.Sprintf("Received event completed for workflow %s for container %s", workflowName, containerName))
+		t.logger.Debug(fmt.Sprintf("Received event completed for workflow %s for container %s", workflowName, containerName))
 		workflowSuccessful = e.Successful
 
 	default:
@@ -73,7 +80,7 @@ func (t *WorkflowGuard) Publish(event events.Event) {
 	}
 
 	if _, ok := t.workflowContainerChannels[workflowName]; !ok {
-		t.soloCtx.Logger.Warn(fmt.Sprintf("Workflow %s not registered for workflow guard", workflowName))
+		t.logger.Warn(fmt.Sprintf("Workflow %s not registered for workflow guard", workflowName))
 		return
 	}
 
@@ -81,16 +88,16 @@ func (t *WorkflowGuard) Publish(event events.Event) {
 	defer t.channelLock.Unlock()
 
 	if _, ok := t.workflowContainerChannels[workflowName][containerName]; !ok {
-		t.soloCtx.Logger.Warn(fmt.Sprintf("Container %s not registered for workflow guard or channel already closed", containerName))
+		t.logger.Warn(fmt.Sprintf("Container %s not registered for workflow guard or channel already closed", containerName))
 		return
 	}
 
 	if t.workflowContainerChannels[workflowName][containerName] == nil {
-		t.soloCtx.Logger.Warn(fmt.Sprintf("Channel for container %s and workflow %s is nil, cannot close channel", containerName, workflowName))
+		t.logger.Warn(fmt.Sprintf("Channel for container %s and workflow %s is nil, cannot close channel", containerName, workflowName))
 		return
 	}
 
-	t.soloCtx.Logger.Debug(fmt.Sprintf("Closing channel for workflow %s and container %s", workflowName, containerName))
+	t.logger.Debug(fmt.Sprintf("Closing channel for workflow %s and container %s", workflowName, containerName))
 
 	currentStatus := t.workflowContainerStatus[workflowName][containerName]
 	t.workflowContainerStatus[workflowName][containerName] = currentStatus && workflowSuccessful
@@ -110,17 +117,17 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 			err := callback(container, func(workflowName workflowcommon.WorkflowName) error {
 				// If the workflow is not present in the map, return immediately
 				if _, ok := t.workflowContainerChannels[workflowName]; !ok {
-					t.soloCtx.Logger.Info(fmt.Sprintf("Cannot wait for workflow %s to complete as this is not mapped", workflowName))
+					t.logger.Info(fmt.Sprintf("Cannot wait for workflow %s to complete as this is not mapped", workflowName))
 					return fmt.Errorf("unrecognised workflow %s", workflowName)
 				}
 
 				var stopped int32
 
-				duration := t.soloCtx.Project.GetMaxWorkflowTimeout(workflowName.String())
+				duration := t.project.GetMaxWorkflowTimeout(workflowName.String())
 				timer := time.NewTimer(duration)
 				startTime := time.Now()
 
-				t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for %s to complete %s workflow, time remaining: %v", container, workflowName, duration.Seconds()))
+				t.logger.Info(fmt.Sprintf("Waiting for %s to complete %s workflow, time remaining: %v", container, workflowName, duration.Seconds()))
 
 				// Report timer status through logs
 				go func() {
@@ -135,7 +142,7 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 
 						remainingRounded := int(math.Floor(remaining))
 						if (remainingRounded % 10) == 0 {
-							t.soloCtx.Logger.Info(fmt.Sprintf("Waiting for %s to complete %s workflow, time remaining: %v", container, workflowName, remainingRounded))
+							t.logger.Info(fmt.Sprintf("Waiting for %s to complete %s workflow, time remaining: %v", container, workflowName, remainingRounded))
 						}
 					}
 				}()
@@ -144,11 +151,11 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 				// or expiry of the timer
 				select {
 				case <-timer.C:
-					t.soloCtx.Logger.Error(fmt.Sprintf("%s failed to complete workflow %s before timeout", container, workflowName))
+					t.logger.Error(fmt.Sprintf("%s failed to complete workflow %s before timeout", container, workflowName))
 					return errors.New("provisioning timer expired")
 
 				case <-t.workflowContainerChannels[workflowName][container]:
-					t.soloCtx.Logger.Info(fmt.Sprintf("%s completed workflow %s before timeout", container, workflowName))
+					t.logger.Info(fmt.Sprintf("%s completed workflow %s before timeout", container, workflowName))
 					timer.Stop()
 					atomic.StoreInt32(&stopped, 1)
 
@@ -162,13 +169,13 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 			})
 
 			if err != nil {
-				t.soloCtx.Logger.Error(fmt.Sprintf("Error waiting for container %s: %v", container, err))
+				t.logger.Error(fmt.Sprintf("Error waiting for container %s: %v", container, err))
 
 				lock.Lock()
 				errs = append(errs, err)
 				lock.Unlock()
 			} else {
-				t.soloCtx.Logger.Info(fmt.Sprintf("Container %s completed successfully", container))
+				t.logger.Info(fmt.Sprintf("Container %s completed successfully", container))
 			}
 
 			wg.Done()
@@ -178,10 +185,10 @@ func (t *WorkflowGuard) Wait(callback func(container string, guardCallback func(
 	wg.Wait()
 
 	if len(errs) > 0 {
-		t.soloCtx.Logger.Error(fmt.Sprintf("Encountered %d errors while waiting for containers: %v", len(errs), errs))
+		t.logger.Error(fmt.Sprintf("Encountered %d errors while waiting for containers: %v", len(errs), errs))
 		return fmt.Errorf("encountered errors while waiting for containers: %v", errs)
 	}
 
-	t.soloCtx.Logger.Info("All containers completed successfully")
+	t.logger.Info("All containers completed successfully")
 	return nil
 }

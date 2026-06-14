@@ -7,9 +7,7 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 
-	"github.com/spaulg/solo/internal/pkg/types/host/domain"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project"
-	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type ServiceConfig struct {
@@ -24,8 +22,8 @@ func NewServiceConfig(project domain.Project, serviceConfig types.ServiceConfig)
 	}
 }
 
-func (t *ServiceConfig) GetServiceWorkflow(eventName string) compose_types.ServiceWorkflowConfig {
-	serviceWorkflows := t.serviceConfig.Extensions[project_types.ServiceWorkflowExtensionName].(compose_types.ServiceWorkflows)
+func (t *ServiceConfig) GetServiceWorkflow(eventName string) domain.ServiceWorkflowConfig {
+	serviceWorkflows := t.serviceConfig.Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
 	return serviceWorkflows[eventName]
 }
 

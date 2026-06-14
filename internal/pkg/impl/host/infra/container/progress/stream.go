@@ -5,33 +5,40 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
-type ProgressEventStreamer struct {
-	soloCtx      *context.CliContext
-	eventManager events_types.Manager
+type ProgressEventPublisher struct {
+	logger       *slog.Logger
+	config       *domain.Config
+	project      domain.Project
+	eventManager events.Manager
 	projectName  string
 	stream       io.ReadCloser
 }
 
 func NewProgressEventPublisher(
-	soloCtx *context.CliContext,
-	eventManager events_types.Manager,
+	logger *slog.Logger,
+	config *domain.Config,
+	project domain.Project,
+	eventManager events.Manager,
 	projectName string,
 	stream io.ReadCloser,
-) *ProgressEventStreamer {
-	return &ProgressEventStreamer{
-		soloCtx:      soloCtx,
+) *ProgressEventPublisher {
+	return &ProgressEventPublisher{
+		logger:       logger,
+		config:       config,
+		project:      project,
 		eventManager: eventManager,
 		projectName:  projectName,
 		stream:       stream,
 	}
 }
 
-func (t *ProgressEventStreamer) PublishStreamedProgressEvents() {
+func (t *ProgressEventPublisher) PublishStreamedProgressEvents() {
 	scanner := bufio.NewScanner(t.stream)
 
 	for scanner.Scan() {
@@ -39,7 +46,7 @@ func (t *ProgressEventStreamer) PublishStreamedProgressEvents() {
 
 		composeProgress := ComposeProgress{}
 		if err := json.Unmarshal([]byte(line), &composeProgress); err != nil {
-			t.soloCtx.Logger.Error(fmt.Sprintf("Error unmarshaling JSON: %s: %v", line, err))
+			t.logger.Error(fmt.Sprintf("Error unmarshaling JSON: %s: %v", line, err))
 			continue
 		}
 
@@ -49,7 +56,7 @@ func (t *ProgressEventStreamer) PublishStreamedProgressEvents() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		t.soloCtx.Logger.Error(fmt.Sprintf("Error scanning progress stream: %v", err))
+		t.logger.Error(fmt.Sprintf("Error scanning progress stream: %v", err))
 		return
 	}
 }

@@ -4,9 +4,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc/metadata"
 
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	container_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
 )
 
 type MockOrchestrator struct {
@@ -53,18 +52,18 @@ func (m *MockOrchestrator) GetHostGatewayHostname() string {
 	return args.String(0)
 }
 
-func (m *MockOrchestrator) ServicesStatus(serviceNames []string) (*container_types.ServiceStatus, error) {
+func (m *MockOrchestrator) ServicesStatus(serviceNames []string) (*container.ServiceStatus, error) {
 	args := m.Called(serviceNames)
 	serviceStatus := args.Get(0)
 
-	if s, ok := serviceStatus.(*container_types.ServiceStatus); ok {
+	if s, ok := serviceStatus.(*container.ServiceStatus); ok {
 		return s, args.Error(1)
 	}
 
 	return nil, args.Error(1)
 }
 
-func (m *MockOrchestrator) ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error) {
+func (m *MockOrchestrator) ExportComposeConfiguration(config *domain.Config, project domain.Project) ([]byte, error) {
 	args := m.Called(config, project)
 	configBytes := args.Get(0)
 

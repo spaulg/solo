@@ -1,15 +1,17 @@
 package container
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/app/events"
+	"github.com/spaulg/solo/test/mocks/logging"
 )
 
 func TestOrchestratorFactoryTestSuite(t *testing.T) {
@@ -20,17 +22,21 @@ type OrchestratorFactoryTestSuite struct {
 	suite.Suite
 
 	mockEventManager *events.MockEventManager
+	mockLogHandler   *logging.MockHandler
+	mockLogger       *slog.Logger
 }
 
 func (t *OrchestratorFactoryTestSuite) SetupTest() {
 	t.mockEventManager = &events.MockEventManager{}
+	t.mockLogHandler = &logging.MockHandler{}
+	t.mockLogger = slog.New(t.mockLogHandler)
 }
 
 func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 	loadedConfig := &domain.Config{
-		Orchestration: domain_config.OrchestrationConfig{
+		Orchestration: config.OrchestrationConfig{
 			SearchOrder: []string{"docker"},
-			Orchestrators: map[string]domain_config.OrchestratorConfig{
+			Orchestrators: map[string]config.OrchestratorConfig{
 				"docker": {
 					Binary: "docker",
 				},
@@ -39,15 +45,10 @@ func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
-	loadedProject, err := domain.NewProject(projectFilePath, loadedConfig, []string{})
+	loadedProject, err := compose.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
-	soloCtx := &context.CliContext{
-		Config:  loadedConfig,
-		Project: loadedProject,
-	}
-
-	factory := NewOrchestratorFactory(soloCtx, t.mockEventManager)
+	factory := NewOrchestratorFactory(t.mockLogger, loadedConfig, loadedProject, t.mockEventManager)
 	t.NotNil(factory)
 
 	orchestrator, err := factory.Build()
@@ -58,21 +59,16 @@ func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactorySuccess() {
 
 func (t *OrchestratorFactoryTestSuite) TestOrchestratorFactoryFailure() {
 	loadedConfig := &domain.Config{
-		Orchestration: domain_config.OrchestrationConfig{
+		Orchestration: config.OrchestrationConfig{
 			SearchOrder: []string{},
 		},
 	}
 
 	projectFilePath := test.GetTestDataFilePath("container/solo.yml")
-	loadedProject, err := domain.NewProject(projectFilePath, loadedConfig, []string{})
+	loadedProject, err := compose.NewProject(projectFilePath, loadedConfig, []string{})
 	t.NoError(err)
 
-	soloCtx := &context.CliContext{
-		Config:  loadedConfig,
-		Project: loadedProject,
-	}
-
-	factory := NewOrchestratorFactory(soloCtx, t.mockEventManager)
+	factory := NewOrchestratorFactory(t.mockLogger, loadedConfig, loadedProject, t.mockEventManager)
 	orchestrator, err := factory.Build()
 	t.Nil(orchestrator)
 	t.Error(err)

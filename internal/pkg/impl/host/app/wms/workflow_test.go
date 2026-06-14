@@ -1,19 +1,14 @@
 package wms
 
 import (
-	"log/slog"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/test"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
-	"github.com/spaulg/solo/test/mocks/logging"
 )
 
 func TestOrchestratorTestSuite(t *testing.T) {
@@ -30,33 +25,21 @@ type expectedStep struct {
 type WorkflowTestSuite struct {
 	suite.Suite
 
-	soloCtx        *cli_context.CliContext
-	mockProject    *project.MockProject
-	mockLogHandler *logging.MockHandler
-
+	mockConfig    *domain.Config
 	expectedSteps []expectedStep
-	config        compose_types.ServiceWorkflowConfig
+	config        compose.ServiceWorkflowConfig
 }
 
 func (t *WorkflowTestSuite) SetupTest() {
 	cwd := "/"
 
-	t.mockProject = &project.MockProject{}
-
-	t.mockLogHandler = &logging.MockHandler{}
-	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
-
-	t.soloCtx = &cli_context.CliContext{
-		Project: t.mockProject,
-		Logger:  slog.New(t.mockLogHandler),
-		Config: &domain.Config{
-			Entrypoint: domain_config_types.EntrypointConfig{
-				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
-			},
-			Workflow: domain_config_types.WorkflowConfig{
-				Grpc: domain_config_types.GrpcConfig{
-					ServerPort: 0,
-				},
+	t.mockConfig = &domain.Config{
+		Entrypoint: config.EntrypointConfig{
+			HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
+		},
+		Workflow: config.WorkflowConfig{
+			Grpc: config.GrpcConfig{
+				ServerPort: 0,
 			},
 		},
 	}
@@ -82,29 +65,19 @@ func (t *WorkflowTestSuite) SetupTest() {
 		},
 	}
 
-	t.config = compose_types.ServiceWorkflowConfig{
-		Steps: []compose_types.WorkflowStep{
-			{
-				Name:             "step1",
-				Run:              "/bin/foo arg1 arg2",
-				WorkingDirectory: &cwd,
-			},
-			{
-				Name:             "step2",
-				Run:              "/bin/bar arg3 arg4",
-				WorkingDirectory: &cwd,
-			},
-			{
-				Name:             "step3",
-				Run:              "/bin/baz arg5 arg6",
-				WorkingDirectory: &cwd,
-			},
+	t.config = compose.NewServiceWorkflowConfig(
+		[]domain.WorkflowStep{
+			compose.NewWorkflowStep("step1", "/bin/foo arg1 arg2", nil, &cwd),
+			compose.NewWorkflowStep("step2", "/bin/bar arg3 arg4", nil, &cwd),
+			compose.NewWorkflowStep("step3", "/bin/baz arg5 arg6", nil, &cwd),
 		},
-	}
+		nil,
+		nil,
+	)
 }
 
 func (t *WorkflowTestSuite) TestIteration() {
-	orchestrator := NewWorkflow(t.soloCtx, "/", t.config)
+	orchestrator := NewWorkflow(t.mockConfig, "/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {
@@ -118,7 +91,7 @@ func (t *WorkflowTestSuite) TestIteration() {
 }
 
 func (t *WorkflowTestSuite) TestIterationWithEarlyBreak() {
-	orchestrator := NewWorkflow(t.soloCtx, "/", t.config)
+	orchestrator := NewWorkflow(t.mockConfig, "/", t.config)
 
 	counter := 0
 	for step := range orchestrator.StepIterator() {

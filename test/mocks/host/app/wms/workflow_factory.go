@@ -4,8 +4,8 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	context_types "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type MockWorkflowFactory struct {
@@ -13,13 +13,14 @@ type MockWorkflowFactory struct {
 }
 
 func (m *MockWorkflowFactory) Make(
-	soloCtx *context_types.CliContext,
+	config *domain.Config,
+	project domain.Project,
 	service string,
 	serviceWorkingDirectory string,
 	workflowName workflowcommon.WorkflowName,
-) (wms_types.Definition, error) {
-	args := m.Called(soloCtx, service, serviceWorkingDirectory, workflowName)
-	if o, ok := args.Get(0).(wms_types.Definition); ok {
+) (wf.Definition, error) {
+	args := m.Called(config, project, service, serviceWorkingDirectory, workflowName)
+	if o, ok := args.Get(0).(wf.Definition); ok {
 		return o, args.Error(1)
 	}
 

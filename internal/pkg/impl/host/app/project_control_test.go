@@ -9,18 +9,17 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	container_types "github.com/spaulg/solo/internal/pkg/impl/host/infra/container"
 	"github.com/spaulg/solo/test/mocks/host/app/audit"
 	"github.com/spaulg/solo/test/mocks/host/infra/repository"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/app/events"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
-	"github.com/spaulg/solo/test/mocks/host/domain/project/compose"
+	"github.com/spaulg/solo/test/mocks/host/domain/compose"
 	"github.com/spaulg/solo/test/mocks/host/infra/container"
 	"github.com/spaulg/solo/test/mocks/host/infra/grpc"
 	"github.com/spaulg/solo/test/mocks/logging"
@@ -34,7 +33,7 @@ type ProjectControlTestSuite struct {
 	suite.Suite
 
 	soloCtx                         *context.CliContext
-	mockProject                     *project.MockProject
+	mockProject                     *compose.MockProject
 	mockOrchestratorFactory         *container.MockOrchestratorFactory
 	mockGrpcServerFactory           *grpc.MockGRPCServerFactory
 	mockWorkflowManager             *events.MockEventManager
@@ -54,7 +53,7 @@ func (t *ProjectControlTestSuite) SetupTest() {
 	t.mockGrpcServerFactory = &grpc.MockGRPCServerFactory{}
 	t.mockWorkflowManager = &events.MockEventManager{}
 	t.mockOrchestrator = &container.MockOrchestrator{}
-	t.mockProject = &project.MockProject{}
+	t.mockProject = &compose.MockProject{}
 	t.mockGrpcServer = &grpc.MockAsynchronousServer{}
 	t.mockWorkflowGuardFactory = &wms.MockWorkflowGuardFactory{}
 	t.mockWorkflowGuard = &wms.MockWorkflowGuard{}
@@ -71,11 +70,11 @@ func (t *ProjectControlTestSuite) SetupTest() {
 		Project: t.mockProject,
 		Logger:  slog.New(t.mockLogHandler),
 		Config: &domain.Config{
-			Entrypoint: domain_config_types.EntrypointConfig{
+			Entrypoint: config.EntrypointConfig{
 				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
 			},
-			Workflow: domain_config_types.WorkflowConfig{
-				Grpc: domain_config_types.GrpcConfig{
+			Workflow: config.WorkflowConfig{
+				Grpc: config.GrpcConfig{
 					ServerPort: 0,
 				},
 			},

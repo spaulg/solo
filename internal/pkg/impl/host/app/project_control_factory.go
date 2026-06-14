@@ -23,6 +23,9 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 
 	auditor := audit.NewAuditor(
 		soloCtx,
+		soloCtx.Logger,
+		soloCtx.Config,
+		soloCtx.Project,
 		execEventRepository,
 		workflowLogMetaRepository,
 		workflowStepLogMetaRepository,
@@ -34,7 +37,7 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	eventManager.Subscribe(auditor)
 
 	// Container orchestrator factory
-	orchestratorFactory := container.NewOrchestratorFactory(soloCtx, eventManager)
+	orchestratorFactory := container.NewOrchestratorFactory(soloCtx.Logger, soloCtx.Config, soloCtx.Project, eventManager)
 
 	// GRPC server factory
 	certificateAuthority, err := self_signed.NewCertificateAuthority()
@@ -43,11 +46,11 @@ func ProjectControlFactory(soloCtx *context.CliContext) (*ProjectControl, error)
 	}
 
 	workflowFactory := wms.NewWorkflowFactory()
-	workflowRunner := wms.NewWorkflowRunner(soloCtx, eventManager, workflowFactory)
+	workflowRunner := wms.NewWorkflowRunner(soloCtx.Config, soloCtx.Project, eventManager, workflowFactory)
 
-	grpcServerFactory := grpc.NewMutualTLSServerFactory(soloCtx, certificateAuthority, workflowRunner)
+	grpcServerFactory := grpc.NewMutualTLSServerFactory(soloCtx.Logger, soloCtx.Project, certificateAuthority, workflowRunner)
 
-	workflowGuardFactory := wms.NewWorkflowGuardFactory(soloCtx)
+	workflowGuardFactory := wms.NewWorkflowGuardFactory(soloCtx.Logger, soloCtx.Config, soloCtx.Project)
 
 	// Project control
 	projectControl := NewProjectControl(

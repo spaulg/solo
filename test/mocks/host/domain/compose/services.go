@@ -5,22 +5,22 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type MockServices struct {
 	mock.Mock
 }
 
-func (m *MockServices) ServiceConfigIterator() iter.Seq2[string, compose_types.ServiceConfig] {
+func (m *MockServices) ServiceConfigIterator() iter.Seq2[string, domain.ServiceConfig] {
 	args := m.Called()
-	return args.Get(0).(iter.Seq2[string, compose_types.ServiceConfig])
+	return args.Get(0).(iter.Seq2[string, domain.ServiceConfig])
 }
 
-func (m *MockServices) GetService(serviceName string) compose_types.ServiceConfig {
+func (m *MockServices) GetService(serviceName string) domain.ServiceConfig {
 	args := m.Called(serviceName)
 
-	if s, ok := args.Get(0).(compose_types.ServiceConfig); ok {
+	if s, ok := args.Get(0).(domain.ServiceConfig); ok {
 		return s
 	}
 

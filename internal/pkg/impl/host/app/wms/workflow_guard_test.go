@@ -10,12 +10,11 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/test"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
+	"github.com/spaulg/solo/test/mocks/host/domain/compose"
 	"github.com/spaulg/solo/test/mocks/logging"
 )
 
@@ -26,28 +25,26 @@ func TestWorkflowGuardTestSuite(t *testing.T) {
 type WorkflowGuardTestSuite struct {
 	suite.Suite
 
-	soloCtx        *solo_context.CliContext
-	mockProject    *project.MockProject
+	mockLogger     *slog.Logger
+	mockConfig     *domain.Config
+	mockProject    *compose.MockProject
 	mockLogHandler *logging.MockHandler
 }
 
 func (t *WorkflowGuardTestSuite) SetupTest() {
-	t.mockProject = &project.MockProject{}
+	t.mockProject = &compose.MockProject{}
 	t.mockProject.On("GetMaxWorkflowTimeout", "first_pre_start_container").Return(30 * time.Second)
 
 	t.mockLogHandler = &logging.MockHandler{}
+	t.mockLogger = slog.New(t.mockLogHandler)
 
-	t.soloCtx = &solo_context.CliContext{
-		Project: t.mockProject,
-		Logger:  slog.New(t.mockLogHandler),
-		Config: &domain.Config{
-			Entrypoint: domain_config_types.EntrypointConfig{
-				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
-			},
-			Workflow: domain_config_types.WorkflowConfig{
-				Grpc: domain_config_types.GrpcConfig{
-					ServerPort: 0,
-				},
+	t.mockConfig = &domain.Config{
+		Entrypoint: domain_config_types.EntrypointConfig{
+			HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
+		},
+		Workflow: domain_config_types.WorkflowConfig{
+			Grpc: domain_config_types.GrpcConfig{
+				ServerPort: 0,
 			},
 		},
 	}
@@ -58,7 +55,9 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 	t.mockLogHandler.On("Handle", context.Background(), mock.Anything).Return(nil)
 
 	guard := NewWorkflowGuard(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockConfig,
+		t.mockProject,
 		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"test_container1", "test_container2"},
 	)
@@ -93,7 +92,9 @@ func (t *WorkflowGuardTestSuite) TestWorkflowCompleteOrSkippedEvents() {
 
 func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedEventType() {
 	guard := NewWorkflowGuard(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockConfig,
+		t.mockProject,
 		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"test_container1"},
 	)
@@ -122,7 +123,9 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockConfig,
+		t.mockProject,
 		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"test_container1"},
 	)
@@ -152,7 +155,9 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockConfig,
+		t.mockProject,
 		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"test_container1"},
 	)
@@ -186,7 +191,9 @@ func (t *WorkflowGuardTestSuite) TestWaitWithUnrecognisedWorkflow() {
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
-		t.soloCtx,
+		t.mockLogger,
+		t.mockConfig,
+		t.mockProject,
 		[]workflowcommon.WorkflowName{workflowcommon.FirstPreStartContainer},
 		[]string{"test_container1"},
 	)

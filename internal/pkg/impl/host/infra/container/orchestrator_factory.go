@@ -3,23 +3,30 @@ package container
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os/exec"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	events_types "github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type OrchestratorFactory struct {
-	soloCtx      *context.CliContext
-	eventManager events_types.Manager
+	logger       *slog.Logger
+	config       *domain.Config
+	project      domain.Project
+	eventManager events.Manager
 }
 
 func NewOrchestratorFactory(
-	soloCtx *context.CliContext,
-	eventManager events_types.Manager,
+	logger *slog.Logger,
+	config *domain.Config,
+	project domain.Project,
+	eventManager events.Manager,
 ) *OrchestratorFactory {
 	return &OrchestratorFactory{
-		soloCtx:      soloCtx,
+		logger:       logger,
+		config:       config,
+		project:      project,
 		eventManager: eventManager,
 	}
 }
@@ -32,7 +39,7 @@ func (t *OrchestratorFactory) Build() (Orchestrator, error) {
 
 	switch orchestrator {
 	case "docker":
-		return NewDockerOrchestrator(t.soloCtx, t.eventManager, binaryPath), nil
+		return NewDockerOrchestrator(t.logger, t.config, t.project, t.eventManager, binaryPath), nil
 
 	default:
 		return nil, fmt.Errorf("unsupported orchestrator %s", orchestrator)
@@ -40,8 +47,8 @@ func (t *OrchestratorFactory) Build() (Orchestrator, error) {
 }
 
 func (t *OrchestratorFactory) findOrchestrator() (string, string, error) {
-	for _, orchestrator := range t.soloCtx.Config.Orchestration.SearchOrder {
-		orchestratorConfig, ok := t.soloCtx.Config.Orchestration.Orchestrators[orchestrator]
+	for _, orchestrator := range t.config.Orchestration.SearchOrder {
+		orchestratorConfig, ok := t.config.Orchestration.Orchestrators[orchestrator]
 		if !ok {
 			continue
 		}

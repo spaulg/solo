@@ -8,7 +8,7 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
+	"github.com/spaulg/solo/test/mocks/host/domain/compose"
 	"github.com/spaulg/solo/test/mocks/logging"
 )
 
@@ -20,12 +20,12 @@ type ProjectControlFactoryTestSuite struct {
 	suite.Suite
 
 	soloCtx        *context.CliContext
-	mockProject    *project.MockProject
+	mockProject    *compose.MockProject
 	mockLogHandler *logging.MockHandler
 }
 
 func (t *ProjectControlFactoryTestSuite) SetupTest() {
-	t.mockProject = &project.MockProject{}
+	t.mockProject = &compose.MockProject{}
 
 	tmpDir := t.T().TempDir()
 	t.mockProject.On("GetStateDirectoryRoot").Return(tmpDir)

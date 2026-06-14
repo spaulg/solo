@@ -3,8 +3,7 @@ package container
 import (
 	"google.golang.org/grpc/metadata"
 
-	config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 )
 
 type Orchestrator interface {
@@ -17,7 +16,7 @@ type Orchestrator interface {
 	RunCommand(containerName string, command []string) (string, error)
 	GetHostGatewayHostname() string
 	ServicesStatus(serviceNames []string) (*ServiceStatus, error)
-	ExportComposeConfiguration(config *config_types.Config, project project_types.Project) ([]byte, error)
+	ExportComposeConfiguration(config *domain.Config, project domain.Project) ([]byte, error)
 	ResolveContainerNameFromMetadata(md metadata.MD) (string, string, error)
 	ResolveContainerNameFromServiceName(serviceName string, index int) (string, string, error)
 	ResolveImageWorkingDirectory(serviceName string) (string, error)

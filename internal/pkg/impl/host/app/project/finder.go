@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	"github.com/spaulg/solo/internal/pkg/impl/host/domain/compose"
 )
 
 const DefaultProjectFileName = "solo.yml"
@@ -13,7 +14,7 @@ const DefaultProjectFileName = "solo.yml"
 // FindProject Find the project file by navigating up the
 // filesystem tree until the project file is found, or
 // return error if no project file is found
-func FindProject(startPath string, config *domain.Config, profiles []string) (*domain.Project, error) {
+func FindProject(startPath string, config *domain.Config, profiles []string) (*compose.Project, error) {
 	var projectFilePath string
 
 	path, err := filepath.Abs(startPath)
@@ -39,7 +40,7 @@ func FindProject(startPath string, config *domain.Config, profiles []string) (*d
 				return nil, err
 			}
 		} else if fileInfo != nil {
-			return domain.NewProject(projectFilePath, config, profiles)
+			return compose.NewProject(projectFilePath, config, profiles)
 		}
 	}
 

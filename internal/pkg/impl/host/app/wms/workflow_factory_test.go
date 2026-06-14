@@ -1,7 +1,6 @@
 package wms
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/compose-spec/compose-go/v2/types"
@@ -9,13 +8,11 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	compose_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/compose"
 	domain_config_types "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
-	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
 	"github.com/spaulg/solo/test"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
-	"github.com/spaulg/solo/test/mocks/host/domain/project/compose"
+	"github.com/spaulg/solo/test/mocks/host/domain/compose"
 	"github.com/spaulg/solo/test/mocks/logging"
 )
 
@@ -26,28 +23,24 @@ func TestWorkflowFactoryTestSuite(t *testing.T) {
 type WorkflowFactoryTestSuite struct {
 	suite.Suite
 
-	soloCtx        *cli_context.CliContext
-	mockProject    *project.MockProject
+	mockProject    *compose.MockProject
+	mockConfig     *domain.Config
 	mockLogHandler *logging.MockHandler
 }
 
 func (t *WorkflowFactoryTestSuite) SetupTest() {
-	t.mockProject = &project.MockProject{}
+	t.mockProject = &compose.MockProject{}
 
 	t.mockLogHandler = &logging.MockHandler{}
 	t.mockLogHandler.On("Enabled", mock.Anything, mock.Anything).Return(true)
 
-	t.soloCtx = &cli_context.CliContext{
-		Project: t.mockProject,
-		Logger:  slog.New(t.mockLogHandler),
-		Config: &domain.Config{
-			Entrypoint: domain_config_types.EntrypointConfig{
-				HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
-			},
-			Workflow: domain_config_types.WorkflowConfig{
-				Grpc: domain_config_types.GrpcConfig{
-					ServerPort: 0,
-				},
+	t.mockConfig = &domain.Config{
+		Entrypoint: domain_config_types.EntrypointConfig{
+			HostEntrypointPath: test.GetTestDataFilePath("entrypoint.sh"),
+		},
+		Workflow: domain_config_types.WorkflowConfig{
+			Grpc: domain_config_types.GrpcConfig{
+				ServerPort: 0,
 			},
 		},
 	}
@@ -57,9 +50,7 @@ func (t *WorkflowFactoryTestSuite) TestBuild() {
 	serviceName := "test"
 	workflowName := workflowcommon.FirstPreStartContainer
 
-	workflowConfig := compose_types.ServiceWorkflowConfig{
-		Steps: make([]compose_types.WorkflowStep, 0),
-	}
+	workflowConfig := compose_types.NewServiceWorkflowConfig(make([]domain.WorkflowStep, 0), nil, nil)
 
 	mockServices := &compose.MockServices{}
 	mockServiceConfig := &compose.MockServiceConfig{}
@@ -70,7 +61,7 @@ func (t *WorkflowFactoryTestSuite) TestBuild() {
 	mockServiceConfig.On("GetConfig").Return(types.ServiceConfig{})
 
 	workflowFactory := NewWorkflowFactory()
-	workflow, err := workflowFactory.Make(t.soloCtx, serviceName, "/", workflowName)
+	workflow, err := workflowFactory.Make(t.mockConfig, t.mockProject, serviceName, "/", workflowName)
 
 	t.NotNil(workflow)
 	t.NoError(err)

@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	shared_wms "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type MockWorkflowSession struct {
@@ -46,14 +46,14 @@ func (m *MockWorkflowSession) GetWorkingDirectory() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockWorkflowSession) RunCommand(request *shared_wms.RunCommandRequest) error {
+func (m *MockWorkflowSession) RunCommand(request *wf.RunCommandRequest) error {
 	args := m.Called(request)
 	return args.Error(0)
 }
 
-func (m *MockWorkflowSession) RecvCommandResponse() (*shared_wms.CommandResponse, error) {
+func (m *MockWorkflowSession) RecvCommandResponse() (*wf.CommandResponse, error) {
 	args := m.Called()
-	if r, ok := args.Get(0).(*shared_wms.CommandResponse); ok {
+	if r, ok := args.Get(0).(*wf.CommandResponse); ok {
 		return r, args.Error(1)
 	}
 

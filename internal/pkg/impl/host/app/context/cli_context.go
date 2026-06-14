@@ -15,7 +15,6 @@ import (
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/project"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/config"
-	project_types "github.com/spaulg/solo/internal/pkg/types/host/domain"
 )
 
 const lockFileName = "locking_file"
@@ -23,7 +22,7 @@ const lockFileName = "locking_file"
 type CliContext struct {
 	configReader ConfigReader
 
-	Project        project_types.Project
+	Project        domain.Project
 	ProjectLoadErr error
 
 	Config        *domain.Config
@@ -62,7 +61,7 @@ func LoadCliContext() (*CliContext, error) {
 		context.ProjectLoadErr = projectLoadErr
 
 		// If logging is enabled override the default logger
-		if context.Config.Logging.Enabled && context.Project != nil {
+		if context.Config.Logging.Enabled && context.ProjectLoadErr == nil {
 			stateDirectory := path.Join(context.Project.GetStateDirectoryRoot(), "cli", "logs")
 			if err := os.MkdirAll(stateDirectory, 0755); err != nil {
 				return nil, fmt.Errorf("failed to create log directory: %v", err)

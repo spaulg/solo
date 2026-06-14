@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/spaulg/solo/test"
-	"github.com/spaulg/solo/test/mocks/host/domain/project"
+	"github.com/spaulg/solo/test/mocks/host/domain/compose"
 )
 
 func TestServiceConfigTestSuite(t *testing.T) {
@@ -20,13 +20,13 @@ type ServiceConfigTestSuite struct {
 
 	desiredWorkingDirectory string
 	testDirectory           string
-	mockProject             *project.MockProject
+	mockProject             *compose.MockProject
 }
 
 func (t *ServiceConfigTestSuite) SetupTest() {
 	t.testDirectory = test.GetTestDataFilePath("project/service_config/working_directory_resolution")
 
-	t.mockProject = &project.MockProject{}
+	t.mockProject = &compose.MockProject{}
 	t.mockProject.On("GetDirectory").Return(t.testDirectory)
 	t.mockProject.On("GetStateDirectoryRoot").Return(filepath.Join(t.testDirectory, ".solo"))
 }
