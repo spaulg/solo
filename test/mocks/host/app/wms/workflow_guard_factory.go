@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type MockWorkflowGuardFactory struct {

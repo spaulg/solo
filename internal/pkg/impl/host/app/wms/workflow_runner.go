@@ -5,19 +5,19 @@ import (
 
 	solo_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
 	"github.com/spaulg/solo/internal/pkg/impl/host/app/event_manager/events"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type WorkflowRunner struct {
 	soloCtx         *solo_context.CliContext
 	eventManager    events.Manager
-	workflowFactory workflow.Factory
+	workflowFactory wf.Factory
 }
 
 func NewWorkflowRunner(
 	soloCtx *solo_context.CliContext,
 	eventManager events.Manager,
-	workflowFactory workflow.Factory,
+	workflowFactory wf.Factory,
 ) *WorkflowRunner {
 	return &WorkflowRunner{
 		soloCtx:         soloCtx,
@@ -26,7 +26,7 @@ func NewWorkflowRunner(
 	}
 }
 
-func (t *WorkflowRunner) RunWorkflow(workflowSession workflow.Session) error {
+func (t *WorkflowRunner) RunWorkflow(workflowSession wf.Session) error {
 	// Handle previously run once-only workflows
 	hasServiceWorkflowRun, err := workflowSession.HasServiceWorkflowRun(workflowSession.GetServiceName())
 	if err != nil {
@@ -36,8 +36,8 @@ func (t *WorkflowRunner) RunWorkflow(workflowSession workflow.Session) error {
 	hasFirstContainerWorkflowRun := workflowSession.HasFirstContainerWorkflowRun()
 
 	if hasServiceWorkflowRun || hasFirstContainerWorkflowRun {
-		t.eventManager.Publish(&workflow.SkippedEvent{
-			BaseWorkflowEvent: workflow.BaseWorkflowEvent{
+		t.eventManager.Publish(&wf.SkippedEvent{
+			BaseWorkflowEvent: wf.BaseWorkflowEvent{
 				ServiceName:       workflowSession.GetServiceName(),
 				ContainerName:     workflowSession.GetContainerName(),
 				FullContainerName: workflowSession.GetFullContainerName(),
@@ -52,8 +52,8 @@ func (t *WorkflowRunner) RunWorkflow(workflowSession workflow.Session) error {
 			return err
 		}
 
-		t.eventManager.Publish(&workflow.CompleteEvent{
-			BaseWorkflowEvent: workflow.BaseWorkflowEvent{
+		t.eventManager.Publish(&wf.CompleteEvent{
+			BaseWorkflowEvent: wf.BaseWorkflowEvent{
 				ServiceName:       workflowSession.GetServiceName(),
 				ContainerName:     workflowSession.GetContainerName(),
 				FullContainerName: workflowSession.GetFullContainerName(),
@@ -66,11 +66,11 @@ func (t *WorkflowRunner) RunWorkflow(workflowSession workflow.Session) error {
 	return workflowSession.MarkCompletion()
 }
 
-func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bool, error) {
+func (t *WorkflowRunner) handleRunWorkflow(workflowSession wf.Session) (bool, error) {
 	workflowSuccess := true
 
-	t.eventManager.Publish(&workflow.StartedEvent{
-		BaseWorkflowEvent: workflow.BaseWorkflowEvent{
+	t.eventManager.Publish(&wf.StartedEvent{
+		BaseWorkflowEvent: wf.BaseWorkflowEvent{
 			ServiceName:       workflowSession.GetServiceName(),
 			ContainerName:     workflowSession.GetContainerName(),
 			FullContainerName: workflowSession.GetFullContainerName(),
@@ -83,7 +83,7 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bo
 		return false, err
 	}
 
-	wf, err := t.workflowFactory.Make(
+	workflow, err := t.workflowFactory.Make(
 		t.soloCtx,
 		workflowSession.GetServiceName(),
 		serviceWorkingDirectory,
@@ -94,12 +94,12 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bo
 		return false, fmt.Errorf("failed to create workflow: %w", err)
 	}
 
-	if wf != nil {
-		for step := range wf.StepIterator() {
+	if workflow != nil {
+		for step := range workflow.StepIterator() {
 			err := step.Trigger(func() error {
 				// Trigger callback
-				t.eventManager.Publish(&workflow.StepStartedEvent{
-					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
+				t.eventManager.Publish(&wf.StepStartedEvent{
+					BaseWorkflowEvent: wf.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),
@@ -113,7 +113,7 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bo
 					Shell:     step.GetShell(),
 				})
 
-				return workflowSession.RunCommand(&workflow.RunCommandRequest{
+				return workflowSession.RunCommand(&wf.RunCommandRequest{
 					Command:          step.GetCommand(),
 					Arguments:        step.GetArguments(),
 					WorkingDirectory: step.GetWorkingDirectory(),
@@ -125,8 +125,8 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bo
 					return nil, err
 				}
 
-				t.eventManager.Publish(&workflow.StepOutputEvent{
-					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
+				t.eventManager.Publish(&wf.StepOutputEvent{
+					BaseWorkflowEvent: wf.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),
@@ -140,8 +140,8 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bo
 				return result.ExitCode, nil
 			}, func(exitCode uint8) error {
 				// Completion callback
-				t.eventManager.Publish(&workflow.StepCompleteEvent{
-					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
+				t.eventManager.Publish(&wf.StepCompleteEvent{
+					BaseWorkflowEvent: wf.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),
@@ -163,8 +163,8 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession workflow.Session) (bo
 			})
 
 			if err != nil {
-				t.eventManager.Publish(&workflow.ErrorEvent{
-					BaseWorkflowEvent: workflow.BaseWorkflowEvent{
+				t.eventManager.Publish(&wf.ErrorEvent{
+					BaseWorkflowEvent: wf.BaseWorkflowEvent{
 						ServiceName:       workflowSession.GetServiceName(),
 						ContainerName:     workflowSession.GetContainerName(),
 						FullContainerName: workflowSession.GetFullContainerName(),

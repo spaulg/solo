@@ -3,7 +3,7 @@ package wms
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	context_types "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type WorkflowFactory struct{}
@@ -17,7 +17,7 @@ func (t *WorkflowFactory) Make(
 	serviceName string,
 	serviceWorkingDirectory string,
 	workflowName workflowcommon.WorkflowName,
-) (workflow.Definition, error) {
+) (wf.Definition, error) {
 	serviceWorkflow := soloCtx.Project.Services().GetService(serviceName).GetServiceWorkflow(workflowName.String())
 	return NewWorkflow(soloCtx, serviceWorkingDirectory, serviceWorkflow), nil
 }

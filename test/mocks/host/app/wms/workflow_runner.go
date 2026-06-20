@@ -3,14 +3,14 @@ package wms
 import (
 	"github.com/stretchr/testify/mock"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type MockWorkflowRunner struct {
 	mock.Mock
 }
 
-func (m *MockWorkflowRunner) RunWorkflow(workflowSession workflow.Session) error {
+func (m *MockWorkflowRunner) RunWorkflow(workflowSession wf.Session) error {
 	args := m.Called(workflowSession)
 	return args.Error(0)
 }

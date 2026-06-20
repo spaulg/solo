@@ -8,7 +8,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	context_types "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 	compose_types "github.com/spaulg/solo/internal/pkg/types/host/domain/project/compose"
 )
 
@@ -30,8 +30,8 @@ func NewWorkflow(
 	}
 }
 
-func (t *Workflow) StepIterator() iter.Seq[workflow.Step] {
-	return func(yield func(workflow.Step) bool) {
+func (t *Workflow) StepIterator() iter.Seq[wf.Step] {
+	return func(yield func(wf.Step) bool) {
 		for stepNumber := range t.workflow.Steps {
 			id := ulid.MustNew(ulid.Timestamp(time.Now()), rand.Reader)
 

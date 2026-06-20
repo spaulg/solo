@@ -1,4 +1,4 @@
-package workflow
+package wf
 
 import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"

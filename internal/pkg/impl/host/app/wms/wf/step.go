@@ -1,4 +1,4 @@
-package workflow
+package wf
 
 type StepTriggerFunc func() error
 type StepProgressFunc func() (*uint8, error)
