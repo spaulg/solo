@@ -12,7 +12,7 @@ import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/impl/common/infra/grpc/services"
 	cli_context "github.com/spaulg/solo/internal/pkg/impl/host/app/context"
-	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	wms_shared "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
 	domain_config "github.com/spaulg/solo/internal/pkg/impl/host/domain/config"
 	"github.com/spaulg/solo/internal/pkg/impl/host/infra/grpc/interceptors"

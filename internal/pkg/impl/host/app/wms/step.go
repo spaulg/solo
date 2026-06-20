@@ -2,7 +2,7 @@ package wms
 
 import (
 	"github.com/spaulg/solo/internal/pkg/impl/common/app/cmd"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type Step struct {
@@ -52,9 +52,9 @@ func (t *Step) GetWorkingDirectory() string {
 }
 
 func (t *Step) Trigger(
-	start workflow.StepTriggerFunc,
-	progress workflow.StepProgressFunc,
-	complete workflow.StepCompleteFunc,
+	start wf.StepTriggerFunc,
+	progress wf.StepProgressFunc,
+	complete wf.StepCompleteFunc,
 ) error {
 	// Start step
 	if err := start(); err != nil {

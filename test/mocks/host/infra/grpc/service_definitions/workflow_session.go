@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	shared_wms "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	shared_wms "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type MockWorkflowSession struct {

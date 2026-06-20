@@ -1,9 +1,9 @@
 package service_definitions
 
 import (
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type WorkflowRunner interface {
-	RunWorkflow(workflowSession workflow.Session) error
+	RunWorkflow(workflowSession wf.Session) error
 }

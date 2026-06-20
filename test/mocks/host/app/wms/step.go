@@ -3,7 +3,7 @@ package wms
 import (
 	"github.com/stretchr/testify/mock"
 
-	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/workflow"
+	wms_types "github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
 )
 
 type MockStep struct {
