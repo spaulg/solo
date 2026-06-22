@@ -3,8 +3,8 @@ package subcommand
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/host/app"
+	"github.com/spaulg/solo/internal/pkg/host/app/context"
 )
 
 func NewStopCommand(soloCtx *context.CliContext) *cobra.Command {

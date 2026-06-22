@@ -3,9 +3,9 @@ package wms
 import (
 	"github.com/stretchr/testify/mock"
 
-	workflowcommon "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
-	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	workflowcommon "github.com/spaulg/solo/internal/pkg/common/domain/wms"
+	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
+	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
 )
 
 type MockWorkflowFactory struct {
@@ -13,8 +13,8 @@ type MockWorkflowFactory struct {
 }
 
 func (m *MockWorkflowFactory) Make(
-	config *domain.Config,
-	project domain.Project,
+	config *domain2.Config,
+	project domain2.Project,
 	service string,
 	serviceWorkingDirectory string,
 	workflowName workflowcommon.WorkflowName,
