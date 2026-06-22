@@ -4,7 +4,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain"
 )
 
 type MockServiceConfig struct {

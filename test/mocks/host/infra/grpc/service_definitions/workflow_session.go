@@ -3,8 +3,8 @@ package service_definitions
 import (
 	"github.com/stretchr/testify/mock"
 
-	commonworkflow "github.com/spaulg/solo/internal/pkg/impl/common/domain/wms"
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	commonworkflow "github.com/spaulg/solo/internal/pkg/common/domain/wms"
+	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
 )
 
 type MockWorkflowSession struct {

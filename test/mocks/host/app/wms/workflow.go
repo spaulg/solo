@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/spaulg/solo/internal/pkg/impl/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
 )
 
 type MockWorkflow struct {
