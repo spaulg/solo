@@ -1,20 +1,8 @@
-package wf
+package wfsession
 
 import (
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/domain/wms"
 )
-
-type RunCommandRequest struct {
-	Command          string
-	Arguments        []string
-	WorkingDirectory string
-}
-
-type CommandResponse struct {
-	Stdout   string
-	Stderr   string
-	ExitCode *uint8
-}
 
 type Session interface {
 	GetWorkflowName() commonworkflow.WorkflowName

@@ -3,9 +3,10 @@ package wms
 import (
 	"fmt"
 
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
 	wf2 "github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
 	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
+	"github.com/spaulg/solo/internal/pkg/host/infra/grpc/service_definitions/wfsession"
 )
 
 type WorkflowRunner struct {
@@ -29,7 +30,7 @@ func NewWorkflowRunner(
 	}
 }
 
-func (t *WorkflowRunner) RunWorkflow(workflowSession wf2.Session) error {
+func (t *WorkflowRunner) RunWorkflow(workflowSession wfsession.Session) error {
 	// Handle previously run once-only workflows
 	hasServiceWorkflowRun, err := workflowSession.HasServiceWorkflowRun(workflowSession.GetServiceName())
 	if err != nil {
@@ -69,7 +70,7 @@ func (t *WorkflowRunner) RunWorkflow(workflowSession wf2.Session) error {
 	return workflowSession.MarkCompletion()
 }
 
-func (t *WorkflowRunner) handleRunWorkflow(workflowSession wf2.Session) (bool, error) {
+func (t *WorkflowRunner) handleRunWorkflow(workflowSession wfsession.Session) (bool, error) {
 	workflowSuccess := true
 
 	t.eventManager.Publish(&wf2.StartedEvent{
@@ -117,7 +118,7 @@ func (t *WorkflowRunner) handleRunWorkflow(workflowSession wf2.Session) (bool, e
 					Shell:     step.GetShell(),
 				})
 
-				return workflowSession.RunCommand(&wf2.RunCommandRequest{
+				return workflowSession.RunCommand(&wfsession.RunCommandRequest{
 					Command:          step.GetCommand(),
 					Arguments:        step.GetArguments(),
 					WorkingDirectory: step.GetWorkingDirectory(),

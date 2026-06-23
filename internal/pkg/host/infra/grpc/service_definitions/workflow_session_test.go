@@ -11,8 +11,8 @@ import (
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/common/infra/grpc/services"
-	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
 	"github.com/spaulg/solo/internal/pkg/host/infra/grpc/interceptors"
+	"github.com/spaulg/solo/internal/pkg/host/infra/grpc/service_definitions/wfsession"
 	"github.com/spaulg/solo/test/mocks/grpc"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
 	"github.com/spaulg/solo/test/mocks/host/domain/compose"
@@ -276,7 +276,7 @@ func (t *WorkflowSessionTestSuite) TestRunCommand() {
 		},
 	}).Return(nil)
 
-	err = workflowSession.RunCommand(&wf.RunCommandRequest{
+	err = workflowSession.RunCommand(&wfsession.RunCommandRequest{
 		Command:          "test_command",
 		Arguments:        []string{"arg1", "arg2"},
 		WorkingDirectory: "/tmp",

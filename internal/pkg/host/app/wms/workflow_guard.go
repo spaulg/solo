@@ -10,9 +10,9 @@ import (
 	"time"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/common/domain/wms"
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
 	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 type WorkflowGuard struct {

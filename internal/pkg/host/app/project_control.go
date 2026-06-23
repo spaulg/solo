@@ -9,10 +9,10 @@ import (
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/host/app/project"
 	"github.com/spaulg/solo/internal/pkg/host/app/wms"
 	"github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 	"github.com/spaulg/solo/internal/pkg/host/infra/grpc"
 )
 

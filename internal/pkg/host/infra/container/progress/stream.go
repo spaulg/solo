@@ -7,14 +7,14 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
-	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 type ProgressEventPublisher struct {
 	logger       *slog.Logger
-	config       *domain2.Config
-	project      domain2.Project
+	config       *domain.Config
+	project      domain.Project
 	eventManager events.Manager
 	projectName  string
 	stream       io.ReadCloser
@@ -22,8 +22,8 @@ type ProgressEventPublisher struct {
 
 func NewProgressEventPublisher(
 	logger *slog.Logger,
-	config *domain2.Config,
-	project domain2.Project,
+	config *domain.Config,
+	project domain.Project,
 	eventManager events.Manager,
 	projectName string,
 	stream io.ReadCloser,

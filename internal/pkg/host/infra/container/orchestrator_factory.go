@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os/exec"
 
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
 	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 type OrchestratorFactory struct {

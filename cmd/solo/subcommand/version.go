@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/spaulg/solo/internal/pkg/common/domain/version"
 	"github.com/spaulg/solo/internal/pkg/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/host/app/version"
 )
 
 func NewVersionCommand(_ *context.CliContext) *cobra.Command {

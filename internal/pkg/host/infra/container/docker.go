@@ -17,8 +17,8 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
 	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 	"github.com/spaulg/solo/internal/pkg/host/infra/container/progress"
 )
 

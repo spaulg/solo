@@ -1,9 +1,9 @@
 package service_definitions
 
 import (
-	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
+	"github.com/spaulg/solo/internal/pkg/host/infra/grpc/service_definitions/wfsession"
 )
 
 type WorkflowRunner interface {
-	RunWorkflow(workflowSession wf.Session) error
+	RunWorkflow(workflowSession wfsession.Session) error
 }
