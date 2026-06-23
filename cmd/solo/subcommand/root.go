@@ -72,35 +72,6 @@ func NewRootCommand(soloCtx *context.CliContext) (*cobra.Command, func() error) 
 	var memProfile string
 	var cpuFile *os.File
 
-	stopProfilingCallback := func() error {
-		pprof.StopCPUProfile()
-
-		if cpuFile != nil {
-			_ = cpuFile.Close()
-		}
-
-		if memProfile != "" {
-			runtime.GC()
-
-			f, err := os.OpenFile(memProfile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-			if err != nil {
-				return fmt.Errorf("failed to create memory profile %q: %v", memProfile, err)
-			}
-
-			defer func() {
-				if closeErr := f.Close(); closeErr != nil {
-					_, _ = fmt.Fprintf(os.Stderr, "failed to close memory profile %q: %v\n", memProfile, closeErr)
-				}
-			}()
-
-			if err := pprof.WriteHeapProfile(f); err != nil {
-				return fmt.Errorf("failed to write memory profile %q: %v", memProfile, err)
-			}
-		}
-
-		return nil
-	}
-
 	cmd := &cobra.Command{
 		Use:           "solo",
 		SilenceUsage:  true,
@@ -156,5 +127,36 @@ func NewRootCommand(soloCtx *context.CliContext) (*cobra.Command, func() error) 
 	cmd.PersistentFlags().StringVar(&cpuProfile, "cpu-profile", "", "Enable CPU profiling and write data to the supplied file")
 	cmd.PersistentFlags().StringVar(&memProfile, "mem-profile", "", "Enable memory profiling and write data to the supplied file")
 
-	return cmd, stopProfilingCallback
+	return cmd, stopProfilingCallback(cpuFile, memProfile)
+}
+
+func stopProfilingCallback(cpuFile *os.File, memProfile string) func() error {
+	return func() error {
+		pprof.StopCPUProfile()
+
+		if cpuFile != nil {
+			_ = cpuFile.Close()
+		}
+
+		if memProfile != "" {
+			runtime.GC()
+
+			f, err := os.OpenFile(memProfile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+			if err != nil {
+				return fmt.Errorf("failed to create memory profile %q: %v", memProfile, err)
+			}
+
+			defer func() {
+				if closeErr := f.Close(); closeErr != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "failed to close memory profile %q: %v\n", memProfile, closeErr)
+				}
+			}()
+
+			if err := pprof.WriteHeapProfile(f); err != nil {
+				return fmt.Errorf("failed to write memory profile %q: %v", memProfile, err)
+			}
+		}
+
+		return nil
+	}
 }

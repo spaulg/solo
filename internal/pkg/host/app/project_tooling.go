@@ -9,6 +9,7 @@ import (
 
 	"github.com/spaulg/solo/internal/pkg/common/app/cmd"
 	"github.com/spaulg/solo/internal/pkg/host/app/context"
+	"github.com/spaulg/solo/internal/pkg/host/infra/container"
 )
 
 const maxOutputPreviewLen = 200
@@ -91,55 +92,66 @@ func (t *ProjectTooling) ExecuteShell(shell string, index int, serviceName strin
 	}
 
 	if shell == "" {
-		// List the shells in the container
-		catShellsCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "cat-shells"}
-
-		output, err := orchestrator.RunCommand(fullContainerName, catShellsCommand)
+		shell, err = t.listContainerShells(orchestrator, fullContainerName)
 		if err != nil {
-			return err
-		}
-
-		// Select a shell to use
-		var shellList []string
-		if err := json.Unmarshal([]byte(output), &shellList); err != nil {
-			outputPreview := output
-
-			if len(outputPreview) > maxOutputPreviewLen {
-				outputPreview = outputPreview[:maxOutputPreviewLen] + "..."
-			}
-
-			return fmt.Errorf("failed to parse shell list JSON from cat-shells for container %s: %w; output preview: %q",
-				fullContainerName, err, outputPreview)
-		}
-
-		if len(shellList) > 0 {
-			shellmap := make(map[string][]string)
-
-			for _, fullShellPath := range shellList {
-				shellPath, shellFile := path.Split(fullShellPath)
-				if _, ok := shellmap[shellFile]; !ok {
-					shellmap[shellFile] = make([]string, 0)
-				}
-
-				shellmap[shellFile] = append(shellmap[shellFile], shellPath)
-			}
-
-			for _, priorityShell := range t.soloCtx.Config.Shell.ShellPriority {
-				if shellPaths, ok := shellmap[priorityShell]; ok && len(shellPaths) > 0 {
-					shell = path.Join(shellPaths[len(shellPaths)-1], priorityShell)
-					break
-				}
-			}
-
-			// If a shell from the preferred list could not be
-			// selected, take the first one from the list
-			if shell == "" {
-				shell = shellList[0]
-			}
-		} else {
-			shell = t.soloCtx.Config.Shell.DefaultShell
+			return fmt.Errorf("failed to list shells in container %s: %w", fullContainerName, err)
 		}
 	}
 
 	return orchestrator.ForkAndExecute(fullContainerName, shell, nil, workingDirectory)
+}
+
+func (t *ProjectTooling) listContainerShells(orchestrator container.Orchestrator, fullContainerName string) (string, error) {
+	// List the shells in the container
+	catShellsCommand := []string{t.soloCtx.Config.Entrypoint.ContainerEntrypointPath, "cat-shells"}
+
+	output, err := orchestrator.RunCommand(fullContainerName, catShellsCommand)
+	if err != nil {
+		return "", err
+	}
+
+	// Select a shell to use
+	var shellList []string
+	if err := json.Unmarshal([]byte(output), &shellList); err != nil {
+		outputPreview := output
+
+		if len(outputPreview) > maxOutputPreviewLen {
+			outputPreview = outputPreview[:maxOutputPreviewLen] + "..."
+		}
+
+		return "", fmt.Errorf("failed to parse shell list JSON from cat-shells for container %s: %w; output preview: %q",
+			fullContainerName, err, outputPreview)
+	}
+
+	var shell string
+
+	if len(shellList) > 0 {
+		shellmap := make(map[string][]string)
+
+		for _, fullShellPath := range shellList {
+			shellPath, shellFile := path.Split(fullShellPath)
+			if _, ok := shellmap[shellFile]; !ok {
+				shellmap[shellFile] = make([]string, 0)
+			}
+
+			shellmap[shellFile] = append(shellmap[shellFile], shellPath)
+		}
+
+		for _, priorityShell := range t.soloCtx.Config.Shell.ShellPriority {
+			if shellPaths, ok := shellmap[priorityShell]; ok && len(shellPaths) > 0 {
+				shell = path.Join(shellPaths[len(shellPaths)-1], priorityShell)
+				break
+			}
+		}
+
+		// If a shell from the preferred list could not be
+		// selected, take the first one from the list
+		if shell == "" {
+			shell = shellList[0]
+		}
+	} else {
+		shell = t.soloCtx.Config.Shell.DefaultShell
+	}
+
+	return shell, nil
 }

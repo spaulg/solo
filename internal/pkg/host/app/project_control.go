@@ -13,6 +13,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/host/app/wms"
 	"github.com/spaulg/solo/internal/pkg/host/domain"
 	"github.com/spaulg/solo/internal/pkg/host/domain/events"
+	"github.com/spaulg/solo/internal/pkg/host/infra/container"
 	"github.com/spaulg/solo/internal/pkg/host/infra/grpc"
 )
 
@@ -153,19 +154,9 @@ func (t *ProjectControl) internalStart() error {
 	}
 
 	// Start GRPC services
-	grpcServer, err := t.grpcServerFactory.Build(
-		orchestrator,
-		workflowExecutionTracker,
-		t.soloCtx.Project,
-		t.soloCtx.Config.Workflow.Grpc.ServerPort,
-	)
-
+	grpcServer, err := t.launchGrpcService(orchestrator, workflowExecutionTracker)
 	if err != nil {
 		return fmt.Errorf("failed to build GRPC server: %w", err)
-	}
-
-	if err := grpcServer.Start(); err != nil {
-		return fmt.Errorf("failed to start GRPC server: %w", err)
 	}
 
 	defer grpcServer.Stop()
@@ -200,49 +191,7 @@ func (t *ProjectControl) internalStart() error {
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
-	if err := guard.Wait(func(container string, guardCallback func(name workflowcommon.WorkflowName) error) error {
-		if err := guardCallback(workflowcommon.FirstPreStartContainer); err != nil {
-			return err
-		}
-
-		if err := guardCallback(workflowcommon.FirstPreStartService); err != nil {
-			return err
-		}
-
-		if err := guardCallback(workflowcommon.PreStartContainer); err != nil {
-			return err
-		}
-
-		if err := guardCallback(workflowcommon.PreStartService); err != nil {
-			return err
-		}
-
-		// Exec post start commands
-		postStartEvents := []workflowcommon.WorkflowName{
-			workflowcommon.PostStartContainer,
-			workflowcommon.PostStartService,
-			workflowcommon.FirstPostStartContainer,
-			workflowcommon.FirstPostStartService,
-		}
-
-		for _, event := range postStartEvents {
-			postStartCommand := []string{
-				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
-				"trigger-event",
-				event.String(),
-			}
-
-			if err := orchestrator.StartCommand(container, postStartCommand); err != nil {
-				return fmt.Errorf("error running compose: %w", err)
-			}
-
-			if err := guardCallback(event); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}); err != nil {
+	if err := guard.Wait(startGuard(orchestrator, t.soloCtx.Config.Entrypoint.ContainerEntrypointPath)); err != nil {
 		return fmt.Errorf("error waiting for services to complete workflows: %w", err)
 	}
 
@@ -281,20 +230,10 @@ func (t *ProjectControl) internalStop() error {
 			return fmt.Errorf("failed to load workflow execution tracker: %w", err)
 		}
 
-		grpcServer, err := t.grpcServerFactory.Build(
-			orchestrator,
-			workflowExecutionTracker,
-			t.soloCtx.Project,
-			t.soloCtx.Config.Workflow.Grpc.ServerPort,
-		)
-
+		// Start GRPC services
+		grpcServer, err := t.launchGrpcService(orchestrator, workflowExecutionTracker)
 		if err != nil {
 			return fmt.Errorf("failed to build GRPC server: %w", err)
-		}
-
-		// Start GRPC services
-		if err := grpcServer.Start(); err != nil {
-			return fmt.Errorf("failed to start GRPC server: %w", err)
 		}
 
 		defer grpcServer.Stop()
@@ -314,20 +253,7 @@ func (t *ProjectControl) internalStop() error {
 		t.eventManager.Subscribe(guard)
 		defer t.eventManager.Unsubscribe(guard)
 
-		if err := guard.Wait(func(container string, _ func(_ workflowcommon.WorkflowName) error) error {
-			// Exec pre stop commands
-			preStopCommand := []string{
-				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
-				"trigger-event",
-				workflowcommon.PreStopContainer.String(),
-			}
-
-			if err := orchestrator.StartCommand(container, preStopCommand); err != nil {
-				return fmt.Errorf("error running compose: %w", err)
-			}
-
-			return nil
-		}); err != nil {
+		if err := guard.Wait(stopGuard(orchestrator, t.soloCtx.Config.Entrypoint.ContainerEntrypointPath)); err != nil {
 			return fmt.Errorf("error waiting for services to complete workflows: %w", err)
 		}
 	}
@@ -369,20 +295,10 @@ func (t *ProjectControl) internalDestroy() error {
 	}
 
 	if len(serviceStatus.RunningServices) > 0 {
-		grpcServer, err := t.grpcServerFactory.Build(
-			orchestrator,
-			workflowExecutionTracker,
-			t.soloCtx.Project,
-			t.soloCtx.Config.Workflow.Grpc.ServerPort,
-		)
-
+		// Start GRPC services
+		grpcServer, err := t.launchGrpcService(orchestrator, workflowExecutionTracker)
 		if err != nil {
 			return fmt.Errorf("failed to build GRPC server: %w", err)
-		}
-
-		// Start GRPC services
-		if err := grpcServer.Start(); err != nil {
-			return fmt.Errorf("failed to start GRPC server: %w", err)
 		}
 
 		defer grpcServer.Stop()
@@ -402,20 +318,7 @@ func (t *ProjectControl) internalDestroy() error {
 		t.eventManager.Subscribe(guard)
 		defer t.eventManager.Unsubscribe(guard)
 
-		if err := guard.Wait(func(container string, _ func(_ workflowcommon.WorkflowName) error) error {
-			// Exec pre destroy commands
-			preDestroyCommand := []string{
-				t.soloCtx.Config.Entrypoint.ContainerEntrypointPath,
-				"trigger-event",
-				workflowcommon.PreDestroyContainer.String(),
-			}
-
-			if err := orchestrator.StartCommand(container, preDestroyCommand); err != nil {
-				return fmt.Errorf("error running compose: %w", err)
-			}
-
-			return nil
-		}); err != nil {
+		if err := guard.Wait(destroyGuard(orchestrator, t.soloCtx.Config.Entrypoint.ContainerEntrypointPath)); err != nil {
 			return fmt.Errorf("error waiting for services to complete workflows: %w", err)
 		}
 	}
@@ -555,4 +458,26 @@ func (t *ProjectControl) copyEntrypointToState() error {
 	}
 
 	return nil
+}
+
+func (t *ProjectControl) launchGrpcService(
+	orchestrator container.Orchestrator,
+	workflowExecutionTracker *wms.WorkflowExecTracker,
+) (grpc.Server, error) {
+	grpcServer, err := t.grpcServerFactory.Build(
+		orchestrator,
+		workflowExecutionTracker,
+		t.soloCtx.Project,
+		t.soloCtx.Config.Workflow.Grpc.ServerPort,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to build GRPC server: %w", err)
+	}
+
+	if err := grpcServer.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start GRPC server: %w", err)
+	}
+
+	return grpcServer, nil
 }

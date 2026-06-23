@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/domain/wms"
-	services2 "github.com/spaulg/solo/internal/pkg/common/infra/grpc/services"
+	"github.com/spaulg/solo/internal/pkg/common/infra/grpc/services"
 	entrypointcontext "github.com/spaulg/solo/internal/pkg/entrypoint/app/context"
 )
 
@@ -22,11 +22,11 @@ const FirstPostStartContainerCompleteMetadataKey = "first_post_start_container_c
 type GrpcWorkflowRunner struct {
 	entrypointCtx  *entrypointcontext.EntrypointContext
 	conn           *grpc.ClientConn
-	workflowClient services2.WorkflowClient
+	workflowClient services.WorkflowClient
 	metadataState  *MetadataState
 }
 
-type WorkflowStream grpc.BidiStreamingClient[services2.RunWorkflowStreamRequest, services2.WorkflowStreamResponse]
+type WorkflowStream grpc.BidiStreamingClient[services.RunWorkflowStreamRequest, services.WorkflowStreamResponse]
 
 func NewGrpcWorkflowRunner(
 	entrypointCtx *entrypointcontext.EntrypointContext,
@@ -47,7 +47,7 @@ func NewGrpcWorkflowRunner(
 	}
 
 	entrypointCtx.Logger.Info("Creating new service client")
-	client := services2.NewWorkflowClient(conn)
+	client := services.NewWorkflowClient(conn)
 
 	return &GrpcWorkflowRunner{
 		entrypointCtx:  entrypointCtx,
@@ -70,9 +70,9 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 		}
 	}(stream)
 
-	if err := stream.Send(&services2.RunWorkflowStreamRequest{
-		Request: &services2.RunWorkflowStreamRequest_RunRequest{
-			RunRequest: &services2.WorkflowRunRequest{
+	if err := stream.Send(&services.RunWorkflowStreamRequest{
+		Request: &services.RunWorkflowStreamRequest_RunRequest{
+			RunRequest: &services.WorkflowRunRequest{
 				WorkflowName: workflowName.String(),
 			},
 		},
@@ -89,7 +89,7 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 		}
 
 		switch instruction.Action {
-		case services2.WorkflowAction_RUN_COMMAND_ACTION:
+		case services.WorkflowAction_RUN_COMMAND_ACTION:
 			t.entrypointCtx.Logger.Info(fmt.Sprintf("Running command: %s %v\n", instruction.RunCommand.Command, instruction.RunCommand.Arguments))
 
 			exitCode, err := t.execute(
@@ -100,11 +100,11 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stdout))
 					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stderr))
 
-					if err := stream.Send(&services2.RunWorkflowStreamRequest{
-						Request: &services2.RunWorkflowStreamRequest_StreamRequest{
-							StreamRequest: &services2.WorkflowStreamRequest{
-								Result: services2.WorkflowResult_RUN_COMMAND_RESULT,
-								RunCommandResult: &services2.WorkflowRunResult{
+					if err := stream.Send(&services.RunWorkflowStreamRequest{
+						Request: &services.RunWorkflowStreamRequest_StreamRequest{
+							StreamRequest: &services.WorkflowStreamRequest{
+								Result: services.WorkflowResult_RUN_COMMAND_RESULT,
+								RunCommandResult: &services.WorkflowRunResult{
 									Stdout: stdout,
 									Stderr: stderr,
 								},
@@ -122,11 +122,11 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 				return err
 			}
 
-			if err := stream.Send(&services2.RunWorkflowStreamRequest{
-				Request: &services2.RunWorkflowStreamRequest_StreamRequest{
-					StreamRequest: &services2.WorkflowStreamRequest{
-						Result: services2.WorkflowResult_RUN_COMMAND_RESULT,
-						RunCommandResult: &services2.WorkflowRunResult{
+			if err := stream.Send(&services.RunWorkflowStreamRequest{
+				Request: &services.RunWorkflowStreamRequest_StreamRequest{
+					StreamRequest: &services.WorkflowStreamRequest{
+						Result: services.WorkflowResult_RUN_COMMAND_RESULT,
+						RunCommandResult: &services.WorkflowRunResult{
 							ExitCode: &exitCode,
 						},
 					},
@@ -135,7 +135,7 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 				return err
 			}
 
-		case services2.WorkflowAction_COMPLETE_ACTION:
+		case services.WorkflowAction_COMPLETE_ACTION:
 			switch workflowName {
 			case commonworkflow.FirstPreStartContainer:
 				t.metadataState.Set(FirstPreStartContainerCompleteMetadataKey, "true")
@@ -193,7 +193,28 @@ func (t *GrpcWorkflowRunner) execute(
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func() {
+	go t.outputPipeReader(&wg, stdout, stderr, streamOutput)()
+	wg.Wait()
+
+	err = cmd.Wait()
+
+	var exitErr *exec.ExitError
+	if err != nil && !errors.As(err, &exitErr) {
+		t.entrypointCtx.Logger.Error(fmt.Sprintf("Run finished with error: %v\n", err))
+		return 0, err
+	}
+
+	exitCode := cmd.ProcessState.ExitCode()
+	return uint32(exitCode), nil // nolint:gosec
+}
+
+func (t *GrpcWorkflowRunner) outputPipeReader(
+	wg *sync.WaitGroup,
+	stdout io.ReadCloser,
+	stderr io.ReadCloser,
+	streamOutput func(stdout string, stderr string) error,
+) func() {
+	return func() {
 		defer wg.Done()
 
 		stdoutBuffer := make([]byte, 64*1024)
@@ -227,18 +248,5 @@ func (t *GrpcWorkflowRunner) execute(
 				break
 			}
 		}
-	}()
-
-	wg.Wait()
-
-	err = cmd.Wait()
-
-	var exitErr *exec.ExitError
-	if err != nil && !errors.As(err, &exitErr) {
-		t.entrypointCtx.Logger.Error(fmt.Sprintf("Run finished with error: %v\n", err))
-		return 0, err
 	}
-
-	exitCode := cmd.ProcessState.ExitCode()
-	return uint32(exitCode), nil // nolint:gosec
 }

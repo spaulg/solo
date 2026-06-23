@@ -248,71 +248,7 @@ func (t *DockerOrchestrator) ServicesStatus(serviceNames []string) (*ServiceStat
 		return nil, err
 	}
 
-	var runningServiceNames []string
-	runningServiceNameMap := make(map[string]bool)
-
-	var stoppedServiceNames []string
-	stoppedServiceNameMap := make(map[string]bool)
-
-	var exitedServiceNames []string
-	exitedServiceNameMap := make(map[string]bool)
-
-	var absentServiceNames []string
-	var notRunningServiceNames []string
-
-	buffer := stdoutBuf.Bytes()
-	reader := bufio.NewReader(bytes.NewReader(buffer))
-
-	for {
-		line, err := reader.ReadBytes('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
-			return nil, err
-		}
-
-		serviceStatus := ComposeServiceStatus{}
-		if err := json.Unmarshal(line, &serviceStatus); err != nil {
-			return nil, err
-		}
-
-		// Filter for running/stopped services
-		if serviceStatus.State == "running" && !runningServiceNameMap[serviceStatus.Service] {
-			runningServiceNameMap[serviceStatus.Service] = true
-			runningServiceNames = append(runningServiceNames, serviceStatus.Service)
-		} else if serviceStatus.State == "stopped" && !stoppedServiceNameMap[serviceStatus.Service] {
-			stoppedServiceNameMap[serviceStatus.Service] = true
-			stoppedServiceNames = append(stoppedServiceNames, serviceStatus.Service)
-			notRunningServiceNames = append(notRunningServiceNames, serviceStatus.Service)
-		} else if serviceStatus.State == "exited" && !exitedServiceNameMap[serviceStatus.Service] {
-			exitedServiceNameMap[serviceStatus.Service] = true
-			exitedServiceNames = append(exitedServiceNames, serviceStatus.Service)
-			notRunningServiceNames = append(notRunningServiceNames, serviceStatus.Service)
-		}
-	}
-
-	// Add services with no container
-	if serviceNames == nil {
-		serviceNames = t.project.Services().ServiceNames()
-	}
-
-	for _, service := range serviceNames {
-		if !runningServiceNameMap[service] && !stoppedServiceNameMap[service] {
-			// Service is neither running nor stopped
-			absentServiceNames = append(absentServiceNames, service)
-			notRunningServiceNames = append(notRunningServiceNames, service)
-		}
-	}
-
-	return &ServiceStatus{
-		RunningServices:    runningServiceNames,
-		StoppedServices:    stoppedServiceNames,
-		ExitedServices:     exitedServiceNames,
-		AbsentServices:     absentServiceNames,
-		NotRunningServices: notRunningServiceNames,
-	}, nil
+	return t.extractServiceStatus(serviceNames, stdoutBuf)
 }
 
 func (t *DockerOrchestrator) GetHostGatewayHostname() string {
@@ -503,4 +439,72 @@ func (t *DockerOrchestrator) dockerInspect(artifactName string, nameOrID string)
 	}
 
 	return &inspect, nil
+}
+
+func (t *DockerOrchestrator) extractServiceStatus(serviceNames []string, outputBuf bytes.Buffer) (*ServiceStatus, error) {
+	var runningServiceNames []string
+	runningServiceNameMap := make(map[string]bool)
+
+	var stoppedServiceNames []string
+	stoppedServiceNameMap := make(map[string]bool)
+
+	var exitedServiceNames []string
+	exitedServiceNameMap := make(map[string]bool)
+
+	var absentServiceNames []string
+	var notRunningServiceNames []string
+
+	buffer := outputBuf.Bytes()
+	reader := bufio.NewReader(bytes.NewReader(buffer))
+
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, err
+		}
+
+		serviceStatus := ComposeServiceStatus{}
+		if err := json.Unmarshal(line, &serviceStatus); err != nil {
+			return nil, err
+		}
+
+		// Filter for running/stopped services
+		if serviceStatus.State == "running" && !runningServiceNameMap[serviceStatus.Service] {
+			runningServiceNameMap[serviceStatus.Service] = true
+			runningServiceNames = append(runningServiceNames, serviceStatus.Service)
+		} else if serviceStatus.State == "stopped" && !stoppedServiceNameMap[serviceStatus.Service] {
+			stoppedServiceNameMap[serviceStatus.Service] = true
+			stoppedServiceNames = append(stoppedServiceNames, serviceStatus.Service)
+			notRunningServiceNames = append(notRunningServiceNames, serviceStatus.Service)
+		} else if serviceStatus.State == "exited" && !exitedServiceNameMap[serviceStatus.Service] {
+			exitedServiceNameMap[serviceStatus.Service] = true
+			exitedServiceNames = append(exitedServiceNames, serviceStatus.Service)
+			notRunningServiceNames = append(notRunningServiceNames, serviceStatus.Service)
+		}
+	}
+
+	// Add services with no container
+	if serviceNames == nil {
+		serviceNames = t.project.Services().ServiceNames()
+	}
+
+	for _, service := range serviceNames {
+		if !runningServiceNameMap[service] && !stoppedServiceNameMap[service] {
+			// Service is neither running nor stopped
+			absentServiceNames = append(absentServiceNames, service)
+			notRunningServiceNames = append(notRunningServiceNames, service)
+		}
+	}
+
+	return &ServiceStatus{
+		RunningServices:    runningServiceNames,
+		StoppedServices:    stoppedServiceNames,
+		ExitedServices:     exitedServiceNames,
+		AbsentServices:     absentServiceNames,
+		NotRunningServices: notRunningServiceNames,
+	}, nil
 }
