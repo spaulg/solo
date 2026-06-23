@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 type Auditor interface {

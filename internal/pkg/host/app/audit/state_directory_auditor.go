@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/spaulg/solo/internal/pkg/host/app/context"
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
 	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
-	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 const auditLogsPath = "audit_logs"
@@ -19,25 +19,25 @@ const metaFileSuffix = ".meta.json"
 type StateDirectoryAuditor struct {
 	soloCtx                       *context.CliContext
 	logger                        *slog.Logger
-	config                        *domain2.Config
-	project                       domain2.Project
+	config                        *domain.Config
+	project                       domain.Project
 	mu                            sync.Mutex
 	outputDirectory               string
-	executionEventRepository      domain2.ExecutionEventRepository
-	workflowLogMetaRepository     domain2.WorkflowLogMetaRepository
-	workflowStepLogMetaRepository domain2.WorkflowStepLogMetaRepository
-	logWriter                     domain2.LogWriter
+	executionEventRepository      domain.ExecutionEventRepository
+	workflowLogMetaRepository     domain.WorkflowLogMetaRepository
+	workflowStepLogMetaRepository domain.WorkflowStepLogMetaRepository
+	logWriter                     domain.LogWriter
 }
 
 func NewAuditor(
 	soloCtx *context.CliContext,
 	logger *slog.Logger,
-	config *domain2.Config,
-	project domain2.Project,
-	executionEventRepository domain2.ExecutionEventRepository,
-	workflowLogMetaRepository domain2.WorkflowLogMetaRepository,
-	workflowStepLogMetaRepository domain2.WorkflowStepLogMetaRepository,
-	logWriter domain2.LogWriter,
+	config *domain.Config,
+	project domain.Project,
+	executionEventRepository domain.ExecutionEventRepository,
+	workflowLogMetaRepository domain.WorkflowLogMetaRepository,
+	workflowStepLogMetaRepository domain.WorkflowStepLogMetaRepository,
+	logWriter domain.LogWriter,
 ) *StateDirectoryAuditor {
 	outputDirectory := path.Join(
 		project.GetStateDirectoryRoot(),
@@ -61,7 +61,7 @@ func NewAuditor(
 func (t *StateDirectoryAuditor) RecordExecutionEvent(callback func() error) error {
 	eventFile := path.Join(t.outputDirectory, executionEventFile)
 
-	workflowEvent := domain2.NewExecutionEvent(t.soloCtx.CommandPath, t.soloCtx.CommandArgs)
+	workflowEvent := domain.NewExecutionEvent(t.soloCtx.CommandPath, t.soloCtx.CommandArgs)
 	if err := t.executionEventRepository.Save(eventFile, workflowEvent); err != nil {
 		return fmt.Errorf("failed to record workflow event start: %w", err)
 	}
@@ -113,7 +113,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 	}
 
 	if meta == nil {
-		meta = domain2.NewWorkflowStepLogMeta()
+		meta = domain.NewWorkflowStepLogMeta()
 
 		if err := t.workflowStepLogMetaRepository.Save(filePath, meta); err != nil {
 			t.logger.Error(fmt.Sprintf(
@@ -187,7 +187,7 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	}
 
 	if metaJSON == nil {
-		metaJSON = domain2.NewWorkflowStepLogMeta()
+		metaJSON = domain.NewWorkflowStepLogMeta()
 	}
 
 	metaJSON.SetExecutionInfo(e.ExitCode, e.Command, e.Arguments, e.Cwd)
@@ -213,7 +213,7 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	}
 
 	if workflowMeta == nil {
-		workflowMeta = domain2.NewWorkflowLogMeta()
+		workflowMeta = domain.NewWorkflowLogMeta()
 	}
 
 	workflowMeta.AppendStep(e.ContainerName, e.StepID)

@@ -9,9 +9,9 @@ import (
 
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/common/infra/grpc/services"
-	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
 	"github.com/spaulg/solo/internal/pkg/host/domain"
 	interceptors2 "github.com/spaulg/solo/internal/pkg/host/infra/grpc/interceptors"
+	"github.com/spaulg/solo/internal/pkg/host/infra/grpc/service_definitions/wfsession"
 )
 
 type WorkflowSession struct {
@@ -133,7 +133,7 @@ func (t *WorkflowSession) GetWorkingDirectory() (string, error) {
 	return serviceWorkingDirectory, err
 }
 
-func (t *WorkflowSession) RunCommand(request *wf.RunCommandRequest) error {
+func (t *WorkflowSession) RunCommand(request *wfsession.RunCommandRequest) error {
 	return t.server.Send(&services.WorkflowStreamResponse{
 		Action: services.WorkflowAction_RUN_COMMAND_ACTION,
 		RunCommand: &services.WorkflowRunCommand{
@@ -144,7 +144,7 @@ func (t *WorkflowSession) RunCommand(request *wf.RunCommandRequest) error {
 	})
 }
 
-func (t *WorkflowSession) RecvCommandResponse() (*wf.CommandResponse, error) {
+func (t *WorkflowSession) RecvCommandResponse() (*wfsession.CommandResponse, error) {
 	result, err := t.server.Recv()
 
 	if err != nil {
@@ -163,7 +163,7 @@ func (t *WorkflowSession) RecvCommandResponse() (*wf.CommandResponse, error) {
 		exitCodePtr = &exitCode
 	}
 
-	return &wf.CommandResponse{
+	return &wfsession.CommandResponse{
 		Stdout:   result.RunCommandResult.Stdout,
 		Stderr:   result.RunCommandResult.Stderr,
 		ExitCode: exitCodePtr,

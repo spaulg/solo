@@ -11,6 +11,7 @@ import (
 	"github.com/spaulg/solo/internal/pkg/host/app/wms/wf"
 	"github.com/spaulg/solo/internal/pkg/host/domain"
 	"github.com/spaulg/solo/internal/pkg/host/domain/config"
+	"github.com/spaulg/solo/internal/pkg/host/infra/grpc/service_definitions/wfsession"
 	"github.com/spaulg/solo/test"
 	"github.com/spaulg/solo/test/mocks/host/app/events"
 	"github.com/spaulg/solo/test/mocks/host/app/wms"
@@ -147,7 +148,7 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(wfName commonworkflow.Work
 				Shell:     "/bin/sh",
 			}).Return()
 
-			t.workflowSession.On("RunCommand", &wf.RunCommandRequest{
+			t.workflowSession.On("RunCommand", &wfsession.RunCommandRequest{
 				Command:          "/bin/sh",
 				Arguments:        []string{"-c", "echo \"Hello World\""},
 				WorkingDirectory: "/",
@@ -160,7 +161,7 @@ func (t *WorkflowRunnerTestSuite) testWorkflowExecFor(wfName commonworkflow.Work
 			t.Nil(err)
 
 			// progress
-			t.workflowSession.On("RecvCommandResponse").Return(&wf.CommandResponse{
+			t.workflowSession.On("RecvCommandResponse").Return(&wfsession.CommandResponse{
 				Stdout:   "Hello World",
 				Stderr:   "",
 				ExitCode: &exitCode,
@@ -518,7 +519,7 @@ func (t *WorkflowRunnerTestSuite) testServerRecvErrorFor(wfName commonworkflow.W
 				Shell:     "/bin/sh",
 			}).Return()
 
-			t.workflowSession.On("RunCommand", &wf.RunCommandRequest{
+			t.workflowSession.On("RunCommand", &wfsession.RunCommandRequest{
 				Command:          "/bin/sh",
 				Arguments:        []string{"-c", "echo \"Hello World\""},
 				WorkingDirectory: "/",

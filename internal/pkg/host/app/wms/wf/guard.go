@@ -2,7 +2,7 @@ package wf
 
 import (
 	workflowcommon "github.com/spaulg/solo/internal/pkg/common/domain/wms"
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 type Guard interface {

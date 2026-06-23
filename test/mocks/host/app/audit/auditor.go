@@ -3,7 +3,7 @@ package audit
 import (
 	"github.com/stretchr/testify/mock"
 
-	"github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
+	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 type MockAuditor struct {

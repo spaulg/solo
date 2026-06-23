@@ -45,9 +45,6 @@ func (t *ArchitectureTestSuite) SetupTest() {
 }
 
 func (t *ArchitectureTestSuite) TestLayerDependencies() {
-	t.T().Skipf("Skipping architecture test as the architecture is still evolving." +
-		" Re-enable once the architecture is stable.")
-
 	configuration := archgo_config.Config{
 		DependenciesRules: []*archgo_config.DependenciesRule{
 			// Commands
@@ -67,6 +64,7 @@ func (t *ArchitectureTestSuite) TestLayerDependencies() {
 					Internal: []string{
 						t.moduleName + "/cmd/solo-entrypoint.**",
 						t.moduleName + "/internal/pkg/entrypoint.**",
+						t.moduleName + "/internal/pkg/common/domain.**",
 					},
 				},
 			},

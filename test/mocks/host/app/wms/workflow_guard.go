@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	workflowcommon "github.com/spaulg/solo/internal/pkg/common/domain/wms"
-	events_types "github.com/spaulg/solo/internal/pkg/host/app/event_manager/events"
+	events_types "github.com/spaulg/solo/internal/pkg/host/domain/events"
 )
 
 type MockWorkflowGuard struct {
