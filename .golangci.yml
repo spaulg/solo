@@ -14,7 +14,7 @@ linters:
 
   settings:
     gocyclo:
-      min-complexity: 25
+      min-complexity: 15
     gosec:
       excludes:
         - G501

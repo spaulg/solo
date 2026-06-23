@@ -196,65 +196,7 @@ func (t *ArchitectureTestSuite) TestConstructorsDontReturnInterfaces() {
 	for _, subDirectory := range []string{"cmd", "internal", "test"} {
 		scanPath := filepath.Join(t.projectRoot, subDirectory)
 
-		err := filepath.WalkDir(scanPath, func(path string, entry os.DirEntry, err error) error {
-			if err != nil || entry.IsDir() {
-				return err
-			}
-
-			if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-				return nil
-			}
-
-			parsedFile, err := parser.ParseFile(fileset, path, nil, parser.SkipObjectResolution)
-			if err != nil {
-				return err
-			}
-
-			imports := buildImportAliasMap(parsedFile)
-
-			for _, declaration := range parsedFile.Decls {
-				// Ignore non-function declarations
-				fn, ok := declaration.(*ast.FuncDecl)
-				if !ok {
-					continue
-				}
-
-				// Ignore non-constructor functions
-				if !strings.HasPrefix(fn.Name.Name, "New") {
-					continue
-				}
-
-				// Ignore methods on structs
-				if fn.Recv != nil && fn.Recv.NumFields() > 0 {
-					continue
-				}
-
-				// Ignore functions that return nothing
-				if fn.Type.Results == nil {
-					continue
-				}
-
-				// For each returned parameter
-				for _, result := range fn.Type.Results.List {
-					pkgPath, isInterface, err := t.resolveInterfaceTypeInPackage(result.Type, imports)
-					if err != nil {
-						t.FailNowf("failed to resolve types package", "%v", err)
-					}
-
-					if isInterface {
-						pos := fileset.Position(fn.Pos())
-						filePath := strings.TrimPrefix(pos.Filename, t.projectRoot+string(filepath.Separator))
-
-						violations = append(violations, fmt.Sprintf(
-							"%s:%d: %s() returns interface type from %s",
-							filePath, pos.Line, fn.Name.Name, pkgPath,
-						))
-					}
-				}
-			}
-
-			return nil
-		})
+		err := filepath.WalkDir(scanPath, t.checkFileForInterfaceReturnTypeFunc(fileset, &violations))
 
 		if err != nil {
 			t.FailNowf("failed to check constructor functions for returning interfaces", "%v", err)
@@ -263,6 +205,71 @@ func (t *ArchitectureTestSuite) TestConstructorsDontReturnInterfaces() {
 
 	for _, v := range violations {
 		t.Failf("Interface type returned from constructor function", "%s", v)
+	}
+}
+
+func (t *ArchitectureTestSuite) checkFileForInterfaceReturnTypeFunc(
+	fileset *token.FileSet,
+	violations *[]string,
+) func(path string, entry os.DirEntry, err error) error {
+	return func(path string, entry os.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+
+		parsedFile, err := parser.ParseFile(fileset, path, nil, parser.SkipObjectResolution)
+		if err != nil {
+			return err
+		}
+
+		imports := buildImportAliasMap(parsedFile)
+
+		for _, declaration := range parsedFile.Decls {
+			// Ignore non-function declarations
+			fn, ok := declaration.(*ast.FuncDecl)
+			if !ok {
+				continue
+			}
+
+			// Ignore non-constructor functions
+			if !strings.HasPrefix(fn.Name.Name, "New") {
+				continue
+			}
+
+			// Ignore methods on structs
+			if fn.Recv != nil && fn.Recv.NumFields() > 0 {
+				continue
+			}
+
+			// Ignore functions that return nothing
+			if fn.Type.Results == nil {
+				continue
+			}
+
+			// For each returned parameter
+			for _, result := range fn.Type.Results.List {
+				pkgPath, isInterface, err := t.resolveInterfaceTypeInPackage(result.Type, imports)
+				if err != nil {
+					t.FailNowf("failed to resolve types package", "%v", err)
+				}
+
+				if isInterface {
+					pos := fileset.Position(fn.Pos())
+					filePath := strings.TrimPrefix(pos.Filename, t.projectRoot+string(filepath.Separator))
+
+					*violations = append(*violations, fmt.Sprintf(
+						"%s:%d: %s() returns interface type from %s",
+						filePath, pos.Line, fn.Name.Name, pkgPath,
+					))
+				}
+			}
+		}
+
+		return nil
 	}
 }
 
