@@ -30,8 +30,8 @@ type Model struct {
 	executionEventName   string
 	workflowContainerMap map[wms.WorkflowName]map[string][]string
 
-	selectedWorkflowName  wms.WorkflowName
-	selectedContainerName string
+	selectedWorkflowIndex  int
+	selectedContainerIndex int
 
 	keyMap KeyMap
 	styles Styles
@@ -78,6 +78,8 @@ func NewModel(
 		workflowContainerMap:       make(map[wms.WorkflowName]map[string][]string),
 		styles:                     DefaultStyles(),
 		keyMap:                     DefaultKeyMap(),
+		selectedWorkflowIndex:      -1,
+		selectedContainerIndex:     -1,
 	}
 }
 
@@ -125,23 +127,23 @@ func (t Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		t.activeModel.SetActiveModel(t.modelID)
 
 		// Select first workflow
-		for _, workflowName := range wms.WorkflowNames {
+		for workflowIndex, workflowName := range wms.WorkflowNames {
 			if _, ok := t.workflowContainerMap[workflowName]; ok {
-				t.selectedWorkflowName = workflowName
+				t.selectedWorkflowIndex = workflowIndex
 				break
 			}
 		}
 
 		// Select first container of first workflow
-		if t.selectedWorkflowName != wms.Undefined {
+		if t.selectedWorkflowIndex >= 0 {
 			containerNames := make([]string, 0)
-			for containerName := range t.workflowContainerMap[t.selectedWorkflowName] {
+			for containerName := range t.workflowContainerMap[wms.WorkflowNames[t.selectedWorkflowIndex]] {
 				containerNames = append(containerNames, containerName)
 			}
 
 			if len(containerNames) > 0 {
 				sort.Strings(containerNames)
-				t.selectedContainerName = containerNames[0]
+				t.selectedContainerIndex = 0
 			}
 		}
 
@@ -157,8 +159,8 @@ func (t Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// If receiving an escape, deselect the execution event
 		if key.Matches(m, t.keyMap.Escape) {
-			t.selectedWorkflowName = wms.Undefined
-			t.selectedContainerName = ""
+			t.selectedWorkflowIndex = -1
+			t.selectedContainerIndex = -1
 
 			cmds = append(cmds, func() tea.Msg {
 				return messages.ExecutionEventDeselected{}
@@ -177,20 +179,22 @@ func (t Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if treeChanged {
-			//containerName := t.workflowNames[t.selectedContainerIndex]
-			//
-			//workflowName := ""
-			//if t.selectedWorkflowIndex >= 0 {
-			//	workflowName = t.containerWorkflowMap[containerName][t.selectedWorkflowIndex]
-			//}
-			//
-			//cmds = append(cmds, func() tea.Msg {
-			//	return messages.WorkflowEventSelected{
-			//		ExecutionEventName: t.executionEventName,
-			//		ContainerName:      containerName,
-			//		WorkflowName:       workflowName,
-			//	}
-			//})
+			workflowName := wms.WorkflowNames[t.selectedWorkflowIndex]
+			containerNames := make([]string, 0)
+
+			for containerName := range t.workflowContainerMap[wms.WorkflowNames[t.selectedWorkflowIndex]] {
+				containerNames = append(containerNames, containerName)
+			}
+
+			sort.Strings(containerNames)
+
+			cmds = append(cmds, func() tea.Msg {
+				return messages.WorkflowEventSelected{
+					ExecutionEventName: t.executionEventName,
+					WorkflowName:       workflowName.String(),
+					ContainerName:      containerNames[t.selectedContainerIndex],
+				}
+			})
 		}
 	}
 
@@ -200,7 +204,7 @@ func (t Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (t Model) View() tea.View {
 	treeView := tree.Root("")
 
-	for _, workflowName := range wms.WorkflowNames {
+	for workflowIndex, workflowName := range wms.WorkflowNames {
 		if _, ok := t.workflowContainerMap[workflowName]; !ok {
 			continue
 		}
@@ -215,8 +219,8 @@ func (t Model) View() tea.View {
 
 		sort.Strings(containerNames)
 
-		for _, containerName := range containerNames {
-			if t.selectedContainerName == containerName {
+		for containerIndex, containerName := range containerNames {
+			if t.selectedWorkflowIndex == workflowIndex && t.selectedContainerIndex == containerIndex {
 				containerName = t.styles.Selected.Render(containerName)
 			}
 
@@ -237,33 +241,45 @@ func (t Model) View() tea.View {
 }
 
 func (t *Model) selectPrevRow() bool {
-	//	if t.selectedContainerIndex > 0 && t.selectedWorkflowIndex == -1 {
-	//		t.selectedContainerIndex--
-	//		t.selectedWorkflowIndex = len(t.containerWorkflowMap[t.workflowNames[t.selectedContainerIndex]]) - 1
-	//
-	//		return true
-	//	} else if t.selectedWorkflowIndex >= 0 {
-	//		t.selectedWorkflowIndex--
-	//
-	//		return true
-	//	}
+	if t.selectedWorkflowIndex < 0 {
+		return false
+	}
+
+	if t.selectedContainerIndex > 0 {
+		t.selectedContainerIndex--
+	}
+
+	// Advance previous workflow
+	for workflowIndex := t.selectedWorkflowIndex - 1; workflowIndex >= 0; workflowIndex-- {
+		workflowName := wms.WorkflowNames[workflowIndex]
+		if _, ok := t.workflowContainerMap[workflowName]; ok {
+			t.selectedWorkflowIndex = workflowIndex
+			t.selectedContainerIndex = len(t.workflowContainerMap[workflowName]) - 1
+
+			return true
+		}
+	}
 
 	return false
 }
 
 func (t *Model) selectNextRow() bool {
-	//	containerName := t.workflowNames[t.selectedContainerIndex]
-	//
-	//	if t.selectedWorkflowIndex < len(t.containerWorkflowMap[containerName])-1 {
-	//		t.selectedWorkflowIndex++
-	//
-	//		return true
-	//	} else if t.selectedContainerIndex < len(t.workflowNames)-1 {
-	//		t.selectedContainerIndex++
-	//		t.selectedWorkflowIndex = -1
-	//
-	//		return true
-	//	}
+	if t.selectedContainerIndex < len(t.workflowContainerMap[wms.WorkflowNames[t.selectedWorkflowIndex]])-1 {
+		// Advance next container
+		t.selectedContainerIndex++
+
+		return true
+	}
+
+	// Advance next workflow
+	for workflowIndex, workflowName := range wms.WorkflowNames[(t.selectedWorkflowIndex + 1):] {
+		if _, ok := t.workflowContainerMap[workflowName]; ok {
+			t.selectedWorkflowIndex += workflowIndex + 1
+			t.selectedContainerIndex = 0
+
+			return true
+		}
+	}
 
 	return false
 }
