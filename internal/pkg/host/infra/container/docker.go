@@ -17,6 +17,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"google.golang.org/grpc/metadata"
 
+	commoncontainer "github.com/spaulg/solo/internal/pkg/common/domain/container"
 	domain2 "github.com/spaulg/solo/internal/pkg/host/domain"
 	"github.com/spaulg/solo/internal/pkg/host/domain/events"
 	"github.com/spaulg/solo/internal/pkg/host/infra/container/progress"
@@ -285,6 +286,10 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *domain2.Config, 
 
 		service.Entrypoint = []string{config.Entrypoint.ContainerEntrypointPath, "entrypoint"}
 
+		// Run all containers as root so the entrypoint has the privileges it needs
+		// (e.g. returning ownership of bind mounted files to the host user)
+		service.User = "0"
+
 		serviceLogPath := project.GetServiceLogDirectory(service.Name)
 		_, err := os.Stat(serviceLogPath)
 		if err != nil {
@@ -331,6 +336,17 @@ func (t *DockerOrchestrator) ExportComposeConfiguration(config *domain2.Config, 
 			Target:   "/solo/services_all",
 			ReadOnly: true,
 		})
+
+		// Pass the host user identity so the entrypoint can return ownership
+		// of files written to bind mounts back to the host user
+		if service.Environment == nil {
+			service.Environment = types.MappingWithEquals{}
+		}
+
+		hostUID := strconv.Itoa(os.Getuid())
+		hostGID := strconv.Itoa(os.Getgid())
+		service.Environment[commoncontainer.HostUIDEnvVar] = &hostUID
+		service.Environment[commoncontainer.HostGIDEnvVar] = &hostGID
 
 		service.ExtraHosts = types.HostsList{}
 		service.ExtraHosts["host.docker.internal"] = []string{"host-gateway"}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	commoncontainer "github.com/spaulg/solo/internal/pkg/common/domain/container"
 	commonworkflow "github.com/spaulg/solo/internal/pkg/common/domain/wms"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/app"
 	"github.com/spaulg/solo/internal/pkg/entrypoint/app/context"
@@ -59,14 +60,14 @@ func forkAndExecute(args []string) error {
 
 	if []rune(args[0])[0] == '/' {
 		// Full path of executable given
-		return syscall.Exec(args[0], args, os.Environ()) // nolint:gosec
+		return syscall.Exec(args[0], args, commoncontainer.MaskSoloEnvironment(os.Environ())) // nolint:gosec
 	}
 
 	// Shell command
 	shellArgs := []string{"/bin/sh", "-c"}
 	shellArgs = append(shellArgs, strings.Join(args, " "))
 
-	return syscall.Exec("/bin/sh", shellArgs, os.Environ()) // nolint:gosec
+	return syscall.Exec("/bin/sh", shellArgs, commoncontainer.MaskSoloEnvironment(os.Environ())) // nolint:gosec
 }
 
 func isServiceBuilt() bool {
