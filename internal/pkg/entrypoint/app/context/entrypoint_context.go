@@ -50,7 +50,7 @@ func LoadEntrypointContext() (*EntrypointContext, error) {
 	// Files written to the log bind mount are created as root.
 	// Hand them back to the host user so solo can remove them.
 	if err := chownToHostUser(path.Dir(logFileName), logFileName); err != nil {
-		logger.Warn(fmt.Sprintf("Failed to change log file ownership to host user: %v", err))
+		logger.Warn("Failed to change log file ownership to host user", slog.Any("error", err))
 	}
 
 	return &EntrypointContext{

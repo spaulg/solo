@@ -3,8 +3,8 @@ package workflow
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
+	"log/slog"
 	"os/exec"
 	"sync"
 
@@ -90,15 +90,15 @@ func (t *GrpcWorkflowRunner) Execute(workflowName commonworkflow.WorkflowName) e
 
 		switch instruction.Action {
 		case services.WorkflowAction_RUN_COMMAND_ACTION:
-			t.entrypointCtx.Logger.Info(fmt.Sprintf("Running command: %s %v\n", instruction.RunCommand.Command, instruction.RunCommand.Arguments))
+			t.entrypointCtx.Logger.Info("Running command", slog.String("command", instruction.RunCommand.Command), slog.Any("args", instruction.RunCommand.Arguments))
 
 			exitCode, err := t.execute(
 				instruction.RunCommand.Command,
 				instruction.RunCommand.Arguments,
 				instruction.RunCommand.WorkingDirectory,
 				func(stdout string, stderr string) error {
-					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stdout))
-					t.entrypointCtx.Logger.Info(fmt.Sprintf("%s\n", stderr))
+					t.entrypointCtx.Logger.Info("Command output", slog.String("stdout", stdout))
+					t.entrypointCtx.Logger.Info("Command output", slog.String("stderr", stderr))
 
 					if err := stream.Send(&services.RunWorkflowStreamRequest{
 						Request: &services.RunWorkflowStreamRequest_StreamRequest{
@@ -175,19 +175,19 @@ func (t *GrpcWorkflowRunner) execute(
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		t.entrypointCtx.Logger.Error(fmt.Sprintf("Error creating stdout pipe: %v\n", err))
+		t.entrypointCtx.Logger.Error("Error creating stdout pipe", slog.Any("error", err))
 		return 0, err
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		t.entrypointCtx.Logger.Error(fmt.Sprintf("Error creating stderr pipe: %v\n", err))
+		t.entrypointCtx.Logger.Error("Error creating stderr pipe", slog.Any("error", err))
 		return 0, err
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		t.entrypointCtx.Logger.Error(fmt.Sprintf("Error starting command: %v\n", err))
+		t.entrypointCtx.Logger.Error("Error starting command", slog.Any("error", err))
 		return 0, err
 	}
 
@@ -200,7 +200,7 @@ func (t *GrpcWorkflowRunner) execute(
 
 	var exitErr *exec.ExitError
 	if err != nil && !errors.As(err, &exitErr) {
-		t.entrypointCtx.Logger.Error(fmt.Sprintf("Run finished with error: %v\n", err))
+		t.entrypointCtx.Logger.Error("Run finished with error", slog.Any("error", err))
 		return 0, err
 	}
 
@@ -226,12 +226,12 @@ func (t *GrpcWorkflowRunner) outputPipeReader(
 
 			// If either err returned not null and not EOF, break
 			if stdoutErr != nil && stdoutErr != io.EOF {
-				t.entrypointCtx.Logger.Error(fmt.Sprintf("Error reading from stdout stream: %v\n", stdoutErr))
+				t.entrypointCtx.Logger.Error("Error reading from stdout stream", slog.Any("error", stdoutErr))
 				break
 			}
 
 			if stderrErr != nil && stderrErr != io.EOF {
-				t.entrypointCtx.Logger.Error(fmt.Sprintf("Error reading from stderr stream: %v\n", stdoutErr))
+				t.entrypointCtx.Logger.Error("Error reading from stderr stream", slog.Any("error", stderrErr))
 				break
 			}
 

@@ -3,7 +3,6 @@ package progress
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 
@@ -46,7 +45,7 @@ func (t *ProgressEventPublisher) PublishStreamedProgressEvents() {
 
 		composeProgress := ComposeProgress{}
 		if err := json.Unmarshal([]byte(line), &composeProgress); err != nil {
-			t.logger.Error(fmt.Sprintf("Error unmarshaling JSON: %s: %v", line, err))
+			t.logger.Error("Error unmarshaling JSON", slog.String("line", line), slog.Any("error", err))
 			continue
 		}
 
@@ -56,7 +55,7 @@ func (t *ProgressEventPublisher) PublishStreamedProgressEvents() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		t.logger.Error(fmt.Sprintf("Error scanning progress stream: %v", err))
+		t.logger.Error("Error scanning progress stream", slog.Any("error", err))
 		return
 	}
 }

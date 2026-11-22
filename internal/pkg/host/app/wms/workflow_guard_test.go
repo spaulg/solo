@@ -18,6 +18,25 @@ import (
 	"github.com/spaulg/solo/test/mocks/logging"
 )
 
+// recordMatches reports whether the record has the given message and
+// every expected attribute key with the expected string value.
+func recordMatches(record slog.Record, message string, attrs map[string]string) bool {
+	if record.Message != message {
+		return false
+	}
+
+	found := 0
+	record.Attrs(func(attr slog.Attr) bool {
+		if expected, ok := attrs[attr.Key]; ok && attr.Value.String() == expected {
+			found++
+		}
+
+		return true
+	})
+
+	return found == len(attrs)
+}
+
 func TestWorkflowGuardTestSuite(t *testing.T) {
 	suite.Run(t, new(WorkflowGuardTestSuite))
 }
@@ -115,11 +134,11 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedWorkflow() {
 	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Received event completed for workflow pre_start_container for container test_container1"
+		return recordMatches(record, "Received event completed", map[string]string{"workflow": "pre_start_container", "container": "test_container1"})
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Workflow pre_start_container not registered for workflow guard"
+		return recordMatches(record, "Workflow not registered for workflow guard", map[string]string{"workflow": "pre_start_container"})
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
@@ -147,11 +166,11 @@ func (t *WorkflowGuardTestSuite) TestWorkflowEventWithUnrecognisedContainer() {
 	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Received event completed for workflow first_pre_start_container for container test_container2"
+		return recordMatches(record, "Received event completed", map[string]string{"workflow": "first_pre_start_container", "container": "test_container2"})
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Container test_container2 not registered for workflow guard or channel already closed"
+		return recordMatches(record, "Container not registered for workflow guard or channel already closed", map[string]string{"container": "test_container2"})
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
@@ -179,15 +198,15 @@ func (t *WorkflowGuardTestSuite) TestWaitWithUnrecognisedWorkflow() {
 	t.mockLogHandler.On("Enabled", context.Background(), mock.Anything).Return(true)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Cannot wait for workflow pre_start_container to complete as this is not mapped"
+		return recordMatches(record, "Cannot wait for workflow to complete as this is not mapped", map[string]string{"workflow": "pre_start_container"})
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Error waiting for container test_container1: unrecognised workflow pre_start_container"
+		return recordMatches(record, "Error waiting for container", map[string]string{"container": "test_container1", "error": "unrecognised workflow pre_start_container"})
 	})).Return(nil)
 
 	t.mockLogHandler.On("Handle", context.Background(), mock.MatchedBy(func(record slog.Record) bool {
-		return record.Message == "Encountered 1 errors while waiting for containers: [unrecognised workflow pre_start_container]"
+		return recordMatches(record, "Encountered errors while waiting for containers", map[string]string{"count": "1", "errors": "[unrecognised workflow pre_start_container]"})
 	})).Return(nil)
 
 	guard := NewWorkflowGuard(
