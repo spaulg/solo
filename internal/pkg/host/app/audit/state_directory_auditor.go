@@ -103,11 +103,7 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 
 	meta, err := t.workflowStepLogMetaRepository.Load(filePath)
 	if err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to write step output to log file: %s: %v",
-			filePath,
-			err,
-		))
+		t.logger.Error("Failed to write step output to log file", slog.String("path", filePath), slog.Any("error", err))
 
 		return
 	}
@@ -116,50 +112,30 @@ func (t *StateDirectoryAuditor) writeStepOutput(e *wf.StepOutputEvent) {
 		meta = domain.NewWorkflowStepLogMeta()
 
 		if err := t.workflowStepLogMetaRepository.Save(filePath, meta); err != nil {
-			t.logger.Error(fmt.Sprintf(
-				"Failed to write workflow step meta file: %s: %v",
-				filePath,
-				err,
-			))
+			t.logger.Error("Failed to write workflow step meta file", slog.String("path", filePath), slog.Any("error", err))
 		}
 	}
 
 	// Combined file
 	combinedOutputPath := path.Join(outputDirectory, e.StepID+".out")
 	if err := t.logWriter.Append(combinedOutputPath, []byte(e.Stderr)); err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to write step output to log file: %s: %v",
-			combinedOutputPath,
-			err,
-		))
+		t.logger.Error("Failed to write step output to log file", slog.String("path", combinedOutputPath), slog.Any("error", err))
 	}
 
 	if err := t.logWriter.Append(combinedOutputPath, []byte(e.Stdout)); err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to write step output to log file: %s: %v",
-			combinedOutputPath,
-			err,
-		))
+		t.logger.Error("Failed to write step output to log file", slog.String("path", combinedOutputPath), slog.Any("error", err))
 	}
 
 	// stderr file
 	stderrPath := path.Join(outputDirectory, e.StepID+".stderr")
 	if err := t.logWriter.Append(stderrPath, []byte(e.Stderr)); err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to write step output to log file: %s: %v",
-			stderrPath,
-			err,
-		))
+		t.logger.Error("Failed to write step output to log file", slog.String("path", stderrPath), slog.Any("error", err))
 	}
 
 	// stdout file
 	stdoutPath := path.Join(outputDirectory, e.StepID+".stdout")
 	if err := t.logWriter.Append(stdoutPath, []byte(e.Stdout)); err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to write step output to log file: %s: %v",
-			stdoutPath,
-			err,
-		))
+		t.logger.Error("Failed to write step output to log file", slog.String("path", stdoutPath), slog.Any("error", err))
 	}
 }
 
@@ -177,11 +153,7 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	metaJSON, err := t.workflowStepLogMetaRepository.Load(filePath)
 
 	if err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to load workflow meta file: failed to load meta file: %s: %v",
-			filePath,
-			err,
-		))
+		t.logger.Error("Failed to load workflow meta file", slog.String("path", filePath), slog.Any("error", err))
 
 		return
 	}
@@ -193,21 +165,13 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	metaJSON.SetExecutionInfo(e.ExitCode, e.Command, e.Arguments, e.Cwd)
 
 	if err := t.workflowStepLogMetaRepository.Save(filePath, metaJSON); err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to write workflow step meta file: failed to save meta file: %s: %v",
-			filePath,
-			err,
-		))
+		t.logger.Error("Failed to write workflow step meta file", slog.String("path", filePath), slog.Any("error", err))
 	}
 
 	workflowMetaPath := path.Join(outputDirectory, "container_step_map.meta.json")
 	workflowMeta, err := t.containerStepMapRepository.Load(workflowMetaPath)
 	if err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to load workflow meta file: failed to load meta file: %s: %v",
-			workflowMetaPath,
-			err,
-		))
+		t.logger.Error("Failed to load workflow meta file", slog.String("path", workflowMetaPath), slog.Any("error", err))
 
 		return
 	}
@@ -219,10 +183,6 @@ func (t *StateDirectoryAuditor) writeStepResult(e *wf.StepCompleteEvent) {
 	workflowMeta.AppendStep(e.ContainerName, e.StepID)
 
 	if err = t.containerStepMapRepository.Save(workflowMetaPath, workflowMeta); err != nil {
-		t.logger.Error(fmt.Sprintf(
-			"Failed to write workflow meta file: failed to save meta file: %s: %v",
-			workflowMetaPath,
-			err,
-		))
+		t.logger.Error("Failed to write workflow meta file", slog.String("path", workflowMetaPath), slog.Any("error", err))
 	}
 }
