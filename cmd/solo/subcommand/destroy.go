@@ -1,9 +1,6 @@
 package subcommand
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/spf13/cobra"
 
 	"github.com/spaulg/solo/internal/pkg/host/app"
@@ -29,18 +26,8 @@ func NewDestroySubCommand(soloCtx *context.CliContext) *cobra.Command {
 			}
 
 			if !destroyCmdYes {
-				var cmdConfirmationString string
-				for {
-					fmt.Print("Are you sure you want to destroy (y/n)? ")
-					_, err := fmt.Scanln(&cmdConfirmationString)
-
-					if err != nil {
-						continue
-					} else if strings.ToLower(cmdConfirmationString) == "n" {
-						return ErrUserAbortedCommand
-					} else if strings.ToLower(cmdConfirmationString) == "y" {
-						break
-					}
+				if err := confirm("Are you sure you want to destroy"); err != nil {
+					return err
 				}
 			}
 

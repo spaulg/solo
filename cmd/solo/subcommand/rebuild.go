@@ -1,9 +1,6 @@
 package subcommand
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/spf13/cobra"
 
 	"github.com/spaulg/solo/internal/pkg/host/app"
@@ -28,18 +25,8 @@ func NewRebuildCommand(soloCtx *context.CliContext) *cobra.Command {
 			}
 
 			if !rebuildCmdYes {
-				var cmdConfirmationString string
-				for {
-					fmt.Print("Are you sure you want to rebuild (y/n)? ")
-					_, err := fmt.Scanln(&cmdConfirmationString)
-
-					if err != nil {
-						continue
-					} else if strings.ToLower(cmdConfirmationString) == "n" {
-						return ErrUserAbortedCommand
-					} else if strings.ToLower(cmdConfirmationString) == "y" {
-						break
-					}
+				if err := confirm("Are you sure you want to rebuild"); err != nil {
+					return err
 				}
 			}
 
