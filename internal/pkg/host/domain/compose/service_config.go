@@ -23,8 +23,11 @@ func NewServiceConfig(project domain.Project, serviceConfig types.ServiceConfig)
 }
 
 func (t *ServiceConfig) GetServiceWorkflow(eventName string) domain.ServiceWorkflowConfig {
-	serviceWorkflows := t.serviceConfig.Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows)
-	return serviceWorkflows[eventName]
+	if serviceWorkflows, ok := t.serviceConfig.Extensions[ServiceWorkflowExtensionName].(ServiceWorkflows); ok {
+		return serviceWorkflows[eventName]
+	}
+
+	return NewServiceWorkflowConfig(make([]domain.WorkflowStep, 0), nil, nil)
 }
 
 func (t *ServiceConfig) GetConfig() types.ServiceConfig {
